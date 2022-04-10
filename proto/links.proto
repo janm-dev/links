@@ -1,0 +1,50 @@
+syntax = "proto3";
+package links;
+
+// UNSTABLE! NO BACKWARDS COMPATIBILITY!
+
+service Links {
+	// Get the link corresponding to the id.
+	rpc GetRedirect (Id) returns (Link);
+	// Set a redirect by its id and link. Returns the old link, if any.
+	rpc SetRedirect (IdRedirect) returns (MaybeLink);
+	// Remove a redirect by its id. Returns the old link, if any.
+	rpc RemRedirect (Id) returns (MaybeLink);
+
+	// Get the id corresponding to the vanity path.
+	rpc GetVanity (Vanity) returns (Id);
+	// Set a vanity redirect by its path and id. Returns the old id, if any.
+	rpc SetVanity (VanityRedirect) returns (MaybeId);
+	// Remove a vanity path by its text content. Returns the old id, if any.
+	rpc RemVanity (Vanity) returns (MaybeId);
+}
+
+message Id {
+	uint64 id = 1;
+}
+
+message Link {
+	string url = 1;
+}
+
+message MaybeId {
+	optional Id id = 1;
+}
+
+message MaybeLink {
+	optional Link link = 1;
+}
+
+message Vanity {
+	string vanity = 1;
+}
+
+message IdRedirect {
+	Id id = 1;
+	Link link = 2;
+}
+
+message VanityRedirect {
+	Vanity vanity = 1;
+	Id id = 2;
+}
