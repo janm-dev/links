@@ -23,23 +23,18 @@
 //! providing flexibility with the storage setup. Currently in-memory,
 //! in-memory with file backup (TODO), and redis (TODO) backends are supported.
 
-use hyper::{
-	service::{make_service_fn, service_fn},
-	Server as HttpServer,
-};
+use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::api::{Api, LinksServer};
 use links::redirector::redirector;
 use links::store::get;
-use std::convert::Infallible;
 use std::net::SocketAddr;
-use tokio::{spawn, try_join};
-
+use tokio::{net::TcpListener, spawn, try_join};
 use tonic::transport::Server as RpcServer;
 use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), anyhow::Error> {
 	// Create a tracing subscriber to collect and show logs
 	//TODO: make this configurable
 	let tracing_subscriber = FmtSubscriber::builder()
@@ -49,7 +44,7 @@ async fn main() {
 
 	// Set the subscriber as the global default so all logs are sent there
 	tracing::subscriber::set_global_default(tracing_subscriber)
-		.expect("Setting tracing default subscriber failed");
+		.expect("setting tracing default subscriber failed");
 
 	// Listen on all addresses, on port 80 (http)
 	let http_addr = SocketAddr::from(([0, 0, 0, 0], 80));
@@ -60,15 +55,10 @@ async fn main() {
 
 	// Get and initialize the links store
 	//TODO: make this configurable
-	let store = get("memory").await.unwrap();
+	let store = get("memory").await?;
 
 	// Create the rpc service
 	let rpc_service = Api::new(store);
-
-	// Create the redirector service
-	let redirector_service = make_service_fn(|_conn| async {
-		Ok::<_, Infallible>(service_fn(|r| redirector(r, store)))
-	});
 
 	// Start the rpc api server
 	let rpc_handle = spawn(async move {
@@ -84,16 +74,35 @@ async fn main() {
 	});
 
 	// Start the http server
+	let tcp_listener = TcpListener::bind(http_addr).await?;
 	let http_handle = spawn(async move {
-		// Start the http server
-		let http_server = HttpServer::bind(&http_addr).serve(redirector_service);
+		loop {
+			let tcp_stream = match tcp_listener.accept().await {
+				Ok((tcp_stream, _)) => tcp_stream,
+				Err(err) => {
+					error!(?err, "Error while accepting HTTP connection");
+					continue;
+				}
+			};
 
-		// Log any server errors during requests
-		if let Err(e) = http_server.await {
-			error!(error = ?e, "HTTP server error: {}", e);
+			spawn(async move {
+				if let Err(http_err) = Http::new()
+					.http1_only(true)
+					.http1_keep_alive(true)
+					.serve_connection(
+						tcp_stream,
+						service_fn(|req: Request<Body>| redirector(req, store)),
+					)
+					.await
+				{
+					error!(?http_err, "Error while serving HTTP connection");
+				}
+			});
 		}
 	});
 
 	// Wait until the first unhandled error (if any) and exit
-	try_join!(rpc_handle, http_handle).unwrap();
+	try_join!(rpc_handle, http_handle)?;
+
+	Ok(())
 }
