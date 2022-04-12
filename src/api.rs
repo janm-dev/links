@@ -11,7 +11,12 @@ use tokio::time::Instant;
 use tonic::{Code, Request, Response, Status};
 use tracing::{info, instrument};
 
-pub mod rpc {
+// Do some weird stuff to allow `clippy::pedantic` on generated code.
+use rpc_wrapper::rpc;
+/// A wrapper around the generated tonic code. Contains the `rpc` module with
+/// all of the actual functionality. This is necessary to allow
+/// `clippy::pedantic` on the generated code.
+mod rpc_wrapper {
 	tonic::include_proto!("links");
 }
 
