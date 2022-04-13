@@ -7,7 +7,8 @@ use crate::store::Store;
 use crate::util::SERVER_NAME;
 use hyper::{
 	header::HeaderValue,
-	StatusCode, {Body, Request, Response},
+	http::uri::Scheme,
+	Method, StatusCode, Uri, {Body, Request, Response},
 };
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
@@ -69,7 +70,11 @@ pub async fn redirector(
 	};
 
 	if let Some(link) = link.clone() {
-		*res.status_mut() = StatusCode::TEMPORARY_REDIRECT;
+		if req.method() == Method::GET {
+			*res.status_mut() = StatusCode::FOUND;
+		} else {
+			*res.status_mut() = StatusCode::TEMPORARY_REDIRECT;
+		}
 
 		res.headers_mut().insert(
 			"Location",

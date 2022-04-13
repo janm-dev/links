@@ -79,16 +79,16 @@ async fn main() -> Result<(), anyhow::Error> {
 		loop {
 			let tcp_stream = match tcp_listener.accept().await {
 				Ok((tcp_stream, _)) => tcp_stream,
-				Err(err) => {
-					error!(?err, "Error while accepting HTTP connection");
+				Err(tcp_err) => {
+					error!(?tcp_err, "Error while accepting HTTP connection");
 					continue;
 				}
 			};
 
 			spawn(async move {
 				if let Err(http_err) = Http::new()
-					.http1_only(true)
-					.http1_keep_alive(true)
+					.http1_only(false)
+					.http2_only(false)
 					.serve_connection(
 						tcp_stream,
 						service_fn(|req: Request<Body>| redirector(req, store)),
