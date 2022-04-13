@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 authors = ["janm-dev"]
 description = "An easy to set up selfhostable link shortener."
-license = ""
+license = "AGPL-3.0-or-later"
 repository = "https://github.com/janm-dev/links"
 rust-version = "1.59"
 
