@@ -29,7 +29,7 @@ pub async fn redirector(
 		.insert("Server", HeaderValue::from_str(&SERVER_NAME).unwrap());
 	res.headers_mut().insert(
 		"Content-Security-Policy",
-		HeaderValue::from_str("default-src 'none'; sandbox allow-top-navigation;").unwrap(),
+		HeaderValue::from_str("default-src 'none'; sandbox allow-top-navigation").unwrap(),
 	);
 	res.headers_mut().insert(
 		"Referrer-Policy",
