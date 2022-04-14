@@ -42,6 +42,10 @@ pub const REVERSE_CHARSET: [u8; 69] = [
 	0, 18, 0, 0, 19, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 22, 23, 0, 24, 25, 26, 0, 27, 28, 0, 29,
 	30, 0, 31, 32, 33, 0, 34, 0, 0, 35, 36, 0, 37,
 ];
+
+/// The offset from the ascii value of a base 38 character to its index in
+/// `REVERSE_CHARSET`. To get the index of a character in `REVERSE_CHARSET`,
+/// subtract `REVERSE_CHARSET_BASE_38_OFFSET` from its value (`ascii - this`).
 pub const REVERSE_CHARSET_BASE_38_OFFSET: usize = 54;
 
 /// The 40 bit ID used to identify links in links.

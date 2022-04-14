@@ -20,6 +20,8 @@ mod rpc_wrapper {
 	tonic::include_proto!("links");
 }
 
+/// The grpc api implementation. Contains a reference to the store on which all
+/// operations are performed. Implements all rpc calls from `links.proto`.
 #[derive(Debug)]
 pub struct Api<T: Store + 'static> {
 	store: &'static T,

@@ -1,4 +1,6 @@
-//! This module contains data structures representing normalized data:
+//! This module contains data structures representing normalized data.
+//!
+//! In particular, it contains:
 //! - [`Normalized`], which represents unicode normalized vanity paths
 //! - [`Link`], which represents valid normalized redirection target URLs
 

@@ -13,6 +13,10 @@ use hyper::{
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
 
+/// Redirects the `req`uest to the appropriate target url (if one is found in
+/// the `store`) or returns a `404 Not Found` response. When redirecting, the
+/// status code is `302 Found` when the method is GET, and `307 Temporary
+/// Redirect` otherwise.
 #[instrument(level = "trace", name = "request-details")]
 #[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]")), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
 pub async fn redirector(
