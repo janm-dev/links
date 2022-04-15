@@ -18,3 +18,6 @@ lazy_static! {
 	/// name, and the version is `util::VERSION`.
 	pub static ref SERVER_NAME: String = format!("hyperlinks/{}", &*VERSION);
 }
+
+/// One year in seconds
+pub const A_YEAR: u32 = 365 * 24 * 60 * 60;

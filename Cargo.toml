@@ -16,6 +16,9 @@ anyhow = "1.0.56"
 async-trait = "0.1.52"
 hyper = "0.14.18"
 lazy_static = "1.4.0"
+pico-args = { version = "0.4.2", features = [
+	"combined-flags",
+], default-features = false }
 prost = "0.10.0"
 rand = "0.8.5"
 regex = "1.5.5"

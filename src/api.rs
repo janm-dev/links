@@ -23,19 +23,19 @@ mod rpc_wrapper {
 /// The grpc api implementation. Contains a reference to the store on which all
 /// operations are performed. Implements all rpc calls from `links.proto`.
 #[derive(Debug)]
-pub struct Api<T: Store + 'static> {
-	store: &'static T,
+pub struct Api {
+	store: &'static Store,
 }
 
-impl<T: Store + 'static> Api<T> {
+impl Api {
 	#[instrument(level = "info", skip_all, fields(store = store.backend_name()))]
-	pub fn new(store: &'static T) -> Self {
+	pub fn new(store: &'static Store) -> Self {
 		Api { store }
 	}
 }
 
 #[tonic::async_trait]
-impl<T: Store + 'static> Links for Api<T> {
+impl Links for Api {
 	#[instrument(level = "info", name = "rpc_get_redirect", skip_all, fields(store = %self.store.backend_name()))]
 	async fn get_redirect(&self, req: Request<rpc::Id>) -> Result<Response<rpc::Link>, Status> {
 		let time = Instant::now();

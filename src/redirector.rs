@@ -4,14 +4,41 @@
 use crate::id::Id;
 use crate::normalized::Normalized;
 use crate::store::Store;
-use crate::util::SERVER_NAME;
-use hyper::{
-	header::HeaderValue,
-	http::uri::Scheme,
-	Method, StatusCode, Uri, {Body, Request, Response},
-};
+use crate::util::{A_YEAR, SERVER_NAME};
+use hyper::{header::HeaderValue, Body, Method, Request, Response, StatusCode};
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
+
+/// Configuration for how the redirector should behave.
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct Config {
+	/// Whether to enable HTTP Strict Transport Security
+	pub enable_hsts: bool,
+	/// Whether to preload HTTP Strict Transport Security (also sets `includeSubDomains`)
+	pub preload_hsts: bool,
+	/// Value of `max-age` on the Strict Transport Security header in seconds
+	pub hsts_age: u32,
+	/// Whether to send the `Alt-Svc` header advertising `h2` on port 443
+	pub enable_alt_svc: bool,
+	/// Whether to send the `Server` header
+	pub enable_server: bool,
+	/// Whether to send the `Content-Security-Policy` header
+	pub enable_csp: bool,
+}
+
+impl Default for Config {
+	fn default() -> Self {
+		Self {
+			enable_hsts: true,
+			preload_hsts: false,
+			hsts_age: 2 * A_YEAR,
+			enable_alt_svc: true,
+			enable_server: true,
+			enable_csp: true,
+		}
+	}
+}
 
 /// Redirects the `req`uest to the appropriate target url (if one is found in
 /// the `store`) or returns a `404 Not Found` response. When redirecting, the
@@ -21,7 +48,8 @@ use tracing::{debug, info, instrument, trace};
 #[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]")), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
 pub async fn redirector(
 	req: Request<Body>,
-	store: &impl Store,
+	store: &Store,
+	config: Config,
 ) -> Result<Response<Body>, anyhow::Error> {
 	let redirect_start = Instant::now();
 	debug!(?req);
@@ -31,30 +59,38 @@ pub async fn redirector(
 
 	// Set default response headers
 	res.headers_mut()
-		.insert("Server", HeaderValue::from_str(&SERVER_NAME).unwrap());
-	res.headers_mut().insert(
-		"Content-Security-Policy",
-		HeaderValue::from_str("default-src 'none'; sandbox allow-top-navigation").unwrap(),
-	);
-	res.headers_mut().insert(
-		"Referrer-Policy",
-		HeaderValue::from_str("unsafe-url").unwrap(),
-	);
-	//TODO: make this configurable to allow mixed links/other server deployments and to allow preloading (also set to 63072000)
-	res.headers_mut().insert(
-		"Strict-Transport-Security",
-		HeaderValue::from_str("max-age=300").unwrap(),
-	);
-	//TODO: make this configurable (especially the port, also set to 31536000)
-	res.headers_mut().insert(
-		"Alt-Svc",
-		HeaderValue::from_str("h2=\":443\"; ma=300").unwrap(),
-	);
-	//TODO: make this configurable (maybe add this info to `Link`)
-	res.headers_mut().insert(
-		"Cache-Control",
-		HeaderValue::from_str("max-age=600").unwrap(),
-	);
+		.insert("Referrer-Policy", HeaderValue::from_static("unsafe-url"));
+	if config.enable_server {
+		res.headers_mut()
+			.insert("Server", HeaderValue::from_static(&SERVER_NAME));
+	}
+	if config.enable_csp {
+		res.headers_mut().insert(
+			"Content-Security-Policy",
+			HeaderValue::from_static("default-src 'none'; sandbox allow-top-navigation"),
+		);
+	}
+	if config.enable_hsts {
+		res.headers_mut().insert(
+			"Strict-Transport-Security",
+			HeaderValue::from_str(&format!(
+				"max-age={}{}",
+				config.hsts_age,
+				if config.preload_hsts {
+					"; includeSubDomains; preload"
+				} else {
+					""
+				}
+			))
+			.unwrap(),
+		);
+	}
+	if config.enable_alt_svc {
+		res.headers_mut().insert(
+			"Alt-Svc",
+			HeaderValue::from_static("h2=\":443\"; ma=31536000"),
+		);
+	}
 
 	let id_or_vanity = path.trim_start_matches('/');
 
