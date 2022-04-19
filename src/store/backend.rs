@@ -51,9 +51,9 @@ pub trait StoreBackend: Debug + Send + Sync {
 	/// changed to the new one, returning the old one.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely set / processed /
+	/// If an `Ok` is returned, the new value was definitely set / processed /
 	/// saved, and will be available on next request.
-	/// If an Err is returned, the value must not have been set / modified,
+	/// If an `Err` is returned, the value must not have been set / modified,
 	/// insofar as that is possible to determine from the backend.
 	async fn set_redirect(&self, from: Id, to: Link) -> Result<Option<Link>>;
 
@@ -62,10 +62,10 @@ pub trait StoreBackend: Debug + Send + Sync {
 	/// mapping.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely removed / processed
-	/// / saved, and will be unavailable on next request.
-	/// If an Err is returned, the value must not have been removed / modified,
-	/// insofar as that is possible to determine from the backend.
+	/// If an `Ok` is returned, the new value was definitely removed /
+	/// processed / saved, and will be unavailable on next request.
+	/// If an `Err` is returned, the value must not have been removed /
+	/// modified, insofar as that is possible to determine from the backend.
 	async fn rem_redirect(&self, from: Id) -> Result<Option<Link>>;
 
 	/// Get a vanity path's ID. Returns the ID of the `to` link corresponding
@@ -83,9 +83,9 @@ pub trait StoreBackend: Debug + Send + Sync {
 	/// exists, it must be changed to the new one, returning the old one.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely set / processed /
+	/// If an `Ok` is returned, the new value was definitely set / processed /
 	/// saved, and will be available on next request.
-	/// If an Err is returned, the value must not have been set / modified,
+	/// If an `Err` is returned, the value must not have been set / modified,
 	/// insofar as that is possible to determine from the backend.
 	async fn set_vanity(&self, from: Normalized, to: Id) -> Result<Option<Id>>;
 
@@ -93,9 +93,9 @@ pub trait StoreBackend: Debug + Send + Sync {
 	/// the old value of the mapping or `None` if there was no such mapping.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely removed / processed
-	/// / saved, and will be unavailable on next request.
-	/// If an Err is returned, the value must not have been removed / modified,
-	/// insofar as that is possible to determine from the backend.
+	/// If an `Ok` is returned, the new value was definitely removed /
+	/// processed / saved, and will be unavailable on next request.
+	/// If an `Err` is returned, the value must not have been removed /
+	/// modified, insofar as that is possible to determine from the backend.
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>>;
 }

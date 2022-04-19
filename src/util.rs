@@ -12,9 +12,9 @@ lazy_static! {
 		env!("CARGO_PKG_VERSION_MAJOR").to_string() + "." + env!("CARGO_PKG_VERSION_MINOR")
 	};
 
-	/// The name of the http(s) server implemented by this crate. Used in e.g.
-	/// the `Server` http header. Currently this is `hyperlinks/[version]`,
-	/// where `hyper` refers to the http library used, `links` is this crate's
+	/// The name of the HTTP(S) server implemented by this crate. Used in e.g.
+	/// the `Server` HTTP header. Currently this is `hyperlinks/[version]`,
+	/// where `hyper` refers to the HTTP library used, `links` is this crate's
 	/// name, and the version is `util::VERSION`.
 	pub static ref SERVER_NAME: String = format!("hyperlinks/{}", &*VERSION);
 }

@@ -43,7 +43,7 @@ pub const REVERSE_CHARSET: [u8; 69] = [
 	30, 0, 31, 32, 33, 0, 34, 0, 0, 35, 36, 0, 37,
 ];
 
-/// The offset from the ascii value of a base 38 character to its index in
+/// The offset from the ASCII value of a base 38 character to its index in
 /// `REVERSE_CHARSET`. To get the index of a character in `REVERSE_CHARSET`,
 /// subtract `REVERSE_CHARSET_BASE_38_OFFSET` from its value (`ascii - this`).
 pub const REVERSE_CHARSET_BASE_38_OFFSET: usize = 54;
@@ -95,7 +95,7 @@ impl Id {
 		Self(rand::random())
 	}
 
-	/// Convert this Id into a u64.
+	/// Convert this `Id` into a `u64`.
 	#[must_use]
 	pub fn to_u64(self) -> u64 {
 		let mut buf = [0u8; 8];

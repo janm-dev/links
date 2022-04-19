@@ -15,11 +15,11 @@
 //! ## The gRPC server
 //! Links runs a gRPC server via [tonic](https://github.com/hyperium/tonic) to
 //! provide seamless access to the backend store for tasks such as setting a
-//! redirect. The server is authenticated with JWTs (TODO). The protcol
+//! redirect. The server is authenticated with JWTs (TODO). The protocol
 //! definition can be found in [`proto/links.proto`](../proto/links.proto).
 //!
 //! ## The store backend
-//! Links can use many (TODO) databases and datastores as store backends,
+//! Links can use many (TODO) databases and data stores as store backends,
 //! providing flexibility with the storage setup. Currently in-memory,
 //! in-memory with file backup (TODO), and redis (TODO) backends are supported.
 
@@ -116,7 +116,7 @@ async fn main() -> Result<(), anyhow::Error> {
 	tracing::subscriber::set_global_default(tracing_subscriber)
 		.expect("setting tracing default subscriber failed");
 
-	// Listen on all addresses, on port 80 (http)
+	// Listen on all addresses, on port 80 (HTTP)
 	let http_addr = SocketAddr::from(([0, 0, 0, 0], 80));
 	// Listen on all addresses, on port 530 (gRPC)
 	let rpc_addr = SocketAddr::from(([0, 0, 0, 0], 530));
@@ -132,12 +132,12 @@ async fn main() -> Result<(), anyhow::Error> {
 	)
 	.await?;
 
-	// Create the rpc service
+	// Create the gRPC service
 	let rpc_service = Api::new(store);
 
-	// Start the rpc api server
+	// Start the gRPC API server
 	let rpc_handle = spawn(async move {
-		// Start the rpc server
+		// Start the gRPC server
 		let rpc_server = RpcServer::builder()
 			.add_service(LinksServer::new(rpc_service).send_gzip().accept_gzip())
 			.serve(rpc_addr);
@@ -148,7 +148,7 @@ async fn main() -> Result<(), anyhow::Error> {
 		}
 	});
 
-	// Start the http server
+	// Start the HTTP server
 	let tcp_listener = TcpListener::bind(http_addr).await?;
 	let http_handle = spawn(async move {
 		loop {
