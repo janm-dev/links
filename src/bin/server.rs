@@ -68,31 +68,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
 	// Set redirector config from args
 	let mut config = Config::default();
-	config.enable_hsts = if args.contains("--disable-hsts") {
-		!config.enable_hsts
-	} else {
-		config.enable_hsts
-	};
-	config.preload_hsts = if args.contains("--preload-hsts") {
-		!config.preload_hsts
-	} else {
-		config.preload_hsts
-	};
-	config.enable_alt_svc = if args.contains("--enable-alt-svc") {
-		!config.enable_alt_svc
-	} else {
-		config.enable_alt_svc
-	};
-	config.enable_server = if args.contains("--disable-server") {
-		!config.enable_server
-	} else {
-		config.enable_server
-	};
-	config.enable_csp = if args.contains("--disable-csp") {
-		!config.enable_csp
-	} else {
-		config.enable_csp
-	};
+	config.enable_hsts ^= args.contains("--disable-hsts");
+	config.preload_hsts ^= args.contains("--preload-hsts");
+	config.enable_alt_svc ^= args.contains("--enable-alt-svc");
+	config.enable_server ^= args.contains("--disable-server");
+	config.enable_csp ^= args.contains("--disable-csp");
 	config.hsts_age = args
 		.opt_value_from_str("--hsts-age")?
 		.unwrap_or(config.hsts_age);
