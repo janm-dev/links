@@ -21,3 +21,28 @@ lazy_static! {
 
 /// One year in seconds
 pub const A_YEAR: u32 = 365 * 24 * 60 * 60;
+
+/// Help string for server CLI
+pub const SERVER_HELP: &str = r#"links server
+
+USAGE:
+    server [FLAGS] [OPTIONS] [STORE CONFIG]
+
+FLAGS (all default off):
+ -h --help                   Print this and exit
+    --disable-hsts           Disable the Strict-Transport-Security header
+    --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this. Requires hsts-age of at least 1 year.)
+    --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
+    --disable-server         Disable the Server HTTP header
+    --disable-csp            Disable the Content-Security-Policy header
+
+OPTIONS:
+ -s --store STORE            Store type to use ("memory" *)
+ -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
+    --hsts-age SECONDS       HSTS header max-age (default 2 years)
+
+STORE CONFIG:
+    --store-[CONFIG] VALUE   Store-specific configuration, see the store docs.
+
+* Default value for this option
+"#;

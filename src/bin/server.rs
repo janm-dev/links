@@ -26,35 +26,12 @@ use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::api::{Api, LinksServer};
 use links::redirector::{redirector, Config};
 use links::store::Store;
+use links::util::SERVER_HELP;
 use std::net::SocketAddr;
 use tokio::{net::TcpListener, spawn, try_join};
 use tonic::transport::Server as RpcServer;
 use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
-
-const HELP: &str = r#"links server
-
-USAGE:
-    server [FLAGS] [OPTIONS] [STORE CONFIG]
-
-FLAGS (all default off):
- -h --help                   Print this and exit
-    --disable-hsts           Disable the Strict-Transport-Security header
-    --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this. Requires hsts-age of at least 1 year.)
-    --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
-    --disable-server         Disable the Server HTTP header
-    --disable-csp            Disable the Content-Security-Policy header
-
-OPTIONS:
- -s --store STORE            Store type to use ("memory" *)
- -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
-    --hsts-age SECONDS       HSTS header max-age (default 2 years)
-
-STORE CONFIG:
-    --store-[CONFIG] VALUE   Store-specific configuration, see the store docs.
-
-* Default value for this option
-"#;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -62,7 +39,7 @@ async fn main() -> Result<(), anyhow::Error> {
 	let mut args = pico_args::Arguments::from_env();
 
 	if args.contains(["-h", "--help"]) {
-		print!("{}", HELP);
+		print!("{}", SERVER_HELP);
 		std::process::exit(0);
 	}
 
