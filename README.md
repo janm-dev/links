@@ -28,7 +28,7 @@ TODO - awaiting initial HTTP API implementation
 
 ## How it works
 
-Links has X main parts:
+Links has 3 main parts:
 
 - The redirector server, responsible for redirecting incoming HTTP(S) requests to their destinations
 - A backend store (e.g. Redis), responsible for storing redirect and vanity path information
