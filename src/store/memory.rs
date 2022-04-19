@@ -22,7 +22,7 @@ use std::sync::RwLock;
 use tracing::instrument;
 
 /// A fully in-memory `StoreBackend` implementation useful for testing. Not
-/// recommended for production, as this lacks any data persistance or backups.
+/// recommended for production, as this lacks any data persistence or backups.
 #[derive(Debug)]
 pub struct Store {
 	redirects: RwLock<HashMap<Id, Link>>,

@@ -75,7 +75,7 @@ pub enum LinkError {
 }
 
 /// A normalized URL used as the redirect destination. This ensures that the
-/// link is a valid absolute http(s) URL. The resulting `Link` is guaranteed to
+/// link is a valid absolute HTTP(S) URL. The resulting `Link` is guaranteed to
 /// have an `http` or `https` scheme, be an absolute URL, not have a password,
 /// and be properly percent encoded. Note that this doesn't aim to make invalid
 /// URLs valid (e.g. by percent encoding non-ascii characters), but may

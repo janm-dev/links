@@ -40,7 +40,7 @@ impl Default for Config {
 	}
 }
 
-/// Redirects the `req`uest to the appropriate target url (if one is found in
+/// Redirects the `req`uest to the appropriate target URL (if one is found in
 /// the `store`) or returns a `404 Not Found` response. When redirecting, the
 /// status code is `302 Found` when the method is GET, and `307 Temporary
 /// Redirect` otherwise.

@@ -85,9 +85,9 @@ impl Store {
 	/// changed to the new one, returning the old one.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely set / processed /
+	/// If an `Ok` is returned, the new value was definitely set / processed /
 	/// saved, and will be available on next request.
-	/// If an Err is returned, the value must not have been set / modified,
+	/// If an `Err` is returned, the value must not have been set / modified,
 	/// insofar as that is possible to determine from the backend.
 	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
 	pub async fn set_redirect(&self, from: Id, to: Link) -> Result<Option<Link>> {
@@ -99,10 +99,10 @@ impl Store {
 	/// mapping.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely removed / processed
-	/// / saved, and will be unavailable on next request.
-	/// If an Err is returned, the value must not have been removed / modified,
-	/// insofar as that is possible to determine from the backend.
+	/// If an `Ok` is returned, the new value was definitely removed /
+	/// processed / saved, and will be unavailable on next request.
+	/// If an `Err` is returned, the value must not have been removed /
+	/// modified, insofar as that is possible to determine from the backend.
 	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
 	pub async fn rem_redirect(&self, from: Id) -> Result<Option<Link>> {
 		self.store.rem_redirect(from).await
@@ -126,9 +126,9 @@ impl Store {
 	/// exists, it must be changed to the new one, returning the old one.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely set / processed /
+	/// If an `Ok` is returned, the new value was definitely set / processed /
 	/// saved, and will be available on next request.
-	/// If an Err is returned, the value must not have been set / modified,
+	/// If an `Err` is returned, the value must not have been set / modified,
 	/// insofar as that is possible to determine from the backend.
 	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
 	pub async fn set_vanity(&self, from: Normalized, to: Id) -> Result<Option<Id>> {
@@ -139,10 +139,10 @@ impl Store {
 	/// the old value of the mapping or `None` if there was no such mapping.
 	///
 	/// # Storage Guarantees
-	/// If an Ok is returned, the new value was definitely removed / processed
-	/// / saved, and will be unavailable on next request.
-	/// If an Err is returned, the value must not have been removed / modified,
-	/// insofar as that is possible to determine from the backend.
+	/// If an `Ok` is returned, the new value was definitely removed /
+	/// processed / saved, and will be unavailable on next request.
+	/// If an `Err` is returned, the value must not have been removed /
+	/// modified, insofar as that is possible to determine from the backend.
 	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
 	pub async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		self.store.rem_vanity(from).await
