@@ -33,7 +33,7 @@ impl Default for Config {
 			enable_hsts: true,
 			preload_hsts: false,
 			hsts_age: 2 * A_YEAR,
-			enable_alt_svc: true,
+			enable_alt_svc: false,
 			enable_server: true,
 			enable_csp: true,
 		}

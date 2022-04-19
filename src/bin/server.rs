@@ -3,14 +3,13 @@
 //! The links server is what actually redirects requests to their proper
 //! destinations, interacts with (and sometimes is) the backend store for
 //! redirections, and (soon) collects statistics about redirects. It
-//! accomplishes this with two (or three) external interfaces: an HTTP/HTTPS
-//! server, a gRPC server, and (sometimes) a connection to a backend store.
+//! accomplishes this with two (or three) external interfaces: an HTTP server,
+//! a gRPC server, and (usually) a connection to a backend store.
 //!
 //! ## The HTTP server
-//! Links uses [hyper](https://hyper.rs/) with [(maybe) hyper-rustls] for
-//! HTTP/1.0, HTTP/1.1, and HTTP/2. It listens for incoming requests and
-//! redirects them (using the 302 (TODO) status code for GET requests and 307
-//! for everything else).
+//! Links uses [hyper](https://hyper.rs/) for HTTP/1.0, HTTP/1.1, and HTTP/2.
+//! It listens for incoming requests and redirects them (using the 302 status
+//! code for GET requests and 307 for everything else).
 //!
 //! ## The gRPC server
 //! Links runs a gRPC server via [tonic](https://github.com/hyperium/tonic) to
@@ -40,18 +39,15 @@ USAGE:
 
 FLAGS (all default off):
  -h --help                   Print this and exit
- -r --redirect-https         Redirect http requests to https
     --disable-hsts           Disable the Strict-Transport-Security header
     --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this. Requires hsts-age of at least 1 year.)
-    --disable-alt-svc        Disable the Alt-Svc header advertising HTTP/2 support
+    --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
     --disable-server         Disable the Server HTTP header
     --disable-csp            Disable the Content-Security-Policy header
 
 OPTIONS:
  -s --store STORE            Store type to use ("memory" *)
  -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
- -c --cert PATH              Path to the TLS certificate
- -k --key PATH               Path to the TLS private key
     --hsts-age SECONDS       HSTS header max-age (default 2 years)
 
 STORE CONFIG:
@@ -82,7 +78,7 @@ async fn main() -> Result<(), anyhow::Error> {
 	} else {
 		config.preload_hsts
 	};
-	config.enable_alt_svc = if args.contains("--disable-alt-svc") {
+	config.enable_alt_svc = if args.contains("--enable-alt-svc") {
 		!config.enable_alt_svc
 	} else {
 		config.enable_alt_svc

@@ -41,9 +41,8 @@ COPY --from=builder /links/target/x86_64-unknown-linux-musl/release/server ./
 # Use an unprivileged user
 USER links:links
 
-# Expose all usual ports (80 for HTTP, 443 for HTTPS, 530 for gRPC)
+# Expose all usual ports (80 for HTTP, 530 for gRPC)
 EXPOSE 80
-EXPOSE 443
 EXPOSE 530
 
 ENTRYPOINT [ "/links/server" ]

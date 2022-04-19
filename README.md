@@ -10,11 +10,11 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 ### Docker container
 
-TODO - awaiting file and redis backends, full TLS support, gRPC authentication
+TODO - awaiting file and redis backends, gRPC authentication
 
 ### Standalone executable
 
-TODO - awaiting file and redis backends, full TLS support, gRPC authentication
+TODO - awaiting file and redis backends, gRPC authentication
 
 ## Editing redirects
 
