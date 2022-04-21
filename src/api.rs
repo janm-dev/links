@@ -28,9 +28,11 @@ pub struct Api {
 }
 
 impl Api {
+	/// Create a new API instance. This instance will operate on the `store`
+	/// provided, and provide access to that store via gRPC.
 	#[instrument(level = "info", skip_all, fields(store = store.backend_name()))]
 	pub fn new(store: &'static Store) -> Self {
-		Api { store }
+		Self { store }
 	}
 }
 

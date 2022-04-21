@@ -44,7 +44,7 @@ impl StoreBackend for Store {
 
 	#[instrument(level = "trace", ret, err)]
 	async fn new(_config: &mut Arguments) -> Result<Self> {
-		Ok(Store {
+		Ok(Self {
 			redirects: RwLock::new(HashMap::new()),
 			vanity: RwLock::new(HashMap::new()),
 		})

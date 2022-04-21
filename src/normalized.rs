@@ -32,6 +32,8 @@ impl Normalized {
 
 	/// Returns the string this `Normalized` wraps, consuming `self`.
 	#[must_use]
+	// False positive, see https://github.com/rust-lang/rust-clippy/issues/4979
+	#[allow(clippy::missing_const_for_fn)]
 	pub fn into_string(self) -> String {
 		self.0
 	}
@@ -64,12 +66,16 @@ impl From<&str> for Normalized {
 /// The error returned by fallible conversions into `Link`s.
 #[derive(Debug, thiserror::Error)]
 pub enum LinkError {
+	/// The provided value is not a valid URL.
 	#[error("url is invalid")]
 	Invalid,
+	/// The URL is relative (i.e. does not have a scheme and/or host).
 	#[error("url is not absolute")]
 	Relative,
+	/// The URL has a scheme that is not `http` or `https`.
 	#[error("url has a non-http/https scheme")]
 	Scheme,
+	/// The URL contains a password, which is considered potentially unsafe.
 	#[error("url has credentials")]
 	Unsafe,
 }
@@ -127,12 +133,14 @@ impl Link {
 	/// This makes no guarantees about the contents of the Link, the validity
 	/// of the link must be ensured some other way before calling this.
 	#[must_use]
-	pub fn new_unchecked(url: String) -> Self {
+	pub const fn new_unchecked(url: String) -> Self {
 		Self(url)
 	}
 
 	/// Returns the string this `Link` wraps, consuming `self`.
 	#[must_use]
+	// False positive, see https://github.com/rust-lang/rust-clippy/issues/4979
+	#[allow(clippy::missing_const_for_fn)]
 	pub fn into_string(self) -> String {
 		self.0
 	}

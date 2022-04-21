@@ -16,10 +16,13 @@ use std::fmt::{Debug, Display, Error as FmtError, Formatter};
 /// The error returned by fallible conversions into IDs.
 #[derive(Debug, thiserror::Error)]
 pub enum ConversionError {
+	/// The provided value is too large to be represented in an `Id`.
 	#[error("value is too large")]
 	TooLarge,
+	/// The provided value is too small to be represented in an `Id`.
 	#[error("value is too small")]
 	TooSmall,
+	/// The provided value is improperly formatted.
 	#[error("value is in an invalid format")]
 	InvalidFormat,
 }
@@ -215,13 +218,13 @@ impl TryFrom<u64> for Id {
 }
 
 impl From<Id> for u64 {
-	fn from(id: Id) -> u64 {
+	fn from(id: Id) -> Self {
 		id.to_u64()
 	}
 }
 
 impl From<Id> for String {
-	fn from(id: Id) -> String {
+	fn from(id: Id) -> Self {
 		id.to_string()
 	}
 }
