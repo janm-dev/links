@@ -5,7 +5,7 @@ use std::path::Path;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Compile gRPC/protobuf
 	tonic_build::configure()
-		.build_client(false)
+		.build_client(true)
 		.build_server(true)
 		.compile_well_known_types(true)
 		.compile(&["./proto/links.proto"], &["./proto"])?;

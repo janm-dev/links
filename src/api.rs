@@ -3,9 +3,9 @@
 
 pub use rpc::links_server::LinksServer;
 
-use crate::normalized::Normalized;
+use crate::id::Id;
+use crate::normalized::{Link, Normalized};
 use crate::store::Store;
-use crate::{id::Id, normalized::Link};
 use rpc::links_server::Links;
 use tokio::time::Instant;
 use tonic::{Code, Request, Response, Status};
@@ -39,7 +39,10 @@ impl Api {
 #[tonic::async_trait]
 impl Links for Api {
 	#[instrument(level = "info", name = "rpc_get_redirect", skip_all, fields(store = %self.store.backend_name()))]
-	async fn get_redirect(&self, req: Request<rpc::Id>) -> Result<Response<rpc::Link>, Status> {
+	async fn get_redirect(
+		&self,
+		req: Request<rpc::GetRedirectRequest>,
+	) -> Result<Response<rpc::GetRedirectResponse>, Status> {
 		let time = Instant::now();
 
 		let id = match Id::try_from(req.into_inner().id) {
@@ -49,15 +52,12 @@ impl Links for Api {
 
 		let link = match self.store.get_redirect(id).await {
 			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = match link {
-			Some(link) => Ok(Response::new(rpc::Link {
-				url: link.into_string(),
-			})),
-			None => Err(Status::new(Code::NotFound, "id does not exist")),
-		};
+		let res = Ok(Response::new(rpc::GetRedirectResponse {
+			link: link.map(Link::into_string),
+		}));
 
 		let time = time.elapsed();
 		info!(
@@ -73,23 +73,11 @@ impl Links for Api {
 	#[instrument(level = "info", name = "rpc_set_redirect", skip_all, fields(store = %self.store.backend_name()))]
 	async fn set_redirect(
 		&self,
-		req: Request<rpc::IdRedirect>,
-	) -> Result<Response<rpc::MaybeLink>, Status> {
+		req: Request<rpc::SetRedirectRequest>,
+	) -> Result<Response<rpc::SetRedirectResponse>, Status> {
 		let time = Instant::now();
 
-		let rpc::IdRedirect { id, link } = req.into_inner();
-
-		let id = if let Some(id) = id {
-			id.id
-		} else {
-			return Err(Status::new(Code::InvalidArgument, "id not specified"));
-		};
-
-		let link = if let Some(link) = link {
-			link.url
-		} else {
-			return Err(Status::new(Code::InvalidArgument, "link not specified"));
-		};
+		let rpc::SetRedirectRequest { id, link } = req.into_inner();
 
 		let id = match Id::try_from(id) {
 			Ok(id) => id,
@@ -103,13 +91,11 @@ impl Links for Api {
 
 		let link = match self.store.set_redirect(id, link).await {
 			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = Ok(Response::new(rpc::MaybeLink {
-			link: link.map(|l| rpc::Link {
-				url: l.into_string(),
-			}),
+		let res = Ok(Response::new(rpc::SetRedirectResponse {
+			link: link.map(Link::into_string),
 		}));
 
 		let time = time.elapsed();
@@ -126,8 +112,8 @@ impl Links for Api {
 	#[instrument(level = "info", name = "rpc_rem_redirect", skip_all, fields(store = %self.store.backend_name()))]
 	async fn rem_redirect(
 		&self,
-		req: Request<rpc::Id>,
-	) -> Result<Response<rpc::MaybeLink>, Status> {
+		req: Request<rpc::RemRedirectRequest>,
+	) -> Result<Response<rpc::RemRedirectResponse>, Status> {
 		let time = Instant::now();
 
 		let id = match Id::try_from(req.into_inner().id) {
@@ -137,13 +123,11 @@ impl Links for Api {
 
 		let link = match self.store.rem_redirect(id).await {
 			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = Ok(Response::new(rpc::MaybeLink {
-			link: link.map(|l| rpc::Link {
-				url: l.into_string(),
-			}),
+		let res = Ok(Response::new(rpc::RemRedirectResponse {
+			link: link.map(Link::into_string),
 		}));
 
 		let time = time.elapsed();
@@ -158,20 +142,22 @@ impl Links for Api {
 	}
 
 	#[instrument(level = "info", name = "rpc_get_vanity", skip_all, fields(store = %self.store.backend_name()))]
-	async fn get_vanity(&self, req: Request<rpc::Vanity>) -> Result<Response<rpc::Id>, Status> {
+	async fn get_vanity(
+		&self,
+		req: Request<rpc::GetVanityRequest>,
+	) -> Result<Response<rpc::GetVanityResponse>, Status> {
 		let time = Instant::now();
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
 		let id = match self.store.get_vanity(vanity).await {
 			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = match id {
-			Some(id) => Ok(Response::new(rpc::Id { id: id.to_u64() })),
-			None => Err(Status::new(Code::NotFound, "vanity does not exist")),
-		};
+		let res = Ok(Response::new(rpc::GetVanityResponse {
+			id: id.map(|id| id.to_string()),
+		}));
 
 		let time = time.elapsed();
 		info!(
@@ -187,23 +173,11 @@ impl Links for Api {
 	#[instrument(level = "info", name = "rpc_set_vanity", skip_all, fields(store = %self.store.backend_name()))]
 	async fn set_vanity(
 		&self,
-		req: Request<rpc::VanityRedirect>,
-	) -> Result<Response<rpc::MaybeId>, Status> {
+		req: Request<rpc::SetVanityRequest>,
+	) -> Result<Response<rpc::SetVanityResponse>, Status> {
 		let time = Instant::now();
 
-		let rpc::VanityRedirect { vanity, id } = req.into_inner();
-
-		let vanity = if let Some(vanity) = vanity {
-			vanity.vanity
-		} else {
-			return Err(Status::new(Code::InvalidArgument, "vanity not specified"));
-		};
-
-		let id = if let Some(id) = id {
-			id.id
-		} else {
-			return Err(Status::new(Code::InvalidArgument, "id not specified"));
-		};
+		let rpc::SetVanityRequest { vanity, id } = req.into_inner();
 
 		let vanity = Normalized::new(&vanity);
 
@@ -214,11 +188,11 @@ impl Links for Api {
 
 		let id = match self.store.set_vanity(vanity, id).await {
 			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = Ok(Response::new(rpc::MaybeId {
-			id: id.map(|i| rpc::Id { id: i.to_u64() }),
+		let res = Ok(Response::new(rpc::SetVanityResponse {
+			id: id.map(|id| id.to_string()),
 		}));
 
 		let time = time.elapsed();
@@ -235,19 +209,19 @@ impl Links for Api {
 	#[instrument(level = "info", name = "rpc_rem_vanity", skip_all, fields(store = %self.store.backend_name()))]
 	async fn rem_vanity(
 		&self,
-		req: Request<rpc::Vanity>,
-	) -> Result<Response<rpc::MaybeId>, Status> {
+		req: Request<rpc::RemVanityRequest>,
+	) -> Result<Response<rpc::RemVanityResponse>, Status> {
 		let time = Instant::now();
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
 		let id = match self.store.rem_vanity(vanity).await {
 			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Unavailable, "store operation failed")),
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
 
-		let res = Ok(Response::new(rpc::MaybeId {
-			id: id.map(|i| rpc::Id { id: i.to_u64() }),
+		let res = Ok(Response::new(rpc::RemVanityResponse {
+			id: id.map(|id| id.to_string()),
 		}));
 
 		let time = time.elapsed();

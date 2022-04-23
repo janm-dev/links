@@ -1,50 +1,70 @@
 syntax = "proto3";
 package links;
 
-// UNSTABLE! NO BACKWARDS COMPATIBILITY!
-
+// The links gRPC API, providing a remote interface to the backend store. This
+// RPC interface roughly mimics `links::store::Store`.
 service Links {
 	// Get the link corresponding to the id.
-	rpc GetRedirect (Id) returns (Link);
+	rpc GetRedirect (GetRedirectRequest) returns (GetRedirectResponse);
 	// Set a redirect by its id and link. Returns the old link, if any.
-	rpc SetRedirect (IdRedirect) returns (MaybeLink);
+	rpc SetRedirect (SetRedirectRequest) returns (SetRedirectResponse);
 	// Remove a redirect by its id. Returns the old link, if any.
-	rpc RemRedirect (Id) returns (MaybeLink);
+	rpc RemRedirect (RemRedirectRequest) returns (RemRedirectResponse);
 
 	// Get the id corresponding to the vanity path.
-	rpc GetVanity (Vanity) returns (Id);
+	rpc GetVanity (GetVanityRequest) returns (GetVanityResponse);
 	// Set a vanity redirect by its path and id. Returns the old id, if any.
-	rpc SetVanity (VanityRedirect) returns (MaybeId);
+	rpc SetVanity (SetVanityRequest) returns (SetVanityResponse);
 	// Remove a vanity path by its text content. Returns the old id, if any.
-	rpc RemVanity (Vanity) returns (MaybeId);
+	rpc RemVanity (RemVanityRequest) returns (RemVanityResponse);
 }
 
-message Id {
-	uint64 id = 1;
+message GetRedirectRequest {
+	string id = 1;
 }
 
-message Link {
-	string url = 1;
+message GetRedirectResponse {
+	optional string link = 1;
 }
 
-message MaybeId {
-	optional Id id = 1;
+message SetRedirectRequest {
+	string id = 1;
+	string link = 2;
 }
 
-message MaybeLink {
-	optional Link link = 1;
+message SetRedirectResponse {
+	optional string link = 1;
 }
 
-message Vanity {
+message RemRedirectRequest {
+	string id = 1;
+}
+
+message RemRedirectResponse {
+	optional string link = 1;
+}
+
+message GetVanityRequest {
 	string vanity = 1;
 }
 
-message IdRedirect {
-	Id id = 1;
-	Link link = 2;
+message GetVanityResponse {
+	optional string id = 1;
 }
 
-message VanityRedirect {
-	Vanity vanity = 1;
-	Id id = 2;
+message SetVanityRequest {
+	string vanity = 1;
+	string id = 2;
+}
+
+message SetVanityResponse {
+	optional string id = 1;
+}
+
+message RemVanityRequest {
+	string vanity = 1;
+}
+
+message RemVanityResponse {
+	optional string id = 1;
 }
