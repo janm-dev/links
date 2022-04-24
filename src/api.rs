@@ -1,15 +1,15 @@
 //! This module contains the gRPC-based low-level links API, responsible for
 //! allowing outside services access to the links store.
 
-pub use rpc::links_server::LinksServer;
-
 use crate::id::Id;
 use crate::normalized::{Link, Normalized};
 use crate::store::Store;
 use rpc::links_server::Links;
 use tokio::time::Instant;
 use tonic::{Code, Request, Response, Status};
-use tracing::{info, instrument};
+use tracing::{info, instrument, trace};
+
+pub use rpc::links_server::LinksServer;
 
 // Do some weird stuff to allow `clippy::pedantic` on generated code.
 use rpc_wrapper::rpc;
@@ -18,6 +18,41 @@ use rpc_wrapper::rpc;
 /// `clippy::pedantic` on the generated code.
 mod rpc_wrapper {
 	tonic::include_proto!("links");
+}
+
+/// Get a function that checks authentication/authorization of an incoming grpc
+/// API call. The incoming request is checked for the `auth` metadata value,
+/// which should be a shared secret string value, that is simply compared to
+/// the one given to the server on startup. **It is critical that this value is
+/// kept secret and never exposed publicly!**
+///
+/// # Errors
+/// Returns the `UNAUTHENTICATED` status code if the token is not provided or
+/// is invalid.
+pub fn get_auth_checker(
+	secret: &'static str,
+) -> impl FnMut(Request<()>) -> Result<Request<()>, Status> + Clone {
+	let secret = secret.as_bytes();
+
+	#[allow(clippy::cognitive_complexity)] // Caused by macro expansion
+	move |req: Request<()>| -> Result<Request<()>, Status> {
+		let token = if let Some(token) = req.metadata().get("auth") {
+			token.as_encoded_bytes()
+		} else {
+			trace!("no auth token to check");
+			return Err(Status::new(Code::Unauthenticated, "no auth token provided"));
+		};
+
+		trace!("checking auth token {token:?}, secret is {secret:?}");
+
+		if secret == token {
+			trace!("auth token is valid");
+			Ok(req)
+		} else {
+			trace!("auth token is not valid");
+			Err(Status::new(Code::Unauthenticated, "auth token is invalid"))
+		}
+	}
 }
 
 /// The grpc API implementation. Contains a reference to the store on which all

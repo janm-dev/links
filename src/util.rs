@@ -31,7 +31,7 @@ USAGE:
 FLAGS (all default off):
  -h --help                   Print this and exit
     --disable-hsts           Disable the Strict-Transport-Security header
-    --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this. Requires hsts-age of at least 1 year.)
+    --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this, see https://hstspreload.org/. Requires hsts-age of at least 1 year.)
     --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
     --disable-server         Disable the Server HTTP header
     --disable-csp            Disable the Content-Security-Policy header
@@ -39,6 +39,7 @@ FLAGS (all default off):
 OPTIONS:
  -s --store STORE            Store type to use ("memory" *)
  -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
+ -a --api-secret SECRET      Authentication secret for use by the gRPC API (long random ascii string, will generate one if not present)
     --hsts-age SECONDS       HSTS header max-age (default 2 years)
 
 STORE CONFIG:

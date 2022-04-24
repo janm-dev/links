@@ -23,14 +23,15 @@
 //! in-memory with file backup (TODO), and redis (TODO) backends are supported.
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
-use links::api::{Api, LinksServer};
+use links::api::{self, Api, LinksServer};
 use links::redirector::{redirector, Config};
 use links::store::Store;
 use links::util::SERVER_HELP;
+use rand::{distributions::Alphanumeric, Rng};
 use std::net::SocketAddr;
 use tokio::{net::TcpListener, spawn, try_join};
-use tonic::transport::Server as RpcServer;
-use tracing::{error, info, Level};
+use tonic::{codegen::InterceptedService, transport::Server as RpcServer};
+use tracing::{debug, error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
@@ -69,6 +70,21 @@ async fn main() -> Result<(), anyhow::Error> {
 	tracing::subscriber::set_global_default(tracing_subscriber)
 		.expect("setting tracing default subscriber failed");
 
+	// Get API auth secret from args (or generate a random one)
+	let api_secret = Box::leak(Box::new(
+		args.opt_value_from_str(["-a", "--api-secret"])?
+			.unwrap_or_else(|| {
+				let secret = rand::thread_rng()
+					.sample_iter(&Alphanumeric)
+					.take(32)
+					.map(char::from)
+					.collect::<String>();
+				info!("No API secret provided, generated new secret: \"{secret}\"");
+				secret
+			}),
+	));
+	debug!("Using API secret: \"{api_secret}\"");
+
 	// Listen on all addresses, on port 80 (HTTP)
 	let http_addr = SocketAddr::from(([0, 0, 0, 0], 80));
 	// Listen on all addresses, on port 530 (gRPC)
@@ -91,8 +107,12 @@ async fn main() -> Result<(), anyhow::Error> {
 	// Start the gRPC API server
 	let rpc_handle = spawn(async move {
 		// Start the gRPC server
+		let rpc_service = LinksServer::new(rpc_service).send_gzip().accept_gzip();
 		let rpc_server = RpcServer::builder()
-			.add_service(LinksServer::new(rpc_service).send_gzip().accept_gzip())
+			.add_service(InterceptedService::new(
+				rpc_service,
+				api::get_auth_checker(api_secret),
+			))
 			.serve(rpc_addr);
 
 		// Log any server errors during requests
