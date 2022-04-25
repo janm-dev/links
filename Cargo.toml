@@ -16,6 +16,7 @@ anyhow = "1.0.56"
 async-trait = "0.1.52"
 hyper = "0.14.18"
 lazy_static = "1.4.0"
+parking_lot = "0.12.0"
 pico-args = { version = "0.4.2", features = [
 	"combined-flags",
 ], default-features = false }

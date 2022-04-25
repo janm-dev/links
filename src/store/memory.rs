@@ -16,9 +16,9 @@ use crate::normalized::{Link, Normalized};
 use crate::store::StoreBackend;
 use anyhow::Result;
 use async_trait::async_trait;
+use parking_lot::RwLock;
 use pico_args::Arguments;
 use std::collections::HashMap;
-use std::sync::RwLock;
 use tracing::instrument;
 
 /// A fully in-memory `StoreBackend` implementation useful for testing. Not
@@ -52,37 +52,37 @@ impl StoreBackend for Store {
 
 	#[instrument(level = "trace", ret, err)]
 	async fn get_redirect(&self, from: Id) -> Result<Option<Link>> {
-		let redirects = self.redirects.read().expect("redirects lock is poisoned");
+		let redirects = self.redirects.read();
 		Ok(redirects.get(&from).map(ToOwned::to_owned))
 	}
 
 	#[instrument(level = "trace", ret, err)]
 	async fn set_redirect(&self, from: Id, to: Link) -> Result<Option<Link>> {
-		let mut redirects = self.redirects.write().expect("redirects lock is poisoned");
+		let mut redirects = self.redirects.write();
 		Ok(redirects.insert(from, to))
 	}
 
 	#[instrument(level = "trace", ret, err)]
 	async fn rem_redirect(&self, from: Id) -> Result<Option<Link>> {
-		let mut redirects = self.redirects.write().expect("redirects lock is poisoned");
+		let mut redirects = self.redirects.write();
 		Ok(redirects.remove(&from))
 	}
 
 	#[instrument(level = "trace", ret, err)]
 	async fn get_vanity(&self, from: Normalized) -> Result<Option<Id>> {
-		let vanity = self.vanity.read().expect("vanity lock is poisoned");
+		let vanity = self.vanity.read();
 		Ok(vanity.get(&from).map(ToOwned::to_owned))
 	}
 
 	#[instrument(level = "trace", ret, err)]
 	async fn set_vanity(&self, from: Normalized, to: Id) -> Result<Option<Id>> {
-		let mut vanity = self.vanity.write().expect("vanity lock is poisoned");
+		let mut vanity = self.vanity.write();
 		Ok(vanity.insert(from, to))
 	}
 
 	#[instrument(level = "trace", ret, err)]
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
-		let mut vanity = self.vanity.write().expect("vanity lock is poisoned");
+		let mut vanity = self.vanity.write();
 		Ok(vanity.remove(&from))
 	}
 }
