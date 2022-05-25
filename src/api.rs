@@ -6,10 +6,16 @@ use crate::normalized::{Link, Normalized};
 use crate::store::Store;
 use rpc::links_server::Links;
 use tokio::time::Instant;
-use tonic::{Code, Request, Response, Status};
 use tracing::{info, instrument, trace};
 
+pub use rpc::links_client::LinksClient;
 pub use rpc::links_server::LinksServer;
+pub use rpc::{
+	GetRedirectRequest, GetRedirectResponse, GetVanityRequest, GetVanityResponse,
+	RemRedirectRequest, RemRedirectResponse, RemVanityRequest, RemVanityResponse,
+	SetRedirectRequest, SetRedirectResponse, SetVanityRequest, SetVanityResponse,
+};
+pub use tonic::{Code, Request, Response, Status};
 
 // Do some weird stuff to allow `clippy::pedantic` on generated code.
 use rpc_wrapper::rpc;

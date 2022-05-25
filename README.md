@@ -15,21 +15,49 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 ### Docker container
 
-TODO - awaiting file and redis backends, gRPC authentication
+TODO - many important features are still work-in-progress
 
 ### Standalone executable
 
-TODO - awaiting file and redis backends, gRPC authentication
+TODO - many important features are still work-in-progress
 
 ## Editing redirects
 
 ### CLI
 
-TODO - awaiting initial CLI implementation
+You can access the low-level gRPC API via the links cli to perform operations on the backend store.
+
+For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-h` to specify the redirector's hostname, `-p` to specify the redirector's gRPC API port, and `-t` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
+
+To create a new redirect with a random ID and an optional vanity path, run
+
+```sh
+links-cli -h 'LINKS HOST' -t 'API TOKEN' new https://example.com/
+```
+
+or
+
+```sh
+links-cli -h 'LINKS HOST' -t 'API TOKEN' new https://example.com/ example-vanity-path
+```
+
+To remove a redirect or vanity path, run
+
+```sh
+links-cli -h 'LINKS HOST' -t 'API TOKEN' rem 4QGk87b7
+```
+
+or
+
+```sh
+links-cli -h 'LINKS HOST' -t 'API TOKEN' rem example-vanity-path
+```
+
+For instructions on more `links-cli` subcommands, run `links-cli --help`.
 
 ### HTTP API
 
-TODO - awaiting initial HTTP API implementation
+TODO - not implemented yet
 
 ## How it works
 

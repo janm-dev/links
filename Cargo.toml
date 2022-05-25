@@ -8,12 +8,14 @@ description = "An easy to set up selfhostable link shortener."
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/janm-dev/links"
 rust-version = "1.59"
+default-run = "server"
 
 [features]
 
 [dependencies]
 anyhow = "1.0.56"
 async-trait = "0.1.52"
+clap = { version = "3.1.18", features = ["derive"] }
 hyper = "0.14.18"
 lazy_static = "1.4.0"
 parking_lot = "0.12.0"

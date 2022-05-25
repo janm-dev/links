@@ -5,7 +5,9 @@
 //! - [`Link`], which represents valid normalized redirection target URLs
 
 use serde_derive::{Deserialize, Serialize};
+use std::convert::Infallible;
 use std::fmt::{Display, Error as FmtError, Formatter};
+use std::str::FromStr;
 use unicode_normalization::UnicodeNormalization;
 use uriparse::{Scheme, URIReference};
 
@@ -42,6 +44,14 @@ impl Normalized {
 impl Display for Normalized {
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), FmtError> {
 		formatter.write_str(&self.0)
+	}
+}
+
+impl FromStr for Normalized {
+	type Err = Infallible;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Ok(Self::from(s))
 	}
 }
 
@@ -149,6 +159,14 @@ impl Link {
 impl Display for Link {
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), FmtError> {
 		formatter.write_str(&self.0)
+	}
+}
+
+impl FromStr for Link {
+	type Err = LinkError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Self::try_from(s)
 	}
 }
 

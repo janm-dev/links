@@ -12,6 +12,7 @@ use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Error as FmtError, Formatter};
+use std::str::FromStr;
 
 /// The error returned by fallible conversions into IDs.
 #[derive(Debug, thiserror::Error)]
@@ -143,6 +144,14 @@ impl Display for Id {
 impl Default for Id {
 	fn default() -> Self {
 		Self::new()
+	}
+}
+
+impl FromStr for Id {
+	type Err = ConversionError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Self::try_from(s)
 	}
 }
 
