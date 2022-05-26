@@ -15,7 +15,7 @@ default-run = "server"
 [dependencies]
 anyhow = "1.0.56"
 async-trait = "0.1.52"
-clap = { version = "3.1.18", features = ["derive"] }
+clap = { version = "3.1.18", features = ["derive", "env"] }
 hyper = "0.14.18"
 lazy_static = "1.4.0"
 parking_lot = "0.12.0"

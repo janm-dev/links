@@ -22,15 +22,15 @@ struct Cli {
 	command: Commands,
 
 	/// Redirector server hostaname
-	#[clap(short, long)]
+	#[clap(short, long, env = "LINKS_RPC_HOST")]
 	host: String,
 
 	/// Redirector gRPC port
-	#[clap(short, long, default_value = "530")]
+	#[clap(short, long, env = "LINKS_RPC_PORT", default_value = "530")]
 	port: u16,
 
 	/// gRPC API authentication token
-	#[clap(short, long)]
+	#[clap(short, long, env = "LINKS_RPC_TOKEN")]
 	token: AsciiMetadataValue,
 
 	/// Show more verbose results

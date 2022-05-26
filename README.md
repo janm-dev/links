@@ -27,33 +27,30 @@ TODO - many important features are still work-in-progress
 
 You can access the low-level gRPC API via the links cli to perform operations on the backend store.
 
-For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-h` to specify the redirector's hostname, `-p` to specify the redirector's gRPC API port, and `-t` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
+For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-h` or `LINKS_RPC_HOST` to specify the redirector's hostname, `-p` or `LINKS_RPC_PORT` to specify the redirector's gRPC API port, and `-t` or `LINKS_RPC_TOKEN` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
 
 To create a new redirect with a random ID and an optional vanity path, run
 
 ```sh
-links-cli -h 'LINKS HOST' -t 'API TOKEN' new https://example.com/
-```
-
-or
-
-```sh
+#          or use environment variables        destination URL    optional vanity path
 links-cli -h 'LINKS HOST' -t 'API TOKEN' new https://example.com/ example-vanity-path
 ```
 
 To remove a redirect or vanity path, run
 
 ```sh
-links-cli -h 'LINKS HOST' -t 'API TOKEN' rem 4QGk87b7
-```
-
-or
-
-```sh
+#          or use environment variables          or link ID
 links-cli -h 'LINKS HOST' -t 'API TOKEN' rem example-vanity-path
 ```
 
-For instructions on more `links-cli` subcommands, run `links-cli --help`.
+To change a redirect's destination URL, run
+
+```sh
+#          or use environment variables      link ID    new destination URL
+links-cli -h 'LINKS HOST' -t 'API TOKEN' set 0pB5DK8T https://example.com/new
+```
+
+For instructions on more `links-cli` subcommands, run `links-cli help`.
 
 ### HTTP API
 
