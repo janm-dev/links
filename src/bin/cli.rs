@@ -5,15 +5,21 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use links::api::{
 	GetRedirectRequest, GetVanityRequest, LinksClient, RemRedirectRequest, RemVanityRequest,
 	SetRedirectRequest, SetVanityRequest,
 };
-use links::id::Id;
+use links::id::{ConversionError, Id};
 use links::normalized::{Link, Normalized};
 use std::convert::Infallible;
+use std::fmt::Debug;
+use std::process;
 use std::str::FromStr;
-use tonic::{metadata::AsciiMetadataValue, transport::Channel, Request};
+use tonic::{
+	metadata::AsciiMetadataValue, transport::Channel, transport::Error as TonicError, Request,
+	Status,
+};
 
 #[derive(Parser, Debug)]
 #[clap(name = "links-cli", version, about = "A simple command-line interface for configuring links redirects via the gRPC API built into every redirector.", long_about = None)]
@@ -73,6 +79,59 @@ impl FromStr for IdOrVanity {
 	}
 }
 
+trait FormatError<T> {
+	fn format_err(self, message: &'static str) -> T;
+}
+
+fn format_result<T, E: Debug>(res: Result<T, E>, message: &'static str) -> T {
+	match res {
+		Ok(ok) => ok,
+		Err(err) => {
+			println!(
+				"{} {}\n\n{} {:?}",
+				"error:".red().bold(),
+				message,
+				"more info:".blue().bold(),
+				err
+			);
+
+			process::exit(2)
+		}
+	}
+}
+
+impl<T> FormatError<T> for Result<T, Status> {
+	fn format_err(self, message: &'static str) -> T {
+		match self {
+			Self::Ok(ok) => ok,
+			Self::Err(err) => {
+				println!(
+					"{} {} - {}\n\n{} {:?}",
+					"error:".red().bold(),
+					message,
+					err.message(),
+					"more info:".blue().bold(),
+					err
+				);
+
+				process::exit(2)
+			}
+		}
+	}
+}
+
+impl<T> FormatError<T> for Result<T, TonicError> {
+	fn format_err(self, message: &'static str) -> T {
+		format_result(self, message)
+	}
+}
+
+impl<T> FormatError<T> for Result<T, ConversionError> {
+	fn format_err(self, message: &'static str) -> T {
+		format_result(self, message)
+	}
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
 	// Get command-line args
@@ -81,7 +140,7 @@ async fn main() -> Result<()> {
 	// Connect to gRPC API
 	let client = LinksClient::connect(format!("grpc://{}:{}", cli.host, cli.port))
 		.await
-		.unwrap()
+		.format_err("Could not connect to gRPC API server")
 		.accept_gzip()
 		.send_gzip();
 
@@ -110,7 +169,11 @@ async fn gen_unique_id(mut client: LinksClient<Channel>, token: AsciiMetadataVal
 		let id = Id::new();
 		let mut req = Request::new(GetRedirectRequest { id: id.to_string() });
 		req.metadata_mut().append("auth", token.clone());
-		let res = client.get_redirect(req).await.unwrap().into_inner();
+		let res = client
+			.get_redirect(req)
+			.await
+			.format_err("API call failed")
+			.into_inner();
 
 		if res.link.is_none() {
 			break id;
@@ -146,10 +209,10 @@ async fn get(
 				client
 					.get_vanity(req)
 					.await
-					.unwrap()
+					.format_err("API call failed")
 					.into_inner()
 					.id
-					.map(|id| Id::try_from(id).unwrap()),
+					.map(|id| Id::try_from(id).format_err("API returned invalid link ID")),
 				Some(vanity),
 			)
 		}
@@ -162,7 +225,12 @@ async fn get(
 			id: id.unwrap().to_string(),
 		});
 		req.metadata_mut().append("auth", token.clone());
-		client.get_redirect(req).await.unwrap().into_inner().link
+		client
+			.get_redirect(req)
+			.await
+			.format_err("API call failed")
+			.into_inner()
+			.link
 	} else {
 		None
 	};
@@ -207,7 +275,7 @@ async fn new(
 		link: to.clone().into_string(),
 	});
 	req.metadata_mut().append("auth", token.clone());
-	client.set_redirect(req).await.unwrap();
+	client.set_redirect(req).await.format_err("API call failed");
 
 	if let Some(vanity) = from {
 		let mut req = Request::new(SetVanityRequest {
@@ -215,7 +283,7 @@ async fn new(
 			id: id.to_string(),
 		});
 		req.metadata_mut().append("auth", token.clone());
-		client.set_vanity(req).await.unwrap();
+		client.set_vanity(req).await.format_err("API call failed");
 
 		(
 			format!("\"{vanity}\" ---> \"{id}\" ---> \"{to}\""), 
@@ -241,7 +309,12 @@ async fn set(
 		link: link.clone().into_string(),
 	});
 	req.metadata_mut().append("auth", token.clone());
-	let old = client.set_redirect(req).await.unwrap().into_inner().link;
+	let old = client
+		.set_redirect(req)
+		.await
+		.format_err("API call failed")
+		.into_inner()
+		.link;
 
 	if let Some(old) = old {
 		(
@@ -268,7 +341,7 @@ async fn add(
 		vanity: vanity.clone().into_string(),
 	});
 	req.metadata_mut().append("auth", token.clone());
-	client.set_vanity(req).await.unwrap();
+	client.set_vanity(req).await.format_err("API call failed");
 
 	(
 		format!("\"{vanity}\" ---> \"{id}\""),
@@ -286,7 +359,12 @@ async fn rem(
 		IdOrVanity::Id(id) => {
 			let mut req = Request::new(RemRedirectRequest { id: id.to_string() });
 			req.metadata_mut().append("auth", token.clone());
-			let old = client.rem_redirect(req).await.unwrap().into_inner().link;
+			let old = client
+				.rem_redirect(req)
+				.await
+				.format_err("API call failed")
+				.into_inner()
+				.link;
 
 			if let Some(old) = old {
 				(format!("\"{id}\" -X-> \"{old}\""), format!("Successfully removed redirect with ID \"{id}\" (used to redirect to \"{old}\")"))
@@ -302,7 +380,12 @@ async fn rem(
 				vanity: vanity.clone().to_string(),
 			});
 			req.metadata_mut().append("auth", token.clone());
-			let old = client.rem_vanity(req).await.unwrap().into_inner().id;
+			let old = client
+				.rem_vanity(req)
+				.await
+				.format_err("API call failed")
+				.into_inner()
+				.id;
 
 			if let Some(old) = old {
 				(format!("\"{vanity}\" -X-> \"{old}\""), format!("Successfully removed vanity path \"{vanity}\" (used to point to ID \"{old}\")"))
