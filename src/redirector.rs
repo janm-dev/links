@@ -4,8 +4,8 @@
 use crate::id::Id;
 use crate::normalized::Normalized;
 use crate::store::Store;
-use crate::util::{A_YEAR, SERVER_NAME};
-use hyper::{header::HeaderValue, Body, Method, Request, Response, StatusCode};
+use crate::util::{csp_hashes, include_html, A_YEAR, SERVER_NAME};
+use hyper::{Body, Method, Request, Response, StatusCode};
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
 
@@ -50,30 +50,32 @@ pub async fn redirector(
 	req: Request<Body>,
 	store: &Store,
 	config: Config,
-) -> Result<Response<Body>, anyhow::Error> {
+) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();
 	debug!(?req);
 
 	let path = req.uri().path();
-	let mut res = Response::new(Body::empty());
+	let mut res = Response::builder();
 
 	// Set default response headers
-	res.headers_mut()
-		.insert("Referrer-Policy", HeaderValue::from_static("unsafe-url"));
+	res = res.header("Referrer-Policy", "unsafe-url");
 	if config.enable_server {
-		res.headers_mut()
-			.insert("Server", HeaderValue::from_static(&SERVER_NAME));
+		res = res.header("Server", &*SERVER_NAME);
 	}
 	if config.enable_csp {
-		res.headers_mut().insert(
+		res = res.header(
 			"Content-Security-Policy",
-			HeaderValue::from_static("default-src 'none'; sandbox allow-top-navigation"),
+			concat!(
+				"default-src 'none'; style-src ",
+				csp_hashes!("style"),
+				"; sandbox allow-top-navigation"
+			),
 		);
 	}
 	if config.enable_hsts {
-		res.headers_mut().insert(
+		res = res.header(
 			"Strict-Transport-Security",
-			HeaderValue::from_str(&format!(
+			&format!(
 				"max-age={}{}",
 				config.hsts_age,
 				if config.preload_hsts {
@@ -81,15 +83,11 @@ pub async fn redirector(
 				} else {
 					""
 				}
-			))
-			.unwrap(),
+			),
 		);
 	}
 	if config.enable_alt_svc {
-		res.headers_mut().insert(
-			"Alt-Svc",
-			HeaderValue::from_static("h2=\":443\"; ma=31536000"),
-		);
+		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
 	}
 
 	let id_or_vanity = path.trim_start_matches('/');
@@ -109,25 +107,29 @@ pub async fn redirector(
 		None
 	};
 
-	if let Some(link) = link.clone() {
+	let res = if let Some(link) = link.clone() {
+		let link = link.into_string();
+
+		res = res.header("Location", &link);
+		res = res.header("Link-Id", &id.unwrap().to_string());
+
 		if req.method() == Method::GET {
-			*res.status_mut() = StatusCode::FOUND;
+			res = res.status(StatusCode::FOUND);
 		} else {
-			*res.status_mut() = StatusCode::TEMPORARY_REDIRECT;
+			res = res.status(StatusCode::TEMPORARY_REDIRECT);
 		}
 
-		res.headers_mut().insert(
-			"Location",
-			HeaderValue::from_str(&link.into_string()).unwrap(),
-		);
-
-		res.headers_mut().insert(
-			"Link-Id",
-			HeaderValue::from_str(&id.unwrap().to_string()).unwrap(),
-		);
+		res = res.header("Content-Type", "text/html; charset=UTF-8");
+		res.body(
+			include_html!("redirect")
+				.to_string()
+				.replace("{{LINK_URL}}", &link),
+		)?
 	} else {
-		*res.status_mut() = StatusCode::NOT_FOUND;
-	}
+		res = res.status(StatusCode::NOT_FOUND);
+		res = res.header("Content-Type", "text/html; charset=UTF-8");
+		res.body(include_html!("not-found").to_string())?
+	};
 
 	let redirect_time = redirect_start.elapsed();
 
