@@ -24,7 +24,7 @@ jobs:
       redis:
         image: redis:7.0-alpine
         ports:
-          - 6379/tcp
+          - 6379:6379
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
