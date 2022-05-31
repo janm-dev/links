@@ -4,6 +4,10 @@
 //! - [`Normalized`], which represents unicode normalized vanity paths
 //! - [`Link`], which represents valid normalized redirection target URLs
 
+use fred::{
+	error::{RedisError, RedisErrorKind},
+	types::{FromRedis, RedisValue},
+};
 use serde_derive::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::fmt::{Display, Error as FmtError, Formatter};
@@ -52,6 +56,18 @@ impl FromStr for Normalized {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(Self::from(s))
+	}
+}
+
+impl FromRedis for Normalized {
+	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
+		match value.into_string() {
+			Some(s) => Ok(Self::from(&*s)),
+			None => Err(RedisError::new(
+				RedisErrorKind::Parse,
+				"can't convert this type into a Normalized",
+			)),
+		}
 	}
 }
 
@@ -170,6 +186,19 @@ impl FromStr for Link {
 	}
 }
 
+impl FromRedis for Link {
+	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
+		match value {
+			RedisValue::String(s) => Ok(Self::try_from(&*s)
+				.map_err(|e| RedisError::new(RedisErrorKind::Parse, e.to_string()))?),
+			_ => Err(RedisError::new(
+				RedisErrorKind::Parse,
+				"can't convert this type into a Link",
+			)),
+		}
+	}
+}
+
 impl TryFrom<String> for Link {
 	type Error = LinkError;
 
@@ -221,6 +250,25 @@ mod tests {
 			Normalized::new("BiGbIrD").into_string(),
 			Normalized::new("bigbird").into_string()
 		);
+	}
+
+	#[test]
+	fn normalized_from_redis() {
+		assert_eq!(
+			Normalized::from_value(RedisValue::from_static_str("BiG bIrD"))
+				.unwrap()
+				.into_string(),
+			"bigbird".to_string()
+		);
+
+		assert_eq!(
+			Normalized::from_value(RedisValue::Integer(42))
+				.unwrap()
+				.into_string(),
+			"42".to_string()
+		);
+
+		assert!(Link::from_value(RedisValue::Null).is_err());
 	}
 
 	#[test]
@@ -292,5 +340,22 @@ mod tests {
 		assert!(Link::new("https://username:password@example.com").is_err());
 
 		assert!(Link::new("https://êxämpłé.ćóm/ᴮᴵᴳ ᴮᴵᴿᴰ").is_err());
+	}
+
+	#[test]
+	fn link_from_redis() {
+		assert_eq!(
+			Link::from_value(RedisValue::from_static_str("HTtPS://eXaMpLe.com?"))
+				.unwrap()
+				.into_string(),
+			"https://example.com/?".to_string()
+		);
+
+		assert!(Link::from_value(RedisValue::from_static_str(
+			"https_colon_slash_slash_example_dot_com_slash_test"
+		))
+		.is_err());
+
+		assert!(Link::from_value(RedisValue::Null).is_err());
 	}
 }

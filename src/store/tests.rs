@@ -32,7 +32,7 @@ pub fn get_backend_name<S: StoreBackend>(store: &S) {
 
 pub async fn get_redirect(store: &impl StoreBackend) {
 	let id = Id::from([0x10, 0x20, 0x30, 0x40, 0x50]);
-	let link = Link::new("https://example.com/test").unwrap();
+	let link = Link::new("https://example.com/test/1").unwrap();
 
 	store.set_redirect(id, link.clone()).await.unwrap();
 
@@ -42,7 +42,7 @@ pub async fn get_redirect(store: &impl StoreBackend) {
 
 pub async fn set_redirect(store: &impl StoreBackend) {
 	let id = Id::from([0x11, 0x21, 0x31, 0x41, 0x51]);
-	let link = Link::new("https://example.com/test").unwrap();
+	let link = Link::new("https://example.com/test/2").unwrap();
 
 	store.set_redirect(id, link.clone()).await.unwrap();
 
@@ -51,7 +51,7 @@ pub async fn set_redirect(store: &impl StoreBackend) {
 
 pub async fn rem_redirect(store: &impl StoreBackend) {
 	let id = Id::from([0x12, 0x22, 0x32, 0x42, 0x52]);
-	let link = Link::new("https://example.com/test").unwrap();
+	let link = Link::new("https://example.com/test/3").unwrap();
 
 	store.set_redirect(id, link.clone()).await.unwrap();
 
@@ -61,7 +61,7 @@ pub async fn rem_redirect(store: &impl StoreBackend) {
 }
 
 pub async fn get_vanity(store: &impl StoreBackend) {
-	let vanity = Normalized::new("Example Test");
+	let vanity = Normalized::new("Example Test One");
 	let id = Id::from([0x13, 0x23, 0x33, 0x43, 0x53]);
 
 	store.set_vanity(vanity.clone(), id).await.unwrap();
@@ -77,8 +77,8 @@ pub async fn get_vanity(store: &impl StoreBackend) {
 }
 
 pub async fn set_vanity(store: &impl StoreBackend) {
-	let vanity = Normalized::new("Example Test");
-	let id = Id::from([0x13, 0x23, 0x33, 0x43, 0x53]);
+	let vanity = Normalized::new("Example Test Two");
+	let id = Id::from([0x14, 0x24, 0x34, 0x44, 0x54]);
 
 	store.set_vanity(vanity.clone(), id).await.unwrap();
 
@@ -86,8 +86,8 @@ pub async fn set_vanity(store: &impl StoreBackend) {
 }
 
 pub async fn rem_vanity(store: &impl StoreBackend) {
-	let vanity = Normalized::new("Example Test");
-	let id = Id::from([0x13, 0x23, 0x33, 0x43, 0x53]);
+	let vanity = Normalized::new("Example Test Three");
+	let id = Id::from([0x15, 0x25, 0x35, 0x45, 0x55]);
 
 	store.set_vanity(vanity.clone(), id).await.unwrap();
 

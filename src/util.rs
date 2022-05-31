@@ -37,7 +37,7 @@ FLAGS (all default off):
     --disable-csp            Disable the Content-Security-Policy header
 
 OPTIONS:
- -s --store STORE            Store type to use ("memory" *)
+ -s --store STORE            Store type to use ("memory" * / "redis")
  -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
  -a --api-secret SECRET      Authentication secret for use by the gRPC API (long random ascii string, will generate one if not present)
     --hsts-age SECONDS       HSTS header max-age (default 2 years)

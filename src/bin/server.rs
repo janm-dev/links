@@ -14,13 +14,13 @@
 //! ## The gRPC server
 //! Links runs a gRPC server via [tonic](https://github.com/hyperium/tonic) to
 //! provide seamless access to the backend store for tasks such as setting a
-//! redirect. The server is authenticated with JWTs (TODO). The protocol
+//! redirect. The server is authenticated with a shared token. The protocol
 //! definition can be found in [`proto/links.proto`](../proto/links.proto).
 //!
 //! ## The store backend
-//! Links can use many (TODO) databases and data stores as store backends,
+//! Links can use many different databases and data stores as store backends,
 //! providing flexibility with the storage setup. Currently in-memory,
-//! in-memory with file backup (TODO), and redis (TODO) backends are supported.
+//! in-memory with file backup (TODO), and Redis backends are supported.
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::api::{self, Api, LinksServer};
@@ -90,8 +90,6 @@ async fn main() -> Result<(), anyhow::Error> {
 	// Listen on all addresses, on port 530 (gRPC)
 	let rpc_addr = SocketAddr::from(([0, 0, 0, 0], 530));
 
-	info!(%http_addr, %rpc_addr, %log_level, "Starting links");
-
 	// Initialize the store
 	let store = Store::new_static(
 		&args
@@ -100,6 +98,8 @@ async fn main() -> Result<(), anyhow::Error> {
 		&mut args,
 	)
 	.await?;
+
+	info!(%http_addr, %rpc_addr, %log_level, store = store.backend_name(), "Starting links");
 
 	// Create the gRPC service
 	let rpc_service = Api::new(store);

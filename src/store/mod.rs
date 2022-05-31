@@ -4,11 +4,13 @@
 
 mod backend;
 mod memory;
+mod redis;
 
 #[cfg(test)]
 mod tests;
 
-pub use memory::Store as Memory;
+pub use self::memory::Store as Memory;
+pub use self::redis::Store as Redis;
 
 use crate::id::Id;
 use crate::normalized::{Link, Normalized};
@@ -39,6 +41,10 @@ impl Store {
 		if name == Memory::backend_name() {
 			Ok(Self {
 				store: Box::new(Memory::new(config).await?),
+			})
+		} else if name == Redis::backend_name() {
+			Ok(Self {
+				store: Box::new(Redis::new(config).await?),
 			})
 		} else {
 			bail!(format!("Unknown store \"{name}\""));

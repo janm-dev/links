@@ -4,10 +4,13 @@
 //! does it depend on any external resources or services.
 //!
 //! # Configuration
+//!
 //! **Store backend name:**
 //! `memory`
+//!
 //! **Command-line flags:**
 //! *none*
+//!
 //! **Command-line options:**
 //! *none*
 
@@ -94,6 +97,10 @@ mod tests {
 	use crate::store::StoreBackend as _;
 	use pico_args::Arguments;
 
+	async fn get_store() -> Store {
+		Store::new(&mut Arguments::from_vec(vec![])).await.unwrap()
+	}
+
 	#[test]
 	fn backend_name() {
 		tests::backend_name::<Store>();
@@ -101,43 +108,36 @@ mod tests {
 
 	#[tokio::test]
 	async fn get_backend_name() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::get_backend_name::<Store>(&store);
+		tests::get_backend_name::<Store>(&get_store().await);
 	}
 
 	#[tokio::test]
 	async fn get_redirect() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::get_redirect(&store).await;
+		tests::get_redirect(&get_store().await).await;
 	}
 
 	#[tokio::test]
 	async fn set_redirect() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::set_redirect(&store).await;
+		tests::set_redirect(&get_store().await).await;
 	}
 
 	#[tokio::test]
 	async fn rem_redirect() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::rem_redirect(&store).await;
+		tests::rem_redirect(&get_store().await).await;
 	}
 
 	#[tokio::test]
 	async fn get_vanity() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::get_vanity(&store).await;
+		tests::get_vanity(&get_store().await).await;
 	}
 
 	#[tokio::test]
 	async fn set_vanity() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::set_vanity(&store).await;
+		tests::set_vanity(&get_store().await).await;
 	}
 
 	#[tokio::test]
 	async fn rem_vanity() {
-		let store = Store::new(&mut Arguments::from_vec(vec![])).await.unwrap();
-		tests::rem_vanity(&store).await;
+		tests::rem_vanity(&get_store().await).await;
 	}
 }

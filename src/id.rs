@@ -8,6 +8,10 @@
 //! with 2 additional characters - `X` and `x`. The full charset is (in order):
 //! `6789BCDFGHJKLMNPQRTWXbcdfghjkmnpqrtwxz`.
 
+use fred::{
+	error::{RedisError, RedisErrorKind},
+	types::{FromRedis, RedisValue},
+};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
 use serde_derive::{Deserialize, Serialize};
@@ -155,9 +159,38 @@ impl FromStr for Id {
 	}
 }
 
+impl FromRedis for Id {
+	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
+		match value {
+			RedisValue::String(s) => Ok(Self::try_from(&*s)
+				.map_err(|e| RedisError::new(RedisErrorKind::Parse, e.to_string()))?),
+			RedisValue::Bytes(b) => Ok(Self::try_from(&*b)
+				.map_err(|e| RedisError::new(RedisErrorKind::Parse, e.to_string()))?),
+			_ => Err(RedisError::new(
+				RedisErrorKind::Parse,
+				"can't convert this type into an ID",
+			)),
+		}
+	}
+}
+
 impl From<[u8; 5]> for Id {
 	fn from(bytes: [u8; 5]) -> Self {
 		Self(bytes)
+	}
+}
+
+impl TryFrom<&[u8]> for Id {
+	type Error = ConversionError;
+
+	fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+		match bytes.len() {
+			5 => Ok(Self(
+				bytes.try_into().map_err(|_| Self::Error::InvalidFormat)?,
+			)),
+			0..=4 => Err(Self::Error::TooSmall),
+			_ => Err(Self::Error::TooLarge),
+		}
 	}
 }
 
@@ -294,6 +327,21 @@ mod tests {
 	}
 
 	#[test]
+	fn from_redis() {
+		assert_eq!(
+			Id([0x11, 0x33, 0x55, 0x77, 0x99]),
+			Id::from_value(RedisValue::from_static_str("0fXMgWQz")).unwrap()
+		);
+
+		assert_eq!(
+			Id([0x00, 0x22, 0x44, 0x66, 0x88]),
+			Id::from_value(RedisValue::from_static(&[0x00, 0x22, 0x44, 0x66, 0x88])).unwrap()
+		);
+
+		assert!(Id::from_value(RedisValue::Null).is_err());
+	}
+
+	#[test]
 	fn from_bytes() {
 		assert_eq!(
 			Id([0x01, 0x02, 0x03, 0x04, 0x05]),
@@ -302,6 +350,22 @@ mod tests {
 
 		let id = Id::new();
 		assert_eq!(Id::from(id.0), id);
+	}
+
+	#[test]
+	fn try_from_bytes() {
+		assert_eq!(
+			Id([0x01, 0x02, 0x03, 0x04, 0x05]),
+			Id::try_from(&[0x01_u8, 0x02_u8, 0x03_u8, 0x04_u8, 0x05_u8][..]).unwrap()
+		);
+
+		assert!(Id::try_from(&[0_u8, 1_u8, 2_u8, 3_u8, 4_u8, 5_u8][..]).is_err());
+		assert!(Id::try_from(&[0_u8, 1_u8, 2_u8, 3_u8][..]).is_err());
+		assert!(Id::try_from(&b""[..]).is_err());
+		assert!(Id::try_from(&b"This is not a valid binary representation of an ID"[..]).is_err());
+
+		let id = Id::new();
+		assert_eq!(Id::try_from(id.0).unwrap(), id);
 	}
 
 	#[test]
