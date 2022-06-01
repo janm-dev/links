@@ -6,8 +6,9 @@
 //!
 //! \* If Redis is configured appropriately.
 //!
-//! This is tested with and developed against Redis 7.0. Older Redis versions
-//! may work, but are currently not supported, and may break at any time.
+//! This is tested with and developed against Redis 6.2 and 7.0. Older Redis
+//! versions may be supported in the future. Newer Redis versions will be
+//! supported as they are released.
 //!
 //! On Redis, redirects and vanity paths are stored in the specified database
 //! with keys in the following format:
@@ -174,10 +175,13 @@ impl StoreBackend for Store {
 }
 
 /// Note:
-/// These tests require a running Redis 7.0 server. You can run one with Docker
-/// using `docker run -p 6379:6379 --rm redis:7.0-alpine`. It is highly
-/// recommended **not** to run these tests on a production Redis server.
-#[cfg(test)]
+/// These tests require a running Redis 7.0 server. Because of this, they only
+/// run if the `redis-tests` feature is enabled. To run all tests including
+/// these, use `cargo test --features redis-tests` You can run a Redis server
+/// with Docker using `docker run -p 6379:6379 --rm redis:7.0-alpine` (replace
+/// `7.0` with another version if necessary). It is highly recommended **not**
+/// to run these tests on a production Redis server.
+#[cfg(all(test, feature = "redis-tests"))]
 mod tests {
 	use super::Store;
 	use crate::store::tests;

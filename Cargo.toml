@@ -11,6 +11,8 @@ rust-version = "1.59"
 default-run = "server"
 
 [features]
+# Run tests involving a Redis server. Needs a running links-compatible Redis server on localhost:6379.
+redis-tests = []
 
 [dependencies]
 anyhow = "1.0.56"

@@ -18,32 +18,8 @@ jobs:
           command: check
 
   test:
-    name: Test Suite
+    name: Test Suite (without external services)
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7.0-alpine
-        ports:
-          - 6379:6379
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-  test-v62:
-    name: Test Suite with Redis 6.2
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:6.2-alpine
-        ports:
-          - 6379:6379
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
