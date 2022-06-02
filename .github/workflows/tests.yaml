@@ -1,0 +1,60 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test Suite without external services
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  test-redis:
+    strategy:
+      matrix:
+        version: ["6.2-alpine", "7.0-alpine", "alpine"]
+        os: [ubuntu-latest, windows-latest]
+    name: Test with Redis ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    services:
+      redis:
+        image: redis:${{ matrix.version }}
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: "--features redis-tests"
