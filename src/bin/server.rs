@@ -19,8 +19,8 @@
 //!
 //! ## The store backend
 //! Links can use many different databases and data stores as store backends,
-//! providing flexibility with the storage setup. Currently in-memory,
-//! in-memory with file backup (TODO), and Redis backends are supported.
+//! providing flexibility with the storage setup. Currently in-memory and Redis
+//! backends are supported.
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::api::{self, Api, LinksServer};
