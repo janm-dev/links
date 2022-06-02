@@ -1,8 +1,9 @@
 # ![links - an easy to set up selfhostable link shortener](misc/banner.webp)
 
 [![repository license](https://img.shields.io/github/license/janm-dev/links)](https://github.com/janm-dev/links/blob/main/LICENSE)
-[![weekly automated dependency audit](https://github.com/janm-dev/links/actions/workflows/audit.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/audit.yaml)
-[![continuous integration (tests, linting, formatting, ...)](https://github.com/janm-dev/links/actions/workflows/ci.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/ci.yaml)
+[![regular automated dependency audit](https://github.com/janm-dev/links/actions/workflows/audit.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/audit.yaml)
+[![continuous integration (clippy, rustfmt, check)](https://github.com/janm-dev/links/actions/workflows/ci.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/ci.yaml)
+[![unit and integration tests](https://github.com/janm-dev/links/actions/workflows/tests.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/tests.yaml)
 [![contact us via email at dev@janm.dev](https://img.shields.io/badge/contact-dev%40janm.dev-informational)](mailto:dev+links@janm.dev)
 
 ## What it does
