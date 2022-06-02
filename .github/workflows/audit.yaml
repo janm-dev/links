@@ -19,7 +19,7 @@ jobs:
         id: install-toolchain
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           override: true
       - uses: actions/cache@v3
         with:
