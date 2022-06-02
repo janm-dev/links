@@ -1,18 +1,31 @@
 name: Audit
 
 on:
+  push:
+  pull_request:
   schedule:
-    - cron: "0 12 */7 * *"
+    - cron: "30 12 * * *"
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   audit:
-    name: Weekly Audit
+    name: Regular Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/audit-check@v1
+      - uses: actions-rs/toolchain@v1
+        id: install-toolchain
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+          key: cargo-audit-and-outdated-${{ steps.install-toolchain.outputs.rustc_hash }}
+      - run: cargo install cargo-audit cargo-outdated
+      - run: cargo outdated --exit-code 1
+      - run: cargo audit -D warnings
