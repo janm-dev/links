@@ -6,8 +6,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta, nightly]
+        os: [ubuntu-latest]
+        rust: [stable, beta]
     name: Test Suite on ${{ matrix.os }} with Rust ${{ matrix.rust }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -27,7 +27,7 @@ jobs:
   test-redis:
     strategy:
       matrix:
-        version: [6.2-alpine, 7.0-alpine, alpine, latest]
+        version: [6.2-alpine, 7.0-alpine]
     name: Test with Redis ${{ matrix.version }}
     runs-on: ubuntu-latest
     services:
