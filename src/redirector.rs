@@ -5,7 +5,9 @@ use crate::id::Id;
 use crate::normalized::Normalized;
 use crate::store::Store;
 use crate::util::{csp_hashes, include_html, A_YEAR, SERVER_NAME};
-use hyper::{Body, Method, Request, Response, StatusCode};
+use hyper::{
+	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
+};
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
 
@@ -139,6 +141,79 @@ pub async fn redirector(
 		link = %link.map_or_else(|| "[none]".to_string(), |link| link.to_string()),
 		id = %id.map_or_else(|| "[none]".to_string(), |id| id.to_string()),
 		vanity = %vanity.map_or_else(|| "[none]".to_string(), |vanity| vanity.to_string()),
+		status_code = %res.status(),
+		"redirect processed in {:.6} seconds",
+		redirect_time.as_secs_f64()
+	);
+
+	Ok(res)
+}
+
+/// Redirects an incoming request to the same host and path, but with the
+/// `https` scheme.
+#[instrument(level = "trace", name = "request-https-details")]
+#[instrument(level = "info", name = "request-https", skip_all, fields(http.version = ?req.version(), http.host = %req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]")), http.path = ?req.uri().path(), http.method = %req.method()))]
+pub async fn https_redirector(
+	req: Request<Body>,
+	config: Config,
+) -> Result<Response<String>, anyhow::Error> {
+	let redirect_start = Instant::now();
+	debug!(?req);
+
+	// Set default response headers
+	let mut res = Response::builder();
+	res = res.header("Referrer-Policy", "no-referrer");
+	if config.enable_server {
+		res = res.header("Server", &*SERVER_NAME);
+	}
+	if config.enable_csp {
+		res = res.header(
+			"Content-Security-Policy",
+			concat!(
+				"default-src 'none'; style-src ",
+				csp_hashes!("style"),
+				"; sandbox allow-top-navigation"
+			),
+		);
+	}
+	if config.enable_alt_svc {
+		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
+	}
+
+	let p_and_q = req.uri().path_and_query().map_or("/", PathAndQuery::as_str);
+	let (res, link) = if let Some(Ok(host)) = req.headers().get("host").map(HeaderValue::to_str) {
+		let link = Uri::builder()
+			.scheme("https")
+			.authority(host)
+			.path_and_query(p_and_q)
+			.build()?
+			.to_string();
+
+		res = res.header("Location", &link);
+
+		if req.method() == Method::GET {
+			res = res.status(StatusCode::FOUND);
+		} else {
+			res = res.status(StatusCode::TEMPORARY_REDIRECT);
+		}
+
+		res = res.header("Content-Type", "text/html; charset=UTF-8");
+		(
+			res.body(include_html!("https-redirect").to_string())?,
+			Some(link),
+		)
+	} else {
+		res = res.status(StatusCode::BAD_REQUEST);
+		res = res.header("Content-Type", "text/html; charset=UTF-8");
+		(res.body(include_html!("bad-request").to_string())?, None)
+	};
+
+	let redirect_time = redirect_start.elapsed();
+
+	debug!(?res);
+	info!(
+		time_ns = %redirect_time.as_nanos(),
+		link = %link.map_or_else(|| "[none]".to_string(), |link| link),
 		status_code = %res.status(),
 		"redirect processed in {:.6} seconds",
 		redirect_time.as_secs_f64()

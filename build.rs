@@ -31,9 +31,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Include and minify html pages
 	minify("not-found", PathBuf::from("misc/not-found.html"));
 	minify("redirect", PathBuf::from("misc/redirect.html"));
+	minify("bad-request", PathBuf::from("misc/bad-request.html"));
+	minify("https-redirect", PathBuf::from("misc/https-redirect.html"));
 
 	// Generate hashes for the CSP header
-	hash_tags("style", ["not-found", "redirect"]);
+	hash_tags(
+		"style",
+		["not-found", "redirect", "bad-request", "https-redirect"],
+	);
 
 	Ok(())
 }
