@@ -20,6 +20,7 @@ async-trait = "0.1.53"
 clap = { version = "3.1.18", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.0.0", features = [
+	"enable-tls",
 	"ignore-auth-error",
 	"pool-prefer-active",
 	"partial-tracing",
