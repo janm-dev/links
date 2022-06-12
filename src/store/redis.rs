@@ -26,6 +26,8 @@
 //!   information will be requested from Redis nodes (which will fail if the
 //!   server isn't in cluster mode). If this flag is not present, only one
 //!   single Redis server will be used.
+//! - `--store-tls`: Enable TLS (using system root CAs) when communicating with
+//!   the Redis server.
 //!
 //! **Command-line options:**
 //! - `--store-connect`: Connection information in the format of `host:port` to
@@ -47,7 +49,11 @@ use crate::normalized::{Link, Normalized};
 use crate::store::StoreBackend;
 use anyhow::Result;
 use async_trait::async_trait;
-use fred::{pool::RedisPool, prelude::*, types::RespVersion};
+use fred::{
+	pool::RedisPool,
+	prelude::*,
+	types::{RespVersion, TlsConfig},
+};
 use pico_args::Arguments;
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use tracing::instrument;
@@ -109,6 +115,11 @@ impl StoreBackend for Store {
 			version: RespVersion::RESP3,
 			database: config.opt_value_from_fn("--store-database", |s| str::parse::<u8>(s))?,
 			tracing: true,
+			tls: if config.contains("--store-tls") {
+				Some(TlsConfig::default())
+			} else {
+				None
+			},
 			..RedisConfig::default()
 		};
 

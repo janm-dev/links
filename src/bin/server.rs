@@ -24,12 +24,19 @@
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::api::{self, Api, LinksServer};
-use links::redirector::{redirector, Config};
+use links::config::CertificateResolver;
+use links::redirector::{https_redirector, redirector, Config};
 use links::store::Store;
 use links::util::SERVER_HELP;
 use rand::{distributions::Alphanumeric, Rng};
 use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::{net::TcpListener, spawn, try_join};
+use tokio_rustls::{
+	rustls::{server::ResolvesServerCert, ServerConfig},
+	TlsAcceptor,
+};
 use tonic::{codegen::InterceptedService, transport::Server as RpcServer};
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -43,6 +50,9 @@ async fn main() -> Result<(), anyhow::Error> {
 		print!("{}", SERVER_HELP);
 		std::process::exit(0);
 	}
+
+	let enable_tls = args.contains(["-t", "--tls-enable"]);
+	let redirect_https = args.contains(["-r", "--redirect-https"]);
 
 	// Set redirector config from args
 	let mut config = Config::default();
@@ -85,8 +95,37 @@ async fn main() -> Result<(), anyhow::Error> {
 	));
 	debug!("Using API secret: \"{api_secret}\"");
 
+	// Get TLS cert and key
+	let cert_resolver = if enable_tls {
+		let cert_path = args
+			.opt_value_from_fn::<_, _, anyhow::Error>(["-c", "--tls-cert"], |s| {
+				Ok(PathBuf::from(s))
+			})?
+			.unwrap_or_else(|| PathBuf::from("./cert.pem"));
+		let key_path = args
+			.opt_value_from_fn::<_, _, anyhow::Error>(["-k", "--tls-key"], |s| {
+				Ok(PathBuf::from(s))
+			})?
+			.unwrap_or_else(|| PathBuf::from("./key.pem"));
+
+		debug!(
+			"Using cert file: \"{}\", key file \"{}\"",
+			cert_path.clone().to_string_lossy(),
+			key_path.clone().to_string_lossy()
+		);
+
+		let resolver: Arc<dyn ResolvesServerCert + 'static> =
+			Arc::new(CertificateResolver::new(key_path, cert_path).await?);
+
+		Some(resolver)
+	} else {
+		None
+	};
+
 	// Listen on all addresses, on port 80 (HTTP)
 	let http_addr = SocketAddr::from(([0, 0, 0, 0], 80));
+	// Listen on all addresses, on port 443 (HTTPS)
+	let https_addr = SocketAddr::from(([0, 0, 0, 0], 443));
 	// Listen on all addresses, on port 530 (gRPC)
 	let rpc_addr = SocketAddr::from(([0, 0, 0, 0], 530));
 
@@ -99,58 +138,197 @@ async fn main() -> Result<(), anyhow::Error> {
 	)
 	.await?;
 
-	info!(%http_addr, %rpc_addr, %log_level, store = store.backend_name(), "Starting links");
-
-	// Create the gRPC service
-	let rpc_service = Api::new(store);
+	info!(%http_addr, %https_addr, %rpc_addr, %log_level, store = store.backend_name(), %enable_tls, "Starting links");
 
 	// Start the gRPC API server
-	let rpc_handle = spawn(async move {
-		// Start the gRPC server
-		let rpc_service = LinksServer::new(rpc_service).send_gzip().accept_gzip();
-		let rpc_server = RpcServer::builder()
+	let rpc_handle = if let Some(ref resolver) = cert_resolver {
+		let mut rpc_config = ServerConfig::builder()
+			.with_safe_defaults()
+			.with_no_client_auth()
+			.with_cert_resolver(Arc::clone(resolver));
+		rpc_config.alpn_protocols = vec![b"h2".to_vec()];
+
+		let rpc_config = Arc::new(rpc_config);
+		let rpc_listener = TcpListener::bind(rpc_addr).await?;
+		let rpc_acceptor = TlsAcceptor::from(rpc_config);
+		let mut rpc_handler = Http::new();
+		rpc_handler.http2_only(true);
+		let rpc_service = LinksServer::new(Api::new(store)).send_gzip().accept_gzip();
+		let rpc_service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				rpc_service,
 				api::get_auth_checker(api_secret),
 			))
-			.serve(rpc_addr);
+			.into_service();
 
-		// Log any server errors during requests
-		if let Err(e) = rpc_server.await {
-			error!(error = ?e, "RPC server error: {}", e);
-		}
-	});
+		spawn(async move {
+			loop {
+				let tcp_stream = match rpc_listener.accept().await {
+					Ok((tcp_stream, _)) => tcp_stream,
+					Err(tcp_err) => {
+						error!(?tcp_err, "Error while accepting gRPC connection");
+						continue;
+					}
+				};
+
+				let handler = rpc_handler.clone();
+				let service = rpc_service.clone();
+				let acceptor = rpc_acceptor.clone();
+
+				spawn(async move {
+					let tls_stream = match acceptor.accept(tcp_stream).await {
+						Ok(tls_stream) => tls_stream,
+						Err(tls_err) => {
+							error!(?tls_err, "Error while initiating gRPC connection");
+							return;
+						}
+					};
+
+					if let Err(rpc_err) = handler.serve_connection(tls_stream, service).await {
+						error!(?rpc_err, "Error while serving gRPC connection");
+					}
+				});
+			}
+		})
+	} else {
+		let rpc_listener = TcpListener::bind(rpc_addr).await?;
+		let mut rpc_handler = Http::new();
+		rpc_handler.http2_only(true);
+		let rpc_service = LinksServer::new(Api::new(store)).send_gzip().accept_gzip();
+		let rpc_service = RpcServer::builder()
+			.add_service(InterceptedService::new(
+				rpc_service,
+				api::get_auth_checker(api_secret),
+			))
+			.into_service();
+
+		spawn(async move {
+			loop {
+				let tcp_stream = match rpc_listener.accept().await {
+					Ok((tcp_stream, _)) => tcp_stream,
+					Err(tcp_err) => {
+						error!(?tcp_err, "Error while accepting gRPC connection");
+						continue;
+					}
+				};
+
+				let handler = rpc_handler.clone();
+				let service = rpc_service.clone();
+
+				spawn(async move {
+					if let Err(rpc_err) = handler.serve_connection(tcp_stream, service).await {
+						error!(?rpc_err, "Error while serving gRPC connection");
+					}
+				});
+			}
+		})
+	};
 
 	// Start the HTTP server
-	let tcp_listener = TcpListener::bind(http_addr).await?;
-	let http_handle = spawn(async move {
-		loop {
-			let tcp_stream = match tcp_listener.accept().await {
-				Ok((tcp_stream, _)) => tcp_stream,
-				Err(tcp_err) => {
-					error!(?tcp_err, "Error while accepting HTTP connection");
-					continue;
-				}
-			};
+	let http_handle = if redirect_https {
+		let http_listener = TcpListener::bind(http_addr).await?;
+		let mut http_handler = Http::new();
+		http_handler.http1_only(false).http2_only(false);
+		let http_service = service_fn(move |req: Request<Body>| https_redirector(req, config));
 
-			spawn(async move {
-				if let Err(http_err) = Http::new()
-					.http1_only(false)
-					.http2_only(false)
-					.serve_connection(
-						tcp_stream,
-						service_fn(|req: Request<Body>| redirector(req, store, config)),
-					)
-					.await
-				{
-					error!(?http_err, "Error while serving HTTP connection");
-				}
-			});
-		}
-	});
+		spawn(async move {
+			loop {
+				let tcp_stream = match http_listener.accept().await {
+					Ok((tcp_stream, _)) => tcp_stream,
+					Err(tcp_err) => {
+						error!(?tcp_err, "Error while accepting HTTP connection");
+						continue;
+					}
+				};
+
+				let handler = http_handler.clone();
+
+				spawn(async move {
+					if let Err(http_err) = handler.serve_connection(tcp_stream, http_service).await
+					{
+						error!(?http_err, "Error while serving HTTP connection");
+					}
+				});
+			}
+		})
+	} else {
+		let http_listener = TcpListener::bind(http_addr).await?;
+		let mut http_handler = Http::new();
+		http_handler.http1_only(false).http2_only(false);
+		let http_service = service_fn(move |req: Request<Body>| redirector(req, store, config));
+
+		spawn(async move {
+			loop {
+				let tcp_stream = match http_listener.accept().await {
+					Ok((tcp_stream, _)) => tcp_stream,
+					Err(tcp_err) => {
+						error!(?tcp_err, "Error while accepting HTTP connection");
+						continue;
+					}
+				};
+
+				let handler = http_handler.clone();
+
+				spawn(async move {
+					if let Err(http_err) = handler.serve_connection(tcp_stream, http_service).await
+					{
+						error!(?http_err, "Error while serving HTTP connection");
+					}
+				});
+			}
+		})
+	};
+
+	// Start the HTTPS server
+	let https_handle = if let Some(ref resolver) = cert_resolver {
+		let mut https_config = ServerConfig::builder()
+			.with_safe_defaults()
+			.with_no_client_auth()
+			.with_cert_resolver(Arc::clone(resolver));
+		https_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+
+		let https_config = Arc::new(https_config);
+		let https_listener = TcpListener::bind(https_addr).await?;
+		let https_acceptor = TlsAcceptor::from(https_config);
+		let mut https_handler = Http::new();
+		https_handler.http1_only(false).http2_only(false);
+		let https_service = service_fn(move |req: Request<Body>| redirector(req, store, config));
+
+		spawn(async move {
+			loop {
+				let tcp_stream = match https_listener.accept().await {
+					Ok((tcp_stream, _)) => tcp_stream,
+					Err(tcp_err) => {
+						error!(?tcp_err, "Error while accepting HTTPS connection");
+						continue;
+					}
+				};
+
+				let handler = https_handler.clone();
+				let acceptor = https_acceptor.clone();
+
+				spawn(async move {
+					let tls_stream = match acceptor.accept(tcp_stream).await {
+						Ok(tls_stream) => tls_stream,
+						Err(tls_err) => {
+							error!(?tls_err, "Error while initiating HTTPS connection");
+							return;
+						}
+					};
+
+					if let Err(rpc_err) = handler.serve_connection(tls_stream, https_service).await
+					{
+						error!(?rpc_err, "Error while serving HTTPS connection");
+					}
+				});
+			}
+		})
+	} else {
+		spawn(async {})
+	};
 
 	// Wait until the first unhandled error (if any) and exit
-	try_join!(rpc_handle, http_handle)?;
+	try_join!(rpc_handle, http_handle, https_handle)?;
 
 	Ok(())
 }

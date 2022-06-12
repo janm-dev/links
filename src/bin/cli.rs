@@ -17,8 +17,9 @@ use std::fmt::Debug;
 use std::process;
 use std::str::FromStr;
 use tonic::{
-	metadata::AsciiMetadataValue, transport::Channel, transport::Error as TonicError, Request,
-	Status,
+	metadata::AsciiMetadataValue,
+	transport::{Channel, ClientTlsConfig, Error as TonicError},
+	Request, Status,
 };
 
 #[derive(Parser, Debug)]
@@ -26,6 +27,10 @@ use tonic::{
 struct Cli {
 	#[clap(subcommand)]
 	command: Commands,
+
+	/// Whether to use TLS when connecting to the gRPC API
+	#[clap(short = 's', long, env = "LINKS_RPC_TLS")]
+	tls: bool,
 
 	/// Redirector server hostaname
 	#[clap(short, long, env = "LINKS_RPC_HOST")]
@@ -137,12 +142,24 @@ async fn main() -> Result<()> {
 	// Get command-line args
 	let cli = Cli::parse();
 
-	// Connect to gRPC API
-	let client = LinksClient::connect(format!("grpc://{}:{}", cli.host, cli.port))
-		.await
-		.format_err("Could not connect to gRPC API server")
-		.accept_gzip()
-		.send_gzip();
+	// Connect to gRPC API with native CA certs
+	let client = if cli.tls {
+		let tls_config = ClientTlsConfig::new();
+
+		let channel = Channel::from_shared(format!("grpc://{}:{}", cli.host, cli.port))?
+			.tls_config(tls_config)?
+			.connect()
+			.await
+			.format_err("Could not connect to gRPC API server");
+
+		LinksClient::new(channel).accept_gzip().send_gzip()
+	} else {
+		LinksClient::connect(format!("grpc://{}:{}", cli.host, cli.port))
+			.await
+			.format_err("Could not connect to gRPC API server")
+			.accept_gzip()
+			.send_gzip()
+	};
 
 	// Do what the user wants
 	let res = match cli.command {
