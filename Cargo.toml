@@ -16,6 +16,7 @@ redis-tests = []
 
 [dependencies]
 anyhow = "1.0.57"
+arc-swap = "1.5.0"
 async-trait = "0.1.53"
 clap = { version = "3.1.18", features = ["derive", "env"] }
 colored = "2.0.0"
@@ -27,6 +28,7 @@ fred = { version = "5.0.0", features = [
 ], default-features = false }
 hyper = "0.14.19"
 lazy_static = "1.4.0"
+notify = "4.0.17"
 parking_lot = "0.12.1"
 pico-args = { version = "0.4.2", features = [
 	"combined-flags",
