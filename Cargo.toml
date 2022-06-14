@@ -18,9 +18,9 @@ redis-tests = []
 anyhow = "1.0.57"
 arc-swap = "1.5.0"
 async-trait = "0.1.56"
-clap = { version = "3.1.18", features = ["derive", "env"] }
+clap = { version = "3.2.2", features = ["derive", "env", "unstable-v4"] }
 colored = "2.0.0"
-fred = { version = "5.0.0", features = [
+fred = { version = "5.1.0", features = [
 	"enable-tls",
 	"ignore-auth-error",
 	"pool-prefer-active",
