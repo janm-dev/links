@@ -2,17 +2,6 @@
 //! with no other backups. This is mostly intended for tests, as it doesn't
 //! depend on any state being persisted between links shutdown and startup, nor
 //! does it depend on any external resources or services.
-//!
-//! # Configuration
-//!
-//! **Store backend name:**
-//! `memory`
-//!
-//! **Command-line flags:**
-//! *none*
-//!
-//! **Command-line options:**
-//! *none*
 
 use std::collections::HashMap;
 
@@ -30,6 +19,17 @@ use crate::{
 
 /// A fully in-memory `StoreBackend` implementation useful for testing. Not
 /// recommended for production, as this lacks any data persistence or backups.
+///
+/// # Configuration
+///
+/// **Store backend name:**
+/// `memory`
+///
+/// **Command-line flags:**
+/// *none*
+///
+/// **Command-line options:**
+/// *none*
 #[derive(Debug)]
 pub struct Store {
 	redirects: RwLock<HashMap<Id, Link>>,

@@ -26,11 +26,14 @@ use tracing::{debug, error, info};
 
 /// The error returned by [`get_certkey`].
 #[derive(Debug, thiserror::Error)]
-enum CertKeyError {
+pub enum CertKeyError {
+	/// The certificate or key file could not be read
 	#[error("the certificate or key file could not be read")]
 	Read(#[from] IoError),
+	/// The private key file does not contain a valid private key
 	#[error("the private key file does not contain a valid private key")]
 	NoKey,
+	/// The private key is invalid or unsupported
 	#[error("the private key is invalid or unsupported")]
 	InvalidKey(#[from] SignError),
 }
@@ -43,7 +46,7 @@ enum CertKeyError {
 /// - The certificate or key could not be read from their files
 /// - The certificate or key could not be parsed or are otherwise invalid
 /// - The certificate and key don't match (TODO)
-fn get_certkey(
+pub fn get_certkey(
 	cert_path: impl AsRef<Path>,
 	key_path: impl AsRef<Path>,
 ) -> Result<CertifiedKey, CertKeyError> {

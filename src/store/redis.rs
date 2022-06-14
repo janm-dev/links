@@ -15,34 +15,6 @@
 //! - `links:redirect:[ID]` for redirects (with string values of URLs)
 //! - `links:vanity:[vanity]` for vanity paths (with string values of IDs)
 //! - `links:stat:*` reserved for statistics
-//!
-//! # Configuration
-//!
-//! **Store backend name:**
-//! `redis`
-//!
-//! **Command-line flags:**
-//! - `--store-cluster`: Use Redis cluster mode. If this is present, cluster
-//!   information will be requested from Redis nodes (which will fail if the
-//!   server isn't in cluster mode). If this flag is not present, only one
-//!   single Redis server will be used.
-//! - `--store-tls`: Enable TLS (using system root CAs) when communicating with
-//!   the Redis server.
-//!
-//! **Command-line options:**
-//! - `--store-connect`: Connection information in the format of `host:port` to
-//!   connect to. When using Redis in cluster mode, you can pass this option
-//!   multiple times for different nodes, but only one is required (the others
-//!   will be automatically discovered). Note that this is not a full URL.
-//! - `--store-username`: The username to use for the connection, when using
-//!   ACLs on the server. Don't specify this when using password-based auth.
-//! - `--store-password`: The password to use for the Redis connection. This can
-//!   either be the user's password (when using ACLs) or the global server
-//!   password when using password-based authentication.
-//! - `--store-pool-size`: The number of connections to use in the connection
-//!   pool. **Default `8`**.
-//! - `--store-database`: The database number to use for the Redis connection.
-//!   **Default `0`**.
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
@@ -64,6 +36,34 @@ use crate::{
 
 /// A Redis-backed `StoreBackend` implementation. The best option for most
 /// links deployments.
+///
+/// # Configuration
+///
+/// **Store backend name:**
+/// `redis`
+///
+/// **Command-line flags:**
+/// - `--store-cluster`: Use Redis cluster mode. If this is present, cluster
+///   information will be requested from Redis nodes (which will fail if the
+///   server isn't in cluster mode). If this flag is not present, only one
+///   single Redis server will be used.
+/// - `--store-tls`: Enable TLS (using system root CAs) when communicating with
+///   the Redis server.
+///
+/// **Command-line options:**
+/// - `--store-connect`: Connection information in the format of `host:port` to
+///   connect to. When using Redis in cluster mode, you can pass this option
+///   multiple times for different nodes, but only one is required (the others
+///   will be automatically discovered). Note that this is not a full URL.
+/// - `--store-username`: The username to use for the connection, when using
+///   ACLs on the server. Don't specify this when using password-based auth.
+/// - `--store-password`: The password to use for the Redis connection. This can
+///   either be the user's password (when using ACLs) or the global server
+///   password when using password-based authentication.
+/// - `--store-pool-size`: The number of connections to use in the connection
+///   pool. **Default `8`**.
+/// - `--store-database`: The database number to use for the Redis connection.
+///   **Default `0`**.
 pub struct Store {
 	pool: RedisPool,
 }
