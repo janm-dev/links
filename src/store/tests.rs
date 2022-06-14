@@ -2,8 +2,10 @@
 //! functions have the same name as the function that they are testing.
 
 use super::*;
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+};
 
 pub fn backend_name<S: StoreBackend>() {
 	let name = S::backend_name();

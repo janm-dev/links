@@ -1,24 +1,24 @@
 //! This module contains the gRPC-based low-level links API, responsible for
 //! allowing outside services access to the links store.
 
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
-use crate::store::Store;
 use rpc::links_server::Links;
-use tokio::time::Instant;
-use tracing::{info, instrument, trace};
-
-pub use rpc::links_client::LinksClient;
-pub use rpc::links_server::LinksServer;
 pub use rpc::{
-	GetRedirectRequest, GetRedirectResponse, GetVanityRequest, GetVanityResponse,
-	RemRedirectRequest, RemRedirectResponse, RemVanityRequest, RemVanityResponse,
-	SetRedirectRequest, SetRedirectResponse, SetVanityRequest, SetVanityResponse,
+	links_client::LinksClient, links_server::LinksServer, GetRedirectRequest, GetRedirectResponse,
+	GetVanityRequest, GetVanityResponse, RemRedirectRequest, RemRedirectResponse, RemVanityRequest,
+	RemVanityResponse, SetRedirectRequest, SetRedirectResponse, SetVanityRequest,
+	SetVanityResponse,
 };
-pub use tonic::{Code, Request, Response, Status};
-
 // Do some weird stuff to allow `clippy::pedantic` on generated code.
 use rpc_wrapper::rpc;
+use tokio::time::Instant;
+pub use tonic::{Code, Request, Response, Status};
+use tracing::{info, instrument, trace};
+
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+	store::Store,
+};
 /// A wrapper around the generated tonic code. Contains the `rpc` module with
 /// all of the actual functionality. This is necessary to allow
 /// `clippy::pedantic` on the generated code.

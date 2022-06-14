@@ -4,14 +4,17 @@
 //! - [`Normalized`], which represents unicode normalized vanity paths
 //! - [`Link`], which represents valid normalized redirection target URLs
 
+use std::{
+	convert::Infallible,
+	fmt::{Display, Error as FmtError, Formatter},
+	str::FromStr,
+};
+
 use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
 };
 use serde_derive::{Deserialize, Serialize};
-use std::convert::Infallible;
-use std::fmt::{Display, Error as FmtError, Formatter};
-use std::str::FromStr;
 use unicode_normalization::UnicodeNormalization;
 use uriparse::{Scheme, URIReference};
 

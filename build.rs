@@ -1,12 +1,13 @@
+use std::{
+	cell::RefCell,
+	env, fs,
+	path::{Path, PathBuf},
+	rc::Rc,
+};
+
 use lol_html::{element, text, RewriteStrSettings};
 use minify_html::Cfg;
-use sha2::Digest;
-use sha2::Sha256;
-use std::cell::RefCell;
-use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::rc::Rc;
+use sha2::{Digest, Sha256};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Compile gRPC/protobuf
@@ -23,7 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let proto = fs::read_to_string(&proto_path)?;
 	fs::write(
 		&proto_path,
-		"#[allow(clippy::pedantic, clippy::cargo, clippy::nursery, missing_docs, rustdoc::all)]\npub mod rpc {\n"
+		"#[allow(clippy::pedantic, clippy::cargo, clippy::nursery, missing_docs, \
+		 rustdoc::all)]\npub mod rpc {\n"
 			.to_string() + &proto
 			+ "}\n",
 	)?;
@@ -35,10 +37,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	minify("https-redirect", PathBuf::from("misc/https-redirect.html"));
 
 	// Generate hashes for the CSP header
-	hash_tags(
-		"style",
-		["not-found", "redirect", "bad-request", "https-redirect"],
-	);
+	hash_tags("style", [
+		"not-found",
+		"redirect",
+		"bad-request",
+		"https-redirect",
+	]);
 
 	Ok(())
 }
@@ -80,33 +84,30 @@ fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static st
 
 		// Get the contents of all specified tags
 		let buffer = Rc::new(RefCell::new(String::new()));
-		let _ = lol_html::rewrite_str(
-			&content,
-			RewriteStrSettings {
-				element_content_handlers: vec![
-					element!(tag_name, |el| {
-						buffer.borrow_mut().clear();
-						let buffer = buffer.clone();
-						let contents = contents.clone();
+		let _ = lol_html::rewrite_str(&content, RewriteStrSettings {
+			element_content_handlers: vec![
+				element!(tag_name, |el| {
+					buffer.borrow_mut().clear();
+					let buffer = buffer.clone();
+					let contents = contents.clone();
 
-						el.on_end_tag(move |_| {
-							let s = buffer.borrow();
-							contents.borrow_mut().push(s.to_owned());
-
-							Ok(())
-						})?;
+					el.on_end_tag(move |_| {
+						let s = buffer.borrow();
+						contents.borrow_mut().push(s.to_owned());
 
 						Ok(())
-					}),
-					text!(tag_name, |t| {
-						buffer.borrow_mut().push_str(t.as_str());
+					})?;
 
-						Ok(())
-					}),
-				],
-				..RewriteStrSettings::default()
-			},
-		)
+					Ok(())
+				}),
+				text!(tag_name, |t| {
+					buffer.borrow_mut().push_str(t.as_str());
+
+					Ok(())
+				}),
+			],
+			..RewriteStrSettings::default()
+		})
 		.unwrap();
 	}
 

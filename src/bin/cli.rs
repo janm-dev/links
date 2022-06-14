@@ -3,19 +3,19 @@
 //!
 //! Supports all basic links store operations using the redirectors' gRPC API.
 
+use std::{convert::Infallible, fmt::Debug, process, str::FromStr};
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use links::api::{
-	GetRedirectRequest, GetVanityRequest, LinksClient, RemRedirectRequest, RemVanityRequest,
-	SetRedirectRequest, SetVanityRequest,
+use links::{
+	api::{
+		GetRedirectRequest, GetVanityRequest, LinksClient, RemRedirectRequest, RemVanityRequest,
+		SetRedirectRequest, SetVanityRequest,
+	},
+	id::{ConversionError, Id},
+	normalized::{Link, Normalized},
 };
-use links::id::{ConversionError, Id};
-use links::normalized::{Link, Normalized};
-use std::convert::Infallible;
-use std::fmt::Debug;
-use std::process;
-use std::str::FromStr;
 use tonic::{
 	metadata::AsciiMetadataValue,
 	transport::{Channel, ClientTlsConfig, Error as TonicError},
@@ -255,23 +255,31 @@ async fn get(
 	match (vanity, id, link) {
 		(Some(v), None, None) => (
 			format!("\"{v}\" ---> ??? ---> ???"),
-			format!("\"{v}\" is a vanity path, but doesn't correspond to an ID, and doesn't redirect anywhere")
+			format!(
+				"\"{v}\" is a vanity path, but doesn't correspond to an ID, and doesn't redirect \
+				 anywhere"
+			),
 		),
 		(Some(v), Some(i), None) => (
 			format!("\"{v}\" ---> \"{i}\" ---> ???"),
-			format!("\"{v}\" is a vanity path corresponding to ID \"{i}\", but doesn't redirect anywhere")
+			format!(
+				"\"{v}\" is a vanity path corresponding to ID \"{i}\", but doesn't redirect \
+				 anywhere"
+			),
 		),
 		(Some(v), Some(i), Some(l)) => (
 			format!("\"{v}\" ---> \"{i}\" ---> \"{l}\""),
-			format!("\"{v}\" is a vanity path corresponding to ID \"{i}\" and redirects to \"{l}\"")
+			format!(
+				"\"{v}\" is a vanity path corresponding to ID \"{i}\" and redirects to \"{l}\""
+			),
 		),
 		(None, Some(i), Some(l)) => (
 			format!("\"{i}\" ---> \"{l}\""),
-			format!("\"{i}\" is an ID and redirects to \"{l}\"")
+			format!("\"{i}\" is an ID and redirects to \"{l}\""),
 		),
 		(None, Some(i), None) => (
 			format!("\"{i}\" ---> ???"),
-			format!("\"{i}\" is a valid ID, but doesn't redirect anywhere")
+			format!("\"{i}\" is a valid ID, but doesn't redirect anywhere"),
 		),
 		_ => unreachable!(),
 	}
@@ -303,8 +311,11 @@ async fn new(
 		client.set_vanity(req).await.format_err("API call failed");
 
 		(
-			format!("\"{vanity}\" ---> \"{id}\" ---> \"{to}\""), 
-			format!("Successfully set new redirect from ID \"{id}\" to \"{to}\" with vanity path \"{vanity}\"")
+			format!("\"{vanity}\" ---> \"{id}\" ---> \"{to}\""),
+			format!(
+				"Successfully set new redirect from ID \"{id}\" to \"{to}\" with vanity path \
+				 \"{vanity}\""
+			),
 		)
 	} else {
 		(
@@ -336,7 +347,10 @@ async fn set(
 	if let Some(old) = old {
 		(
 			format!("\"{id}\" ---> \"{link}\" (-X-> \"{old}\")"),
-			format!("Successfully modified redirect from ID \"{id}\" to \"{link}\" (used to redirect to \"{old}\")"),
+			format!(
+				"Successfully modified redirect from ID \"{id}\" to \"{link}\" (used to redirect \
+				 to \"{old}\")"
+			),
 		)
 	} else {
 		(
@@ -384,7 +398,13 @@ async fn rem(
 				.link;
 
 			if let Some(old) = old {
-				(format!("\"{id}\" -X-> \"{old}\""), format!("Successfully removed redirect with ID \"{id}\" (used to redirect to \"{old}\")"))
+				(
+					format!("\"{id}\" -X-> \"{old}\""),
+					format!(
+						"Successfully removed redirect with ID \"{id}\" (used to redirect to \
+						 \"{old}\")"
+					),
+				)
 			} else {
 				(
 					format!("\"{id}\" -X-> ???"),
@@ -405,7 +425,13 @@ async fn rem(
 				.id;
 
 			if let Some(old) = old {
-				(format!("\"{vanity}\" -X-> \"{old}\""), format!("Successfully removed vanity path \"{vanity}\" (used to point to ID \"{old}\")"))
+				(
+					format!("\"{vanity}\" -X-> \"{old}\""),
+					format!(
+						"Successfully removed vanity path \"{vanity}\" (used to point to ID \
+						 \"{old}\")"
+					),
+				)
 			} else {
 				(
 					format!("\"{vanity}\" -X-> ???"),

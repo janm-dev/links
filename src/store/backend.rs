@@ -6,12 +6,16 @@
 //! different storage backends, and to make developing them fast. For details
 //! about configuring each store backend, see that backend's documentation.
 
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
+use core::fmt::Debug;
+
 use anyhow::Result;
 use async_trait::async_trait;
-use core::fmt::Debug;
 use pico_args::Arguments;
+
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+};
 
 /// The redirect, vanity path, and statistics store trait used by links.
 #[async_trait]

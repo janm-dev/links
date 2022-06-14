@@ -36,17 +36,16 @@
 //!   will be automatically discovered). Note that this is not a full URL.
 //! - `--store-username`: The username to use for the connection, when using
 //!   ACLs on the server. Don't specify this when using password-based auth.
-//! - `--store-password`: The password to use for the Redis connection. This
-//!   can either be the user's password (when using ACLs) or the global server
+//! - `--store-password`: The password to use for the Redis connection. This can
+//!   either be the user's password (when using ACLs) or the global server
 //!   password when using password-based authentication.
 //! - `--store-pool-size`: The number of connections to use in the connection
 //!   pool. **Default `8`**.
 //! - `--store-database`: The database number to use for the Redis connection.
 //!   **Default `0`**.
 
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
-use crate::store::StoreBackend;
+use std::fmt::{Debug, Formatter, Result as FmtResult};
+
 use anyhow::Result;
 use async_trait::async_trait;
 use fred::{
@@ -55,8 +54,13 @@ use fred::{
 	types::{RespVersion, TlsConfig},
 };
 use pico_args::Arguments;
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use tracing::instrument;
+
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+	store::StoreBackend,
+};
 
 /// A Redis-backed `StoreBackend` implementation. The best option for most
 /// links deployments.
@@ -194,12 +198,12 @@ impl StoreBackend for Store {
 /// to run these tests on a production Redis server.
 #[cfg(all(test, feature = "redis-tests"))]
 mod tests {
-	use super::Store;
-	use crate::store::tests;
-	use crate::store::StoreBackend as _;
+	use std::{ffi::OsString, str::FromStr};
+
 	use pico_args::Arguments;
-	use std::ffi::OsString;
-	use std::str::FromStr;
+
+	use super::Store;
+	use crate::store::{tests, StoreBackend as _};
 
 	async fn get_store() -> Store {
 		Store::new(&mut Arguments::from_vec(vec![

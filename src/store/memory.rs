@@ -14,15 +14,19 @@
 //! **Command-line options:**
 //! *none*
 
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
-use crate::store::StoreBackend;
+use std::collections::HashMap;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use parking_lot::RwLock;
 use pico_args::Arguments;
-use std::collections::HashMap;
 use tracing::instrument;
+
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+	store::StoreBackend,
+};
 
 /// A fully in-memory `StoreBackend` implementation useful for testing. Not
 /// recommended for production, as this lacks any data persistence or backups.
@@ -92,10 +96,10 @@ impl StoreBackend for Store {
 
 #[cfg(test)]
 mod tests {
-	use super::Store;
-	use crate::store::tests;
-	use crate::store::StoreBackend as _;
 	use pico_args::Arguments;
+
+	use super::Store;
+	use crate::store::{tests, StoreBackend as _};
 
 	async fn get_store() -> Store {
 		Store::new(&mut Arguments::from_vec(vec![])).await.unwrap()

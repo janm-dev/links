@@ -1,15 +1,18 @@
 //! The main part of links. This module contains code relating to actually
 //! redirecting requests.
 
-use crate::id::Id;
-use crate::normalized::Normalized;
-use crate::store::Store;
-use crate::util::{csp_hashes, include_html, A_YEAR, SERVER_NAME};
 use hyper::{
 	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
 };
 use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
+
+use crate::{
+	id::Id,
+	normalized::Normalized,
+	store::Store,
+	util::{csp_hashes, include_html, A_YEAR, SERVER_NAME},
+};
 
 /// Configuration for how the redirector should behave.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -17,7 +20,8 @@ use tracing::{debug, info, instrument, trace};
 pub struct Config {
 	/// Whether to enable HTTP Strict Transport Security
 	pub enable_hsts: bool,
-	/// Whether to preload HTTP Strict Transport Security (also sets `includeSubDomains`)
+	/// Whether to preload HTTP Strict Transport Security (also sets
+	/// `includeSubDomains`)
 	pub preload_hsts: bool,
 	/// Value of `max-age` on the Strict Transport Security header in seconds
 	pub hsts_age: u32,

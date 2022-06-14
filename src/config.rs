@@ -1,18 +1,21 @@
 //! Links server certificate handling.
 
+use std::{
+	fmt::{Debug, Formatter},
+	fs,
+	io::Error as IoError,
+	path::{Path, PathBuf},
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		mpsc::{self, RecvTimeoutError},
+		Arc,
+	},
+	thread,
+	time::Duration,
+};
+
 use arc_swap::ArcSwap;
 use notify::{DebouncedEvent, RecursiveMode, Watcher};
-use std::fmt::{Debug, Formatter};
-use std::fs;
-use std::io::Error as IoError;
-use std::path::{Path, PathBuf};
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	mpsc::{self, RecvTimeoutError},
-	Arc,
-};
-use std::thread;
-use std::time::Duration;
 use tokio::task::spawn_blocking;
 use tokio_rustls::rustls::{
 	server::{ClientHello, ResolvesServerCert},
@@ -60,10 +63,10 @@ fn get_certkey(
 	let cert_key = CertifiedKey::new(certs, sign::any_supported_type(&key)?);
 
 	// Check if the certificate matches the key
-	//TODO: Waiting on <https://github.com/rustls/rustls/issues/618>,
-	//TODO: <https://github.com/briansmith/webpki/issues/35>,
-	//TODO: <https://github.com/briansmith/ring/issues/419>,
-	//TODO: or similar.
+	// TODO: Waiting on <https://github.com/rustls/rustls/issues/618>,
+	// TODO: <https://github.com/briansmith/webpki/issues/35>,
+	// TODO: <https://github.com/briansmith/ring/issues/419>,
+	// TODO: or similar.
 
 	Ok(cert_key)
 }

@@ -8,6 +8,11 @@
 //! with 2 additional characters - `X` and `x`. The full charset is (in order):
 //! `6789BCDFGHJKLMNPQRTWXbcdfghjkmnpqrtwxz`.
 
+use std::{
+	fmt::{Debug, Display, Error as FmtError, Formatter},
+	str::FromStr,
+};
+
 use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
@@ -15,8 +20,6 @@ use fred::{
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
 use serde_derive::{Deserialize, Serialize};
-use std::fmt::{Debug, Display, Error as FmtError, Formatter};
-use std::str::FromStr;
 
 /// The error returned by fallible conversions into IDs.
 #[derive(Debug, thiserror::Error)]
@@ -61,19 +64,15 @@ pub const REVERSE_CHARSET_BASE_38_OFFSET: usize = 54;
 pub struct Id([u8; 5]);
 
 impl Id {
-	/// The number of characters in the usual Id representation.
-	pub const CHARS: usize = 8;
-
 	/// The number of bits in an Id.
 	pub const BITS: usize = 40;
-
 	/// The number of bytes in an Id.
 	pub const BYTES: usize = 5;
-
+	/// The number of characters in the usual Id representation.
+	pub const CHARS: usize = 8;
 	/// The maximum value of an Id when represented as a number.
 	#[allow(clippy::cast_possible_truncation)]
 	pub const MAX: u64 = 2u64.pow(Self::BITS as u32) - 1;
-
 	/// The minimum value of an Id when represented as a number
 	pub const MIN: u64 = 0;
 
@@ -211,13 +210,15 @@ impl TryFrom<&str> for Id {
 		} else if !Self::is_valid(string) {
 			Err(ConversionError::InvalidFormat)
 		} else {
-			// Panic: `string` has already been checked to have only valid characters, so this always succeeds.
+			// Panic: `string` has already been checked to have only valid characters, so
+			// this always succeeds.
 			let mut num = string.chars().next().unwrap().to_digit(10).unwrap() as u64
 				* 38u64.pow((Self::CHARS - 1) as u32);
 
 			#[allow(clippy::cast_possible_truncation)]
 			for (i, char) in string.chars().rev().enumerate().take(Self::CHARS - 1) {
-				// Panic (indexing): `string` has already been checked to have only valid characters, so this always succeeds.
+				// Panic (indexing): `string` has already been checked to have only valid
+				// characters, so this always succeeds.
 				num += REVERSE_CHARSET[char.encode_utf8(&mut [0u8]).as_bytes()[0] as usize
 					- REVERSE_CHARSET_BASE_38_OFFSET] as u64
 					* 38u64.pow(i as u32);

@@ -22,16 +22,17 @@
 //! providing flexibility with the storage setup. Currently in-memory and Redis
 //! backends are supported.
 
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
-use links::api::{self, Api, LinksServer};
-use links::config::CertificateResolver;
-use links::redirector::{https_redirector, redirector, Config};
-use links::store::Store;
-use links::util::SERVER_HELP;
+use links::{
+	api::{self, Api, LinksServer},
+	config::CertificateResolver,
+	redirector::{https_redirector, redirector, Config},
+	store::Store,
+	util::SERVER_HELP,
+};
 use rand::{distributions::Alphanumeric, Rng};
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::Arc;
 use tokio::{net::TcpListener, spawn, try_join};
 use tokio_rustls::{
 	rustls::{server::ResolvesServerCert, ServerConfig},

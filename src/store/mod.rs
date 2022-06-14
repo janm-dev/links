@@ -9,15 +9,16 @@ mod redis;
 #[cfg(test)]
 mod tests;
 
-pub use self::memory::Store as Memory;
-pub use self::redis::Store as Redis;
-
-use crate::id::Id;
-use crate::normalized::{Link, Normalized};
 use anyhow::{bail, Result};
 use backend::StoreBackend;
 use pico_args::Arguments;
 use tracing::instrument;
+
+pub use self::{memory::Store as Memory, redis::Store as Redis};
+use crate::{
+	id::Id,
+	normalized::{Link, Normalized},
+};
 
 /// A wrapper around any `StoreBackend`, providing access to the underlying
 /// store along some with extra things like logging.
