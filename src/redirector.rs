@@ -51,7 +51,7 @@ impl Default for Config {
 /// status code is `302 Found` when the method is GET, and `307 Temporary
 /// Redirect` otherwise.
 #[instrument(level = "trace", name = "request-details")]
-#[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]")), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
+#[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
 pub async fn redirector(
 	req: Request<Body>,
 	store: &Store,
@@ -156,7 +156,7 @@ pub async fn redirector(
 /// Redirects an incoming request to the same host and path, but with the
 /// `https` scheme.
 #[instrument(level = "trace", name = "request-https-details")]
-#[instrument(level = "info", name = "request-https", skip_all, fields(http.version = ?req.version(), http.host = %req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]")), http.path = ?req.uri().path(), http.method = %req.method()))]
+#[instrument(level = "info", name = "request-https", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method()))]
 pub async fn https_redirector(
 	req: Request<Body>,
 	config: Config,
