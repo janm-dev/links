@@ -46,13 +46,12 @@ use crate::{
 };
 
 /// Run the links redirector server using configuration from the provided
-/// command line arguments (with the executable name removed). This is
-/// essentially the entire server binary, but exposed via `lib.rs` to aid in
-/// integration tests.
+/// command line arguments. This is essentially the entire server binary, but
+/// exposed via `lib.rs` to aid in integration tests.
 ///
 /// # What this function *doesn't* do
 /// - Set up a default tracing subscriber. This would otherwise interfere with
-///   integration tests.
+///   integration tests. This includes setting the logging level from args.
 /// - Parse CLI arguments from source. The arguments must be passed to this
 ///   function in a `pico_args::Arguments` struct, but will thereafter be fully
 ///   handled. This would otherwise also interfere with integration tests.
