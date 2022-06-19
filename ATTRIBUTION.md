@@ -115,7 +115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`anyhow 1.0.57`](https://docs.rs/crate/anyhow/1.0.57) by *David Tolnay <dtolnay@gmail.com>*
+## [`anyhow 1.0.58`](https://docs.rs/crate/anyhow/1.0.58) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -398,7 +398,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum 0.5.7`](https://docs.rs/crate/axum/0.5.7)
+## [`axum 0.5.8`](https://docs.rs/crate/axum/0.5.8)
 
 ```txt
 Copyright (c) 2019 Axum Contributors
@@ -428,7 +428,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum-core 0.2.5`](https://docs.rs/crate/axum-core/0.2.5)
+## [`axum-core 0.2.6`](https://docs.rs/crate/axum-core/0.2.6)
 
 ```txt
 Copyright 2021 Axum Contributors
@@ -765,7 +765,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`clap 3.2.2`](https://docs.rs/crate/clap/3.2.2)
+## [`clap 3.2.5`](https://docs.rs/crate/clap/3.2.5)
 
 ```txt
 The MIT License (MIT)
@@ -791,7 +791,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`clap_derive 3.2.2`](https://docs.rs/crate/clap_derive/3.2.2)
+## [`clap_derive 3.2.5`](https://docs.rs/crate/clap_derive/3.2.5)
 
 ```txt
 The MIT License (MIT)
@@ -3661,36 +3661,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`hashbrown 0.11.2`](https://docs.rs/crate/hashbrown/0.11.2) by *Amanieu d'Antras <amanieu@gmail.com>*
-
-```txt
-Copyright (c) 2016 Amanieu d'Antras
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-```
-
 ## [`hashbrown 0.12.1`](https://docs.rs/crate/hashbrown/0.12.1) by *Amanieu d'Antras <amanieu@gmail.com>*
 
 ```txt
@@ -4100,7 +4070,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`indexmap 1.8.2`](https://docs.rs/crate/indexmap/1.8.2) by *bluss|Josh Stone <cuviper@gmail.com>*
+## [`indexmap 1.9.0`](https://docs.rs/crate/indexmap/1.9.0)
 
 ```txt
 Copyright (c) 2016--2017
@@ -4326,7 +4296,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`js-sys 0.3.57`](https://docs.rs/crate/js-sys/0.3.57) by *The wasm-bindgen Developers*
+## [`js-sys 0.3.58`](https://docs.rs/crate/js-sys/0.3.58) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -5422,7 +5392,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`minify-html 0.8.0`](https://docs.rs/crate/minify-html/0.8.0) by *Wilson Lin <code@wilsonl.in>*
+## [`minify-html 0.8.1`](https://docs.rs/crate/minify-html/0.8.1) by *Wilson Lin <code@wilsonl.in>*
 
 ```txt
 MIT License
@@ -6648,7 +6618,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`prettyplease 0.1.11`](https://docs.rs/crate/prettyplease/0.1.11) by *David Tolnay <dtolnay@gmail.com>*
+## [`prettyplease 0.1.13`](https://docs.rs/crate/prettyplease/0.1.13) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -7636,7 +7606,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`quote 1.0.18`](https://docs.rs/crate/quote/1.0.18) by *David Tolnay <dtolnay@gmail.com>*
+## [`quote 1.0.19`](https://docs.rs/crate/quote/1.0.19) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Copyright (c) 2016 The Rust Project Developers
@@ -9438,7 +9408,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`syn 1.0.96`](https://docs.rs/crate/syn/1.0.96) by *David Tolnay <dtolnay@gmail.com>*
+## [`syn 1.0.98`](https://docs.rs/crate/syn/1.0.98) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -10314,7 +10284,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`tower 0.4.12`](https://docs.rs/crate/tower/0.4.12) by *Tower Maintainers <team@tower-rs.com>*
+## [`tower 0.4.13`](https://docs.rs/crate/tower/0.4.13) by *Tower Maintainers <team@tower-rs.com>*
 
 ```txt
 Copyright (c) 2019 Tower Contributors
@@ -10404,7 +10374,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`tower-service 0.3.1`](https://docs.rs/crate/tower-service/0.3.1) by *Tower Maintainers <team@tower-rs.com>*
+## [`tower-service 0.3.2`](https://docs.rs/crate/tower-service/0.3.2) by *Tower Maintainers <team@tower-rs.com>*
 
 ```txt
 Copyright (c) 2019 Tower Contributors
@@ -11046,7 +11016,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen 0.2.80`](https://docs.rs/crate/wasm-bindgen/0.2.80) by *The wasm-bindgen Developers*
+## [`wasm-bindgen 0.2.81`](https://docs.rs/crate/wasm-bindgen/0.2.81) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11076,7 +11046,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen-backend 0.2.80`](https://docs.rs/crate/wasm-bindgen-backend/0.2.80) by *The wasm-bindgen Developers*
+## [`wasm-bindgen-backend 0.2.81`](https://docs.rs/crate/wasm-bindgen-backend/0.2.81) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11106,7 +11076,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen-futures 0.4.30`](https://docs.rs/crate/wasm-bindgen-futures/0.4.30) by *The wasm-bindgen Developers*
+## [`wasm-bindgen-futures 0.4.31`](https://docs.rs/crate/wasm-bindgen-futures/0.4.31) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11136,7 +11106,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen-macro 0.2.80`](https://docs.rs/crate/wasm-bindgen-macro/0.2.80) by *The wasm-bindgen Developers*
+## [`wasm-bindgen-macro 0.2.81`](https://docs.rs/crate/wasm-bindgen-macro/0.2.81) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11166,7 +11136,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen-macro-support 0.2.80`](https://docs.rs/crate/wasm-bindgen-macro-support/0.2.80) by *The wasm-bindgen Developers*
+## [`wasm-bindgen-macro-support 0.2.81`](https://docs.rs/crate/wasm-bindgen-macro-support/0.2.81) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11196,7 +11166,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`wasm-bindgen-shared 0.2.80`](https://docs.rs/crate/wasm-bindgen-shared/0.2.80) by *The wasm-bindgen Developers*
+## [`wasm-bindgen-shared 0.2.81`](https://docs.rs/crate/wasm-bindgen-shared/0.2.81) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -11226,7 +11196,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`web-sys 0.3.57`](https://docs.rs/crate/web-sys/0.3.57) by *The wasm-bindgen Developers*
+## [`web-sys 0.3.58`](https://docs.rs/crate/web-sys/0.3.58) by *The wasm-bindgen Developers*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
