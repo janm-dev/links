@@ -20,7 +20,7 @@ csv = check_output([
 	"--tsv"
 ]).decode("utf-8").splitlines()[1:]
 
-print(f"{'Outputting certificate info into ' + OUTPUT_FILE:60} [ {0:3} / {len(csv):3} ]")
+print(f"{'Outputting license info into ' + OUTPUT_FILE:60} [ {0:3} / {len(csv):3} ]")
 
 # Output file header
 out = f"""# Dependency Attribution (last updated *{date.today()}*)
