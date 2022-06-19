@@ -40,6 +40,7 @@ FLAGS (all default off):
     --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
     --disable-server         Disable the Server HTTP header
     --disable-csp            Disable the Content-Security-Policy header
+	--example-redirect       Set an example redirect on server start ("example" -> "9dDbKpJP" -> "https://example.com/"), generally only useful for tests
 
 OPTIONS:
  -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")

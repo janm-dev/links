@@ -11,14 +11,19 @@ rust-version = "1.59"
 default-run = "server"
 
 [features]
-# Run tests involving a Redis server. Needs a running links-compatible Redis server on localhost:6379.
+# Run tests involving a Redis server. Needs a running links-compatible Redis
+# server on localhost:6379 (TCP) and localhost:6380 (TLS).
 redis-tests = []
 
 [dependencies]
 anyhow = "1.0.57"
 arc-swap = "1.5.0"
 async-trait = "0.1.56"
-clap = { version = "3.2.2", features = ["derive", "env", "unstable-v4"] }
+clap = { version = "3.2.2", features = [
+	"derive",
+	"env",
+	"unstable-v4",
+] }
 colored = "2.0.0"
 fred = { version = "5.1.0", features = [
 	"enable-tls",
@@ -40,7 +45,9 @@ rustls-pemfile = "1.0.0"
 serde = "1.0.137"
 serde_derive = "1.0.137"
 thiserror = "1.0.31"
-tokio = { version = "1.19.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.19.2", features = [
+	"rt-multi-thread",
+] }
 tokio-rustls = "0.23.4"
 tonic = { version = "0.7.2", default-features = false, features = [
 	"compression",
@@ -61,7 +68,14 @@ html-minifier = "3.0.15"
 lol_html = "0.3.1"
 minify-html = "0.8.0"
 sha2 = "0.10.2"
-tonic-build = { version = "0.7.2", features = ["compression"] }
+tonic-build = { version = "0.7.2", features = [
+	"compression",
+] }
+
+[dev-dependencies]
+reqwest = "0.11.11"
+serial_test = "0.7.0"
+tokio = { version = "1.19.2", features = ["full"] }
 
 [profile.release]
 incremental = false
