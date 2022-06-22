@@ -16,6 +16,7 @@
 #![allow(clippy::multiple_crate_versions)]
 
 pub mod api;
+pub mod cli;
 pub mod config;
 pub mod id;
 pub mod normalized;

@@ -1,22 +1,17 @@
 //! End to end links redirector HTTP server tests.
 
+mod util;
+
 use hyper::{header::HeaderValue, StatusCode};
-use pico_args::Arguments;
 use reqwest::{redirect::Policy, ClientBuilder};
-use tracing::Level;
+
+use self::util::start_server;
 
 /// HTTP/1.1 redirect tests
 #[tokio::test]
 #[serial_test::serial]
 async fn http1_redirect() {
-	let server = tokio::spawn(async {
-		links::server::run(
-			Arguments::from_vec(vec!["--example-redirect".into()]),
-			Level::INFO,
-		)
-		.await
-		.unwrap();
-	});
+	let server = start_server(false);
 
 	let client = ClientBuilder::new()
 		.http1_only()
@@ -35,7 +30,6 @@ async fn http1_redirect() {
 	let redirect_res = client.get("http://localhost/example").send().await.unwrap();
 	let status_redirect = redirect_res.status();
 	assert_eq!(status_redirect, StatusCode::FOUND);
-
 	let redirect_dest = redirect_res.headers().get("Location");
 	assert_eq!(
 		redirect_dest,
@@ -52,14 +46,7 @@ async fn http1_redirect() {
 #[tokio::test]
 #[serial_test::serial]
 async fn http2_redirect() {
-	let server = tokio::spawn(async {
-		links::server::run(
-			Arguments::from_vec(vec!["--example-redirect".into()]),
-			Level::INFO,
-		)
-		.await
-		.unwrap();
-	});
+	let server = start_server(false);
 
 	let client = ClientBuilder::new()
 		.http2_prior_knowledge()
@@ -78,7 +65,6 @@ async fn http2_redirect() {
 	let redirect_res = client.get("http://localhost/example").send().await.unwrap();
 	let status_redirect = redirect_res.status();
 	assert_eq!(status_redirect, StatusCode::FOUND);
-
 	let redirect_dest = redirect_res.headers().get("Location");
 	assert_eq!(
 		redirect_dest,

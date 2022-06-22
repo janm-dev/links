@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-06-19*)
+# Dependency Attribution (last updated *2022-06-22*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -398,7 +398,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum 0.5.8`](https://docs.rs/crate/axum/0.5.8)
+## [`axum 0.5.9`](https://docs.rs/crate/axum/0.5.9)
 
 ```txt
 Copyright (c) 2019 Axum Contributors
@@ -765,7 +765,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`clap 3.2.5`](https://docs.rs/crate/clap/3.2.5)
+## [`clap 3.2.6`](https://docs.rs/crate/clap/3.2.6)
 
 ```txt
 The MIT License (MIT)
@@ -791,7 +791,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`clap_derive 3.2.5`](https://docs.rs/crate/clap_derive/3.2.5)
+## [`clap_derive 3.2.6`](https://docs.rs/crate/clap_derive/3.2.6)
 
 ```txt
 The MIT License (MIT)
@@ -817,7 +817,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`clap_lex 0.2.2`](https://docs.rs/crate/clap_lex/0.2.2)
+## [`clap_lex 0.2.3`](https://docs.rs/crate/clap_lex/0.2.3)
 
 ```txt
 The MIT License (MIT)
@@ -4070,7 +4070,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`indexmap 1.9.0`](https://docs.rs/crate/indexmap/1.9.0)
+## [`indexmap 1.9.1`](https://docs.rs/crate/indexmap/1.9.1)
 
 ```txt
 Copyright (c) 2016--2017
@@ -5496,7 +5496,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`mio 0.8.3`](https://docs.rs/crate/mio/0.8.3) by *Carl Lerche <me@carllerche.com>|Thomas de Zeeuw <thomasdezeeuw@gmail.com>|Tokio Contributors <team@tokio.rs>*
+## [`mio 0.8.4`](https://docs.rs/crate/mio/0.8.4) by *Carl Lerche <me@carllerche.com>|Thomas de Zeeuw <thomasdezeeuw@gmail.com>|Tokio Contributors <team@tokio.rs>*
 
 ```txt
 Copyright (c) 2014 Carl Lerche and other MIO contributors
@@ -6618,7 +6618,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`prettyplease 0.1.13`](https://docs.rs/crate/prettyplease/0.1.13) by *David Tolnay <dtolnay@gmail.com>*
+## [`prettyplease 0.1.15`](https://docs.rs/crate/prettyplease/0.1.15) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -6728,7 +6728,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`proc-macro2 1.0.39`](https://docs.rs/crate/proc-macro2/1.0.39) by *David Tolnay <dtolnay@gmail.com>|Alex Crichton <alex@alexcrichton.com>*
+## [`proc-macro2 1.0.40`](https://docs.rs/crate/proc-macro2/1.0.40) by *David Tolnay <dtolnay@gmail.com>|Alex Crichton <alex@alexcrichton.com>*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -7606,7 +7606,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`quote 1.0.19`](https://docs.rs/crate/quote/1.0.19) by *David Tolnay <dtolnay@gmail.com>*
+## [`quote 1.0.20`](https://docs.rs/crate/quote/1.0.20) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Copyright (c) 2016 The Rust Project Developers
@@ -8330,7 +8330,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`rustversion 1.0.6`](https://docs.rs/crate/rustversion/1.0.6) by *David Tolnay <dtolnay@gmail.com>*
+## [`rustversion 1.0.7`](https://docs.rs/crate/rustversion/1.0.7) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
