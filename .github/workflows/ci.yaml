@@ -7,7 +7,7 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -22,7 +22,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -40,7 +40,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -52,3 +52,25 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
+  test:
+    name: Test and report coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: sudo apt-get install -y ca-certificates && sudo cp ${{ GITHUB_WORKSPACE }}/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates
+      - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ GITHUB_WORKSPACE }}/tests/cert.pem:/cert.pem:ro -v ${{ GITHUB_WORKSPACE }}/tests/key.pem:/key.pem:ro redis:7.0-alpine --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: llvm-cov
+      - run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+      - uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: true

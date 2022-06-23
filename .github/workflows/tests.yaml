@@ -1,25 +1,22 @@
-name: Tests
+name: Compatibility tests
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  test-rust:
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        rust: [stable, beta]
-    name: Test Suite on ${{ matrix.os }} with Rust ${{ matrix.rust }}
-    runs-on: ${{ matrix.os }}
+        version: [stable, beta]
+    name: Test with Rust ${{ matrix.version }}
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: ${{ matrix.version }}
           override: true
       - uses: Swatinem/rust-cache@v1
-        with:
-          key: ${{ matrix.os }}-${{ matrix.rust }}
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -30,18 +27,15 @@ jobs:
         version: [6.2-alpine, 7.0-alpine]
     name: Test with Redis ${{ matrix.version }}
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:${{ matrix.version }}
-        ports:
-          - 6379:6379
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           override: true
+      - run: sudo apt-get install -y ca-certificates && sudo cp ${{ GITHUB_WORKSPACE }}/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates
+      - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ GITHUB_WORKSPACE }}/tests/cert.pem:/cert.pem:ro -v ${{ GITHUB_WORKSPACE }}/tests/key.pem:/key.pem:ro redis:${{ matrix.version }} --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
       - uses: Swatinem/rust-cache@v1
       - uses: actions-rs/cargo@v1
         with:
