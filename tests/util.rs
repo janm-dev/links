@@ -14,7 +14,7 @@ use tracing::Level;
 pub fn start_server(tls: bool) -> JoinHandle<()> {
 	let mut args = vec![
 		"--example-redirect".into(),
-		"--api-secret".into(),
+		"--token".into(),
 		"abc123".into(),
 	];
 

@@ -68,7 +68,7 @@ pub async fn run(mut args: Arguments, log_level: Level) -> Result<(), anyhow::Er
 		std::process::exit(0);
 	}
 
-	let enable_tls = args.contains(["-t", "--tls-enable"]);
+	let enable_tls = args.contains(["-t", "--tls"]);
 	let redirect_https = args.contains(["-r", "--redirect-https"]);
 
 	// Set redirector config from args
@@ -83,32 +83,28 @@ pub async fn run(mut args: Arguments, log_level: Level) -> Result<(), anyhow::Er
 		.unwrap_or(config.hsts_age);
 	let config = config;
 
-	// Get API auth secret from args (or generate a random one)
-	let api_secret = Box::leak(Box::new(
-		args.opt_value_from_str(["-a", "--api-secret"])?
+	// Get API auth token from args (or generate a random one)
+	let api_token = Box::leak(Box::new(
+		args.opt_value_from_str(["-T", "--token"])?
 			.unwrap_or_else(|| {
-				let secret = rand::thread_rng()
+				let token = rand::thread_rng()
 					.sample_iter(&Alphanumeric)
 					.take(32)
 					.map(char::from)
 					.collect::<String>();
-				info!("No API secret provided, generated new secret: \"{secret}\"");
-				secret
+				info!("No API token provided, generated new token: \"{token}\"");
+				token
 			}),
 	));
-	debug!("Using API secret: \"{api_secret}\"");
+	debug!("Using API token: \"{api_token}\"");
 
 	// Get TLS cert and key
 	let cert_resolver = if enable_tls {
 		let cert_path = args
-			.opt_value_from_fn::<_, _, anyhow::Error>(["-c", "--tls-cert"], |s| {
-				Ok(PathBuf::from(s))
-			})?
+			.opt_value_from_fn::<_, _, anyhow::Error>(["-c", "--cert"], |s| Ok(PathBuf::from(s)))?
 			.unwrap_or_else(|| PathBuf::from("./cert.pem"));
 		let key_path = args
-			.opt_value_from_fn::<_, _, anyhow::Error>(["-k", "--tls-key"], |s| {
-				Ok(PathBuf::from(s))
-			})?
+			.opt_value_from_fn::<_, _, anyhow::Error>(["-k", "--key"], |s| Ok(PathBuf::from(s)))?
 			.unwrap_or_else(|| PathBuf::from("./key.pem"));
 
 		debug!(
@@ -170,7 +166,7 @@ pub async fn run(mut args: Arguments, log_level: Level) -> Result<(), anyhow::Er
 		let rpc_service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				rpc_service,
-				api::get_auth_checker(api_secret),
+				api::get_auth_checker(api_token),
 			))
 			.into_service();
 
@@ -211,7 +207,7 @@ pub async fn run(mut args: Arguments, log_level: Level) -> Result<(), anyhow::Er
 		let rpc_service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				rpc_service,
-				api::get_auth_checker(api_secret),
+				api::get_auth_checker(api_token),
 			))
 			.into_service();
 

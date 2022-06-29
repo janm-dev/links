@@ -29,11 +29,11 @@ USAGE:
     server [FLAGS] [OPTIONS] [STORE CONFIG]
 
 EXAMPLE:
-    server -tr --disable-server -k './certs/key.pem' --tls-cert './certs/cert.pem' -s redis --store-connect localhost:6379
+    server -tr --disable-server -k './certs/key.pem' --cert './certs/cert.pem' -s redis --store-connect localhost:6379
 
 FLAGS (all default off):
  -h --help                   Print this and exit
- -t --tls-enable             Enable TLS for the HTTPS and gRPC servers. If this is not passed, only HTTP and unencrypted gRPC will be available
+ -t --tls                    Enable TLS for the HTTPS and gRPC servers. If this is not passed, only HTTP and unencrypted gRPC will be available
  -r --redirect-https         Redirect HTTP to HTTPS before doing the external redirect
     --disable-hsts           Disable the Strict-Transport-Security header
     --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this, see https://hstspreload.org/. Requires hsts-age of at least 1 year.)
@@ -44,9 +44,9 @@ FLAGS (all default off):
 
 OPTIONS:
  -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
- -a --api-secret SECRET      Authentication secret for use by the gRPC API (long random ascii string, will generate one if not present)
- -k --tls-key PATH           PEM-encoded private key to use for HTTPS and gRPC servers ("./key.pem" *)
- -c --tls-cert PATH          PEM-encoded certificate to use for HTTPS and gRPC servers ("./cert.pem" *), must be valid for all domains served by these servers
+ -T --token SECRET           Authentication secret for use by the gRPC API (long random ascii string, will generate one if not present)
+ -k --key PATH               PEM-encoded private key to use for HTTPS and gRPC servers ("./key.pem" *)
+ -c --cert PATH              PEM-encoded certificate to use for HTTPS and gRPC servers ("./cert.pem" *), must be valid for all domains served by these servers
     --hsts-age SECONDS       HSTS header max-age (default 2 years)
 
 STORE CONFIG:

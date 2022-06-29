@@ -17,8 +17,6 @@ async fn id() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -41,8 +39,6 @@ async fn new_url() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -69,8 +65,6 @@ async fn new_url_vanity() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -98,8 +92,6 @@ async fn get_id() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -123,8 +115,6 @@ async fn set() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -149,8 +139,6 @@ async fn add() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -175,8 +163,6 @@ async fn rem_id() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),
@@ -200,8 +186,6 @@ async fn rem_vanity() {
 
 	let args: Vec<OsString> = vec![
 		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
 		"--token".into(),
 		"abc123".into(),
 		"--tls".into(),

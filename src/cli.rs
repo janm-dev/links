@@ -31,19 +31,19 @@ struct Cli {
 	command: Commands,
 
 	/// Whether to use TLS when connecting to the gRPC API
-	#[clap(short = 's', long, env = "LINKS_RPC_TLS")]
+	#[clap(short = 't', long, env = "LINKS_RPC_TLS")]
 	tls: bool,
 
 	/// Redirector server hostaname
-	#[clap(short, long, env = "LINKS_RPC_HOST")]
+	#[clap(short = 'H', long, env = "LINKS_RPC_HOST", default_value = "localhost")]
 	host: String,
 
 	/// Redirector gRPC port
-	#[clap(short, long, env = "LINKS_RPC_PORT", default_value = "530")]
+	#[clap(short = 'P', long, env = "LINKS_RPC_PORT", default_value = "530")]
 	port: u16,
 
 	/// gRPC API authentication token
-	#[clap(short, long, env = "LINKS_RPC_TOKEN")]
+	#[clap(short = 'T', long, env = "LINKS_RPC_TOKEN")]
 	token: AsciiMetadataValue,
 
 	/// Show more verbose results

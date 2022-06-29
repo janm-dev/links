@@ -47,7 +47,7 @@ async fn http_to_https_redirect() {
 		links::server::run(
 			Arguments::from_vec(vec![
 				"--example-redirect".into(),
-				"--api-secret".into(),
+				"--token".into(),
 				"abc123".into(),
 				"-t".into(),
 				"-c".into(),
