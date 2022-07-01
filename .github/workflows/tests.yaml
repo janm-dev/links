@@ -3,6 +3,13 @@ name: Compatibility tests
 on: [push, pull_request]
 
 jobs:
+  test-docker:
+    name: Test Docker container build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker build . -t links:test
+
   test-rust:
     strategy:
       matrix:

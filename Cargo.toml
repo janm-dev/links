@@ -14,6 +14,9 @@ default-run = "server"
 # Run tests involving a Redis server. Needs a running links-compatible Redis
 # server on localhost:6379 (TCP) and localhost:6380 (TLS).
 redis-tests = []
+# Compile own OpenSSL as part of the build process of `openssl-sys` for use
+# with the Redis backend. Enables the `vendored-tls` of `fred`.
+vendored-openssl = ["fred/vendored-tls"]
 
 [dependencies]
 anyhow = "1.0.58"
