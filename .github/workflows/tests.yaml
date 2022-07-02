@@ -2,6 +2,9 @@ name: Compatibility tests
 
 on: [push, pull_request]
 
+env:
+  RUST_BACKTRACE: 1
+
 jobs:
   test-docker:
     name: Test Docker container build
