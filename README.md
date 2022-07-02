@@ -1,6 +1,7 @@
 # ![links - an easy to set up selfhostable link shortener](misc/banner.webp)
 
 [![repository license](https://img.shields.io/github/license/janm-dev/links)](https://github.com/janm-dev/links/blob/main/LICENSE)
+[![test coverage](https://codecov.io/gh/janm-dev/links/branch/main/graph/badge.svg?token=SIN9JWZ3BG)](https://codecov.io/gh/janm-dev/links)
 [![regular automated dependency audit](https://github.com/janm-dev/links/actions/workflows/audit.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/audit.yaml)
 [![continuous integration](https://github.com/janm-dev/links/actions/workflows/ci.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/ci.yaml)
 [![compatibility tests](https://github.com/janm-dev/links/actions/workflows/tests.yaml/badge.svg)](https://github.com/janm-dev/links/actions/workflows/tests.yaml)
@@ -14,13 +15,15 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 ## How to set it up
 
-### Docker container
-
-TODO - many important features are still work-in-progress
-
 ### Standalone executable
 
-TODO - many important features are still work-in-progress
+To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments. The server will listen for incoming HTTP requests on port 80 and for API calls on port 530 on all interfaces and addresses.
+
+To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), a certificate and key are required. You can get some for free from [Let's Encrypt](https://letsencrypt.org/). Once you have both of them saved somewhere in `pem` format, run the links server with `-t` to enable tls, and pass the certificate file path with `-c` and the key file path with `-k` (i.e. `links-server -t -c path/to/cert.pem -k path/to/key.pem`). Optionally, you can also pass `-r` to redirect all HTTP requests to HTTPS first, before the external redirect. For information about other optional arguments, run the links server with the `--help` flag.
+
+### Docker container
+
+Since the links docker container is essentially just the server executable in container format, most of [the above section](#standalone-executable) applies, with one difference - tls is enabled by default with a randomly generated (at container build-time) certificate. This certificate and key pair should never be used in production, but they are useful for local testing. The certificate is located in `/cert.pem`, and the key in `/key.pem`. This default configuration is set using the docker command (as opposed to the entrypoint), which by default is set to `-t -c /cert.pem -k /key.pem`, but can be fully overwritten.
 
 ## Editing redirects
 
@@ -28,27 +31,27 @@ TODO - many important features are still work-in-progress
 
 You can access the low-level gRPC API via the links cli to perform operations on the backend store.
 
-For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-h` or `LINKS_RPC_HOST` to specify the redirector's hostname, `-p` or `LINKS_RPC_PORT` to specify the redirector's gRPC API port, and `-t` or `LINKS_RPC_TOKEN` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
+For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-t` to enable TLS encryption (required when it is enabled in the server), `-H` or `LINKS_RPC_HOST` to specify the redirector's hostname, `-P` or `LINKS_RPC_PORT` to specify the redirector's gRPC API port, and `-T` or `LINKS_RPC_TOKEN` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
 
 To create a new redirect with a random ID and an optional vanity path, run
 
 ```sh
-#          or use environment variables        destination URL    optional vanity path
-links-cli -h 'LINKS HOST' -t 'API TOKEN' new https://example.com/ example-vanity-path
+#            or use environment variables              destination URL    optional vanity path
+links-cli -H 'links-host.example' -T 'API TOKEN' new https://example.com/ example-vanity-path
 ```
 
 To remove a redirect or vanity path, run
 
 ```sh
-#          or use environment variables          or link ID
-links-cli -h 'LINKS HOST' -t 'API TOKEN' rem example-vanity-path
+#    or use environment variables        vanity path or link ID
+links-cli -T 'RANDOM SECRET API TOKEN' rem example-vanity-path
 ```
 
 To change a redirect's destination URL, run
 
 ```sh
-#          or use environment variables      link ID    new destination URL
-links-cli -h 'LINKS HOST' -t 'API TOKEN' set 0pB5DK8T https://example.com/new
+#             link ID    new destination URL
+links-cli set 0pB5DK8T https://example.com/new
 ```
 
 For instructions on more `links-cli` subcommands, run `links-cli help`.
@@ -75,29 +78,31 @@ The backend store is accessed by the redirector server, and can also be used via
 
 ## How to build it
 
-To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs). You also need to install [CMake](https://cmake.org/) or [protoc](https://grpc.io/docs/protoc-installation/) to compile .proto files.
+To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs). You also need to install [CMake or protoc](https://github.com/tokio-rs/prost/tree/master/prost-build#protoc) to compile .proto files.
 Once you have all of those installed, you can simply run `cargo build --release` to build an optimized release version of all links binaries, which will be located in `/target/release/`. On Windows the executables have a `.exe` file extension (e.g. `server.exe`), on Linux they don't have a file extension at all (e.g. `server`).
 If you just want to try links out, you can also just run it with `cargo run`. This version will not be optimized and will include debug symbols.
 
-To build a links redirector Docker container, run `docker build .`. The server binary in the container will be release-optimized. The container itself is made to be lightweight, using a `FROM scratch` container with a statically linked musl-libc and OpenSSL for the final image to avoid the size overhead of Debian or Alpine. The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
+To build a links redirector Docker container, run `docker build .`. The server binary in the container will be release-optimized. The container itself is made to be lightweight, using a `FROM scratch` container with statically linked musl-libc and OpenSSL for the final image to avoid the size overhead of Debian or Alpine. The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
 
 ## Directory structure
 
-| path          | contents                                        |
-| ------------- | ----------------------------------------------- |
-| `/misc/`      | miscellaneous static assets                     |
-| `/proto/`     | links protobuf/gRPC files for the low-level API |
-| `/src/`       | rust source for all non-website links stuff     |
-| `/src/bin/`   | executable binary sources                       |
-| `/src/store/` | implementation of storage backends              |
-| `/.github/`   | github-specific configuration/resources         |
-| `/target/`    | Rust build output <sup>_(do not commit)_</sup>  |
-| `/build.rs`   | Rust build script, compiles gRPC .proto files   |
-| `/Dockerfile` | links redirector server docker container        |
+| path          | contents                                               |
+| ------------- | ------------------------------------------------------ |
+| `/misc/`      | miscellaneous static assets                            |
+| `/proto/`     | links protobuf/gRPC files for the low-level API        |
+| `/src/`       | rust source for all non-website links stuff            |
+| `/src/bin/`   | executable binary sources                              |
+| `/src/store/` | implementation of storage backends                     |
+| `/tests/`     | integration/end-to-end testing of links                |
+| `/.github/`   | github-specific configuration/resources                |
+| `/target/`    | rust build output <sup>_(do not commit)_</sup>         |
+| `/build.rs`   | rust build script, compiles protobuf and minifies html |
+| `/Dockerfile` | links redirector server docker container               |
 
 ## Attribution
 
 - The readme header is based on an image of the Gale crater on Mars (where there is a rock outcrop named "Link") courtesy NASA/JPL-Caltech.
+- For software dependency attribution and licenses see [`ATTRIBUTION.md`](./ATTRIBUTION.md).
 
 ## License
 
