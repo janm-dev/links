@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-07-01*)
+# Dependency Attribution (last updated *2022-07-03*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -233,6 +233,32 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
+## [`async-compression 0.3.14`](https://docs.rs/crate/async-compression/0.3.14) by *Wim Looman <wim@nemo157.com>|Allen Bui <fairingrey@gmail.com>*
+
+```txt
+The MIT License (MIT)
+
+Copyright (c) 2018 the rustasync developers
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## [`async-stream 0.3.3`](https://docs.rs/crate/async-stream/0.3.3) by *Carl Lerche <me@carllerche.com>*
 
 ```txt
@@ -428,7 +454,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum 0.5.10`](https://docs.rs/crate/axum/0.5.10)
+## [`axum 0.5.11`](https://docs.rs/crate/axum/0.5.11)
 
 ```txt
 Copyright (c) 2019 Axum Contributors
@@ -1530,7 +1556,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`crypto-common 0.1.3`](https://docs.rs/crate/crypto-common/0.1.3) by *RustCrypto Developers*
+## [`crypto-common 0.1.4`](https://docs.rs/crate/crypto-common/0.1.4) by *RustCrypto Developers*
 
 ```txt
 Copyright (c) 2021 RustCrypto Developers
@@ -3004,7 +3030,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`filetime 0.2.16`](https://docs.rs/crate/filetime/0.2.16) by *Alex Crichton <alex@alexcrichton.com>*
+## [`filetime 0.2.17`](https://docs.rs/crate/filetime/0.2.17) by *Alex Crichton <alex@alexcrichton.com>*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -4098,6 +4124,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
+## [`hyper-rustls 0.23.0`](https://docs.rs/crate/hyper-rustls/0.23.0) by *Joseph Birr-Pixton <jpixton@gmail.com>*
+
+```txt
+Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+```
+
 ## [`hyper-timeout 0.4.1`](https://docs.rs/crate/hyper-timeout/0.4.1) by *Herman J. Radtke III <herman@hermanradtke.com>*
 
 ```txt
@@ -4122,30 +4178,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```
-
-## [`hyper-tls 0.5.0`](https://docs.rs/crate/hyper-tls/0.5.0) by *Sean McArthur <sean@seanmonstar.com>*
-
-```txt
-Copyright (c) 2017 Sean McArthur
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
 ```
 
 ## [`idna 0.2.3`](https://docs.rs/crate/idna/0.2.3) by *The rust-url developers*
@@ -6766,7 +6798,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`pin-project 1.0.10`](https://docs.rs/crate/pin-project/1.0.10)
+## [`pin-project 1.0.11`](https://docs.rs/crate/pin-project/1.0.11)
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -6794,7 +6826,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`pin-project-internal 1.0.10`](https://docs.rs/crate/pin-project-internal/1.0.10)
+## [`pin-project-internal 1.0.11`](https://docs.rs/crate/pin-project-internal/1.0.11)
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9327,7 +9359,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde 1.0.137`](https://docs.rs/crate/serde/1.0.137) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde 1.0.138`](https://docs.rs/crate/serde/1.0.138) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9355,7 +9387,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_derive 1.0.137`](https://docs.rs/crate/serde_derive/1.0.137) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde_derive 1.0.138`](https://docs.rs/crate/serde_derive/1.0.138) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -10884,7 +10916,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`tracing-attributes 0.1.21`](https://docs.rs/crate/tracing-attributes/0.1.21) by *Tokio Contributors <team@tokio.rs>|Eliza Weisman <eliza@buoyant.io>|David Barsky <dbarsky@amazon.com>*
+## [`tracing-attributes 0.1.22`](https://docs.rs/crate/tracing-attributes/0.1.22) by *Tokio Contributors <team@tokio.rs>|Eliza Weisman <eliza@buoyant.io>|David Barsky <dbarsky@amazon.com>*
 
 ```txt
 Copyright (c) 2019 Tokio Contributors
@@ -11004,7 +11036,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`tracing-subscriber 0.3.11`](https://docs.rs/crate/tracing-subscriber/0.3.11) by *Eliza Weisman <eliza@buoyant.io>|David Barsky <me@davidbarsky.com>|Tokio Contributors <team@tokio.rs>*
+## [`tracing-subscriber 0.3.14`](https://docs.rs/crate/tracing-subscriber/0.3.14) by *Eliza Weisman <eliza@buoyant.io>|David Barsky <me@davidbarsky.com>|Tokio Contributors <team@tokio.rs>*
 
 ```txt
 Copyright (c) 2019 Tokio Contributors
@@ -11143,7 +11175,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`unicode-normalization 0.1.20`](https://docs.rs/crate/unicode-normalization/0.1.20) by *kwantam <kwantam@gmail.com>|Manish Goregaokar <manishsmail@gmail.com>*
+## [`unicode-normalization 0.1.21`](https://docs.rs/crate/unicode-normalization/0.1.21) by *kwantam <kwantam@gmail.com>|Manish Goregaokar <manishsmail@gmail.com>*
 
 ```txt
 Copyright (c) 2015 The Rust Project Developers

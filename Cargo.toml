@@ -15,7 +15,7 @@ default-run = "server"
 # server on localhost:6379 (TCP) and localhost:6380 (TLS).
 redis-tests = []
 # Compile own OpenSSL as part of the build process of `openssl-sys` for use
-# with the Redis backend. Enables the `vendored-tls` of `fred`.
+# with the Redis backend. Enables the `vendored-tls` feature of `fred`.
 vendored-openssl = ["fred/vendored-tls"]
 
 [dependencies]
@@ -45,8 +45,8 @@ prost = "0.10.4"
 rand = "0.8.5"
 regex = "1.5.6"
 rustls-pemfile = "1.0.0"
-serde = "1.0.137"
-serde_derive = "1.0.137"
+serde = "1.0.138"
+serde_derive = "1.0.138"
 thiserror = "1.0.31"
 tokio = { version = "1.19.2", features = [
 	"rt-multi-thread",
@@ -61,8 +61,8 @@ tonic = { version = "0.7.2", default-features = false, features = [
 	"prost",
 ] }
 tracing = "0.1.35"
-tracing-subscriber = "0.3.11"
-unicode-normalization = "0.1.20"
+tracing-subscriber = "0.3.14"
+unicode-normalization = "0.1.21"
 uriparse = "0.6.4"
 
 [build-dependencies]
