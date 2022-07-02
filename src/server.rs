@@ -109,12 +109,16 @@ pub async fn run(mut args: Arguments, log_level: Level) -> Result<(), anyhow::Er
 
 		debug!(
 			"Using cert file: \"{}\", key file \"{}\"",
-			cert_path.clone().to_string_lossy(),
-			key_path.clone().to_string_lossy()
+			cert_path.to_string_lossy(),
+			key_path.to_string_lossy()
 		);
 
+		// This does synchronous file IO inside of an async function, which
+		// would usually be bad. However, here this is done only on server
+		// startup, and using `tokio::task::spawn_blocking` causes weird issues
+		// in tests on linux.
 		let resolver: Arc<dyn ResolvesServerCert + 'static> =
-			Arc::new(CertificateResolver::new(key_path, cert_path).await?);
+			Arc::new(CertificateResolver::new(key_path, cert_path)?);
 
 		Some(resolver)
 	} else {

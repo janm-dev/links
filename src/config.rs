@@ -16,7 +16,6 @@ use std::{
 
 use arc_swap::ArcSwap;
 use notify::{DebouncedEvent, RecursiveMode, Watcher};
-use tokio::task::spawn_blocking;
 use tokio_rustls::rustls::{
 	server::{ClientHello, ResolvesServerCert},
 	sign::{self, CertifiedKey, SignError},
@@ -101,12 +100,17 @@ impl CertificateResolver {
 	/// will then be watched for changes on a newly spawned thread. When the
 	/// TLS cert or key files change, the stored certified key will be updated.
 	///
+	/// # File IO
+	/// Note that this function uses [`get_certkey`], which does synchronous
+	/// file IO. Caution is advised when using this function in an asynchronous
+	/// environment.
+	///
 	/// # Errors
 	/// This function returns an error if:
 	/// - The file watcher could not be instantiated
 	/// - The file watcher could not watch either of the file paths provided
 	/// - There was an issue with the certificate or key (see [`get_certkey`])
-	pub async fn new<P: Into<PathBuf> + Send>(key_path: P, cert_path: P) -> anyhow::Result<Self> {
+	pub fn new<P: Into<PathBuf> + Send>(key_path: P, cert_path: P) -> anyhow::Result<Self> {
 		let key_path = key_path.into();
 		let cert_path = cert_path.into();
 
@@ -118,7 +122,7 @@ impl CertificateResolver {
 
 		let key = key_path.clone();
 		let cert = cert_path.clone();
-		let cert_key = spawn_blocking(move || get_certkey(&cert, &key)).await??;
+		let cert_key = get_certkey(&cert, &key)?;
 
 		let cert_key = Arc::new(ArcSwap::from_pointee(cert_key));
 		let current = Arc::clone(&cert_key);
