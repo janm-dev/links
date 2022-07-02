@@ -84,6 +84,10 @@ If you just want to try links out, you can also just run it with `cargo run`. Th
 
 To build a links redirector Docker container, run `docker build .`. The server binary in the container will be release-optimized. The container itself is made to be lightweight, using a `FROM scratch` container with statically linked musl-libc and OpenSSL for the final image to avoid the size overhead of Debian or Alpine. The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
 
+### MSRV
+
+The minimum supported rust version is currently Rust 1.61, but this may change in the future with a minor version update.
+
 ## Directory structure
 
 | path          | contents                                               |
