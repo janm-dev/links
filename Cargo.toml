@@ -77,7 +77,10 @@ tonic-build = { version = "0.7.2", features = [
 
 [dev-dependencies]
 regex = "1.5.6"
-reqwest = "0.11.11"
+reqwest = { version = "0.11.11", default_features = false, features = [
+	"rustls-tls-native-roots",
+	"gzip",
+] }
 serial_test = "0.8.0"
 tokio = { version = "1.19.2", features = ["full"] }
 
