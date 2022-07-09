@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-07-03*)
+# Dependency Attribution (last updated *2022-07-09*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -3060,7 +3060,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`fixedbitset 0.4.1`](https://docs.rs/crate/fixedbitset/0.4.1) by *bluss*
+## [`fixedbitset 0.4.2`](https://docs.rs/crate/fixedbitset/0.4.2) by *bluss*
 
 ```txt
 Copyright (c) 2015-2017
@@ -3795,7 +3795,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`hashbrown 0.12.1`](https://docs.rs/crate/hashbrown/0.12.1) by *Amanieu d'Antras <amanieu@gmail.com>*
+## [`hashbrown 0.12.2`](https://docs.rs/crate/hashbrown/0.12.2) by *Amanieu d'Antras <amanieu@gmail.com>*
 
 ```txt
 Copyright (c) 2016 Amanieu d'Antras
@@ -4100,7 +4100,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`hyper 0.14.19`](https://docs.rs/crate/hyper/0.14.19) by *Sean McArthur <sean@seanmonstar.com>*
+## [`hyper 0.14.20`](https://docs.rs/crate/hyper/0.14.20) by *Sean McArthur <sean@seanmonstar.com>*
 
 ```txt
 Copyright (c) 2014-2021 Sean McArthur
@@ -6251,7 +6251,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`once_cell 1.12.0`](https://docs.rs/crate/once_cell/1.12.0) by *Aleksey Kladov <aleksey.kladov@gmail.com>*
+## [`once_cell 1.13.0`](https://docs.rs/crate/once_cell/1.13.0) by *Aleksey Kladov <aleksey.kladov@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -6383,7 +6383,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`openssl-src 111.21.0+1.1.1p`](https://docs.rs/crate/openssl-src/111.21.0+1.1.1p) by *Alex Crichton <alex@alexcrichton.com>*
+## [`openssl-src 111.22.0+1.1.1q`](https://docs.rs/crate/openssl-src/111.22.0+1.1.1q) by *Alex Crichton <alex@alexcrichton.com>*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -8352,7 +8352,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## [`regex 1.5.6`](https://docs.rs/crate/regex/1.5.6) by *The Rust Project Developers*
+## [`regex 1.6.0`](https://docs.rs/crate/regex/1.6.0) by *The Rust Project Developers*
 
 ```txt
 Copyright (c) 2014 The Rust Project Developers
@@ -8382,7 +8382,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`regex-syntax 0.6.26`](https://docs.rs/crate/regex-syntax/0.6.26) by *The Rust Project Developers*
+## [`regex-syntax 0.6.27`](https://docs.rs/crate/regex-syntax/0.6.27) by *The Rust Project Developers*
 
 ```txt
 Copyright (c) 2014 The Rust Project Developers
