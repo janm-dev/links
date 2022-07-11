@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-07-09*)
+# Dependency Attribution (last updated *2022-07-12*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -454,7 +454,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum 0.5.11`](https://docs.rs/crate/axum/0.5.11)
+## [`axum 0.5.12`](https://docs.rs/crate/axum/0.5.12)
 
 ```txt
 Copyright (c) 2019 Axum Contributors
@@ -484,7 +484,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum-core 0.2.6`](https://docs.rs/crate/axum-core/0.2.6)
+## [`axum-core 0.2.7`](https://docs.rs/crate/axum-core/0.2.7)
 
 ```txt
 Copyright 2021 Axum Contributors
@@ -1556,7 +1556,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`crypto-common 0.1.4`](https://docs.rs/crate/crypto-common/0.1.4) by *RustCrypto Developers*
+## [`crypto-common 0.1.5`](https://docs.rs/crate/crypto-common/0.1.5) by *RustCrypto Developers*
 
 ```txt
 Copyright (c) 2021 RustCrypto Developers
@@ -6309,7 +6309,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`openssl 0.10.40`](https://docs.rs/crate/openssl/0.10.40) by *Steven Fackler <sfackler@gmail.com>*
+## [`openssl 0.10.41`](https://docs.rs/crate/openssl/0.10.41) by *Steven Fackler <sfackler@gmail.com>*
 
 ```txt
 Copyright 2011-2017 Google Inc.
@@ -6413,7 +6413,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`openssl-sys 0.9.74`](https://docs.rs/crate/openssl-sys/0.9.74) by *Alex Crichton <alex@alexcrichton.com>|Steven Fackler <sfackler@gmail.com>*
+## [`openssl-sys 0.9.75`](https://docs.rs/crate/openssl-sys/0.9.75) by *Alex Crichton <alex@alexcrichton.com>|Steven Fackler <sfackler@gmail.com>*
 
 ```txt
 Copyright (c) 2014 Alex Crichton
@@ -7022,7 +7022,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`prettyplease 0.1.15`](https://docs.rs/crate/prettyplease/0.1.15) by *David Tolnay <dtolnay@gmail.com>*
+## [`prettyplease 0.1.16`](https://docs.rs/crate/prettyplease/0.1.16) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9359,7 +9359,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde 1.0.138`](https://docs.rs/crate/serde/1.0.138) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde 1.0.139`](https://docs.rs/crate/serde/1.0.139) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9387,7 +9387,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_derive 1.0.138`](https://docs.rs/crate/serde_derive/1.0.138) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde_derive 1.0.139`](https://docs.rs/crate/serde_derive/1.0.139) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any

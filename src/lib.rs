@@ -11,8 +11,6 @@
 	missing_docs,
 	rustdoc::all
 )]
-// Allowed due to false positives relating to `wasi`, a transitive dependency
-// never used on any target supported by links.
 #![allow(clippy::multiple_crate_versions)]
 
 pub mod api;
