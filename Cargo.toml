@@ -22,7 +22,7 @@ vendored-openssl = ["fred/vendored-tls"]
 anyhow = "1.0.58"
 arc-swap = "1.5.0"
 async-trait = "0.1.56"
-clap = { version = "3.2.8", features = [
+clap = { version = "3.2.14", features = [
 	"derive",
 	"env",
 	"unstable-v4",
