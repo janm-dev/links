@@ -45,7 +45,7 @@ prost = "0.10.4"
 rand = "0.8.5"
 regex = "1.6.0"
 rustls-pemfile = "1.0.0"
-serde = "1.0.139"
+serde = "1.0.141"
 serde_derive = "1.0.139"
 thiserror = "1.0.31"
 tokio = { version = "1.19.2", features = [
