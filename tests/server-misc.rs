@@ -2,65 +2,37 @@
 
 mod util;
 
-use std::ffi::OsString;
-
 use hyper::{header::HeaderValue, StatusCode};
-use pico_args::Arguments;
 use reqwest::{redirect::Policy, ClientBuilder};
-use tracing::Level;
 
 /// Test random API secret generation
 #[tokio::test]
 #[serial_test::serial]
 async fn random_secret() {
-	let server = tokio::spawn(async {
-		links::server::run(
-			Arguments::from_vec(vec!["--example-redirect".into()]),
-			Level::INFO,
-		)
-		.await
-		.unwrap();
-	});
+	let _terminator = util::start_server_with_args(vec!["--example-redirect"]);
 
-	let args: Vec<OsString> = vec![
-		"links-cli".into(),
-		"--host".into(),
-		"localhost".into(),
-		"--token".into(),
-		"abc123".into(),
-		"id".into(),
-	];
+	let args = vec!["--host", "localhost", "--token", "abc123", "id"];
 
-	let res = links::cli::run(args).await.unwrap_err();
+	let res = util::run_cli(args);
 
 	assert_re!(r#"auth token is invalid"#, res);
-
-	server.abort();
-	server.await.unwrap_err();
 }
 
 /// HTTP to HTTPS redirect
 #[tokio::test]
 #[serial_test::serial]
 async fn http_to_https_redirect() {
-	let server = tokio::spawn(async {
-		links::server::run(
-			Arguments::from_vec(vec![
-				"--example-redirect".into(),
-				"--token".into(),
-				"abc123".into(),
-				"-t".into(),
-				"-c".into(),
-				concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem").into(),
-				"-k".into(),
-				concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem").into(),
-				"--redirect-https".into(),
-			]),
-			Level::INFO,
-		)
-		.await
-		.unwrap();
-	});
+	let _terminator = util::start_server_with_args(vec![
+		"--example-redirect",
+		"--token",
+		"abc123",
+		"--tls",
+		"force",
+		"--tls-cert",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
+		"--tls-key",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
+	]);
 
 	let client = ClientBuilder::new()
 		.redirect(Policy::none())
@@ -92,7 +64,4 @@ async fn http_to_https_redirect() {
 	);
 	let redirect_id = redirect_res.headers().get("Link-ID");
 	assert_eq!(redirect_id, None);
-
-	server.abort();
-	server.await.unwrap_err();
 }

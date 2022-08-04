@@ -16,18 +16,21 @@
 //! - `links:vanity:[vanity]` for vanity paths (with string values of IDs)
 //! - `links:stat:*` reserved for statistics
 
-use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::{
+	collections::HashMap,
+	fmt::{Debug, Formatter, Result as FmtResult},
+};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use fred::{
 	pool::RedisPool,
 	prelude::*,
 	types::{RespVersion, TlsConfig},
 };
-use pico_args::Arguments;
 use tracing::instrument;
 
+use super::BackendType;
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
@@ -42,28 +45,27 @@ use crate::{
 /// **Store backend name:**
 /// `redis`
 ///
-/// **Command-line flags:**
-/// - `--store-cluster`: Use Redis cluster mode. If this is present, cluster
-///   information will be requested from Redis nodes (which will fail if the
-///   server isn't in cluster mode). If this flag is not present, only one
-///   single Redis server will be used.
-/// - `--store-tls`: Enable TLS (using system root CAs) when communicating with
-///   the Redis server.
-///
-/// **Command-line options:**
-/// - `--store-connect`: Connection information in the format of `host:port` to
-///   connect to. When using Redis in cluster mode, you can pass this option
-///   multiple times for different nodes, but only one is required (the others
-///   will be automatically discovered). Note that this is not a full URL.
-/// - `--store-username`: The username to use for the connection, when using
-///   ACLs on the server. Don't specify this when using password-based auth.
-/// - `--store-password`: The password to use for the Redis connection. This can
-///   either be the user's password (when using ACLs) or the global server
-///   password when using password-based authentication.
-/// - `--store-pool-size`: The number of connections to use in the connection
-///   pool. **Default `8`**.
-/// - `--store-database`: The database number to use for the Redis connection.
-///   **Default `0`**.
+/// **Configuration:**
+/// - `cluster`: Use Redis cluster mode. If this is enabled, cluster information
+///   will be requested from Redis nodes (which will fail if the server isn't in
+///   cluster mode). *`true` / `false`*. **Default `false`**.
+/// - `connect`: Connection information in the format of `host:port` to connect
+///   to. When using Redis in cluster mode, you can configure multiple
+///   `host:port` pairs seperated by commas for different nodes (i.e.
+///   `host1:port1,host2:port2,host3:port3`), but only one is required (the
+///   others will be automatically discovered). Note that this is not a full
+///   URL, just the host and port.
+/// - `username`: The username to use for the connection, when using ACLs on the
+///   server. Don't specify this when using password-based auth.
+/// - `password`: The password to use for the Redis connection. This can either
+///   be the user's password (when using ACLs) or the global server password
+///   when using password-based authentication.
+/// - `database`: The database number to use for the Redis connection. **Default
+///   `0`**.
+/// - `tls`: Enable TLS (using system root CAs) when communicating with the
+///   Redis server. *`true` / `false`*. **Default `false`**.
+/// - `pool_size`: The number of connections to use in the connection pool.
+///   **Default `8`**.
 pub struct Store {
 	pool: RedisPool,
 }
@@ -76,50 +78,56 @@ impl Debug for Store {
 
 #[async_trait]
 impl StoreBackend for Store {
-	fn backend_name() -> &'static str
+	fn store_type() -> BackendType
 	where
 		Self: Sized,
 	{
-		"redis"
+		BackendType::Redis
 	}
 
-	fn get_backend_name(&self) -> &'static str {
-		"redis"
+	fn get_store_type(&self) -> BackendType {
+		BackendType::Redis
 	}
 
 	#[instrument(level = "trace", ret, err)]
-	async fn new(config: &mut Arguments) -> Result<Self> {
-		let server_config = if config.contains("--store-cluster") {
+	async fn new(config: &HashMap<String, String>) -> Result<Self> {
+		let server_config = if config.get("cluster").map_or(Ok(false), |s| s.parse())? {
 			ServerConfig::Clustered {
-				hosts: config.values_from_fn::<_, _, anyhow::Error>("--store-connect", |s| {
-					s.split_once(':')
-						.map(|v| Ok((v.0.to_string(), v.1.parse::<u16>()?)))
-						.ok_or_else(|| anyhow::anyhow!("couldn't parse --store-connect value"))?
-				})?,
+				hosts: config
+					.get("connect")
+					.ok_or_else(|| anyhow!("missing connect option"))?
+					.split(',')
+					.map(|s| {
+						s.trim()
+							.split_once(':')
+							.map(|v| Ok((v.0.to_string(), v.1.parse::<u16>()?)))
+							.ok_or_else(|| anyhow!("couldn't parse connect value"))?
+					})
+					.collect::<Result<_, anyhow::Error>>()?,
 			}
 		} else {
-			let (host, port) =
-				config.value_from_fn::<_, _, anyhow::Error>("--store-connect", |s| {
+			let (host, port) = config
+				.get("connect")
+				.map(|s| {
 					s.split_once(':')
-						.map(|v| Ok((v.0.to_string(), v.1.parse::<u16>()?)))
-						.ok_or_else(|| anyhow::anyhow!("couldn't parse --store-connect value"))?
-				})?;
+						.map::<Result<_, anyhow::Error>, _>(|v| {
+							Ok((v.0.to_string(), v.1.parse::<u16>()?))
+						})
+						.ok_or_else(|| anyhow!("couldn't parse connect value"))?
+				})
+				.ok_or_else(|| anyhow!("missing connect option"))??;
 
 			ServerConfig::Centralized { host, port }
 		};
 
 		let pool_config = RedisConfig {
-			username: config.opt_value_from_fn::<_, _, anyhow::Error>("--store-username", |s| {
-				Ok(s.to_string())
-			})?,
-			password: config.opt_value_from_fn::<_, _, anyhow::Error>("--store-password", |s| {
-				Ok(s.to_string())
-			})?,
+			username: config.get("username").map(String::clone),
+			password: config.get("password").map(String::clone),
 			server: server_config,
 			version: RespVersion::RESP3,
-			database: config.opt_value_from_fn("--store-database", |s| str::parse::<u8>(s))?,
+			database: config.get("database").map(|s| s.parse()).transpose()?,
 			tracing: true,
-			tls: if config.contains("--store-tls") {
+			tls: if config.get("tls").map_or(Ok(false), |s| s.parse())? {
 				Some(TlsConfig::default())
 			} else {
 				None
@@ -130,7 +138,9 @@ impl StoreBackend for Store {
 		let pool = RedisPool::new(
 			pool_config,
 			config
-				.opt_value_from_fn("--store-pool-size", str::parse)?
+				.get("pool_size")
+				.map(|s| s.parse())
+				.transpose()?
 				.unwrap_or(8),
 		)?;
 
@@ -198,30 +208,28 @@ impl StoreBackend for Store {
 /// to run these tests on a production Redis server.
 #[cfg(all(test, feature = "redis-tests"))]
 mod tests {
-	use std::{ffi::OsString, str::FromStr};
-
-	use pico_args::Arguments;
+	use std::collections::HashMap;
 
 	use super::Store;
 	use crate::store::{tests, StoreBackend as _};
 
 	async fn get_store() -> Store {
-		Store::new(&mut Arguments::from_vec(vec![
-			OsString::from_str("--store-connect").unwrap(),
-			OsString::from_str("localhost:6379").unwrap(),
-		]))
+		Store::new(&HashMap::from_iter([(
+			"connect".to_string(),
+			"localhost:6379".to_string(),
+		)]))
 		.await
 		.unwrap()
 	}
 
 	#[test]
-	fn backend_name() {
-		tests::backend_name::<Store>();
+	fn store_type() {
+		tests::store_type::<Store>();
 	}
 
 	#[tokio::test]
-	async fn get_backend_name() {
-		tests::get_backend_name::<Store>(&get_store().await);
+	async fn get_store_type() {
+		tests::get_store_type::<Store>(&get_store().await);
 	}
 
 	#[tokio::test]

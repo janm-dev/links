@@ -19,11 +19,22 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments. The server will listen for incoming HTTP requests on port 80 and for API calls on port 530 on all interfaces and addresses.
 
-To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), a certificate and key are required. You can get some for free from [Let's Encrypt](https://letsencrypt.org/). Once you have both of them saved somewhere in `pem` format, run the links server with `-t` to enable tls, and pass the certificate file path with `-c` and the key file path with `-k` (i.e. `links-server -t -c path/to/cert.pem -k path/to/key.pem`). Optionally, you can also pass `-r` to redirect all HTTP requests to HTTPS first, before the external redirect. For information about other optional arguments, run the links server with the `--help` flag.
+To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), a certificate and key are required. You can get some for free from [Let's Encrypt](https://letsencrypt.org/). Once you have both of them saved somewhere in `pem` format, run the links server with `--tls on` to enable tls, and pass the certificate file path with `--tls-cert` and the key file path with `--tls-key` (i.e. `links-server --tls on --tls-cert path/to/cert.pem --tls-key path/to/key.pem`). Optionally, you can use `--tls force` to redirect all HTTP requests to HTTPS first, before the external redirect. The command-line options have the same name as the same config option in the file, but they are in `kebab-case`, e.g. `--log-level ...`. For information about other optional arguments, run the links server with the `--help` flag.
+
+In addition to command-line arguments, the links redirector server can also be configured using a config file, in toml, yaml, or json format. To load the configuration file, specify it with `--config path/to/config.file` when running the server. Self-documenting example config files can be found at [example_config.toml](./example_config.toml), [example_config.yaml](./example_config.yaml), and [example_config.json](./example_config.json).
+
+Environment variables can also be used for configuration, similarly to command-line arguments. The environment variables have the same name as the same config option in the file, but they are in `SCREAMING_SNAKE_CASE` with the prefix `LINKS_`, e.g. `LINKS_LOG_LEVEL=...`.
+
+You can use one or more of the above configuration methods at the same time. If an option is specified with multiple of these methods, the following order of precedence is used, later sources overriding earlier ones:
+
+0. default values
+1. environment variables
+2. config file
+3. command-line arguments
 
 ### Docker container
 
-Since the links docker container is essentially just the server executable in container format, most of [the above section](#standalone-executable) applies, with one difference - tls is enabled by default with a randomly generated (at container build-time) certificate. This certificate and key pair should never be used in production, but they are useful for local testing. The certificate is located in `/cert.pem`, and the key in `/key.pem`. This default configuration is set using the docker command (as opposed to the entrypoint), which by default is set to `-t -c /cert.pem -k /key.pem`, but can be fully overwritten.
+Since the links docker container is essentially just the server executable in container format, most of [the above section](#standalone-executable) applies, with one difference - tls is enabled by default with a randomly generated (at container build-time) self-signed certificate. This certificate and key pair should never be used in production, but they are useful for local testing. The certificate is located in `/cert.pem`, and the key in `/key.pem`. This default configuration is set from a config file located in `/config.toml`, set via the docker command with `--config /config.toml`.
 
 ## Editing redirects
 
@@ -78,9 +89,9 @@ The backend store is accessed by the redirector server, and can also be used via
 
 ## How to build it
 
-To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs). You also need to install [CMake or protoc](https://github.com/tokio-rs/prost/tree/master/prost-build#protoc) to compile .proto files.
-Once you have all of those installed, you can simply run `cargo build --release` to build an optimized release version of all links binaries, which will be located in `/target/release/`. On Windows the executables have a `.exe` file extension (e.g. `server.exe`), on Linux they don't have a file extension at all (e.g. `server`).
-If you just want to try links out, you can also just run it with `cargo run`. This version will not be optimized and will include debug symbols.
+To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs). You also need to install a recent version of [protoc](https://github.com/protocolbuffers/protobuf#protocol-compiler-installation) to compile .proto files.
+Once you have all of those installed, you can simply run `cargo build --release` to build an optimized release version of all links binaries, which will be located in `/target/release/`.
+If you just want to try links out, you can also just run it with `cargo run`. This version will not be optimized and will include debug symbols, but will compile faster.
 
 To build a links redirector Docker container, run `docker build .`. The server binary in the container will be release-optimized. The container itself is made to be lightweight, using a `FROM scratch` container with statically linked musl-libc and OpenSSL for the final image to avoid the size overhead of Debian or Alpine. The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
 

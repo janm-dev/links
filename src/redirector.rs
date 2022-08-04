@@ -8,43 +8,12 @@ use tokio::time::Instant;
 use tracing::{debug, info, instrument, trace};
 
 use crate::{
+	config::{Hsts, Redirector as Config},
 	id::Id,
 	normalized::Normalized,
 	store::Store,
-	util::{csp_hashes, include_html, A_YEAR, SERVER_NAME},
+	util::{csp_hashes, include_html, SERVER_NAME},
 };
-
-/// Configuration for how the redirector should behave.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct Config {
-	/// Whether to enable HTTP Strict Transport Security
-	pub enable_hsts: bool,
-	/// Whether to preload HTTP Strict Transport Security (also sets
-	/// `includeSubDomains`)
-	pub preload_hsts: bool,
-	/// Value of `max-age` on the Strict Transport Security header in seconds
-	pub hsts_age: u32,
-	/// Whether to send the `Alt-Svc` header advertising `h2` on port 443
-	pub enable_alt_svc: bool,
-	/// Whether to send the `Server` header
-	pub enable_server: bool,
-	/// Whether to send the `Content-Security-Policy` header
-	pub enable_csp: bool,
-}
-
-impl Default for Config {
-	fn default() -> Self {
-		Self {
-			enable_hsts: true,
-			preload_hsts: false,
-			hsts_age: 2 * A_YEAR,
-			enable_alt_svc: false,
-			enable_server: true,
-			enable_csp: true,
-		}
-	}
-}
 
 /// Redirects the `req`uest to the appropriate target URL (if one is found in
 /// the `store`) or returns a `404 Not Found` response. When redirecting, the
@@ -65,10 +34,11 @@ pub async fn redirector(
 
 	// Set default response headers
 	res = res.header("Referrer-Policy", "unsafe-url");
-	if config.enable_server {
+	if config.send_server {
 		res = res.header("Server", &*SERVER_NAME);
 	}
-	if config.enable_csp {
+
+	if config.send_csp {
 		res = res.header(
 			"Content-Security-Policy",
 			concat!(
@@ -78,23 +48,25 @@ pub async fn redirector(
 			),
 		);
 	}
-	if config.enable_hsts {
-		res = res.header(
-			"Strict-Transport-Security",
-			&format!(
-				"max-age={}{}",
-				config.hsts_age,
-				if config.preload_hsts {
-					"; includeSubDomains; preload"
-				} else {
-					""
-				}
-			),
-		);
-	}
-	if config.enable_alt_svc {
+
+	if config.send_alt_svc {
 		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
 	}
+
+	res = match config.hsts {
+		Hsts::Disable => res,
+		Hsts::Enable(max_age) => {
+			res.header("Strict-Transport-Security", &format!("max-age={max_age}"))
+		}
+		Hsts::IncludeSubDomains(max_age) => res.header(
+			"Strict-Transport-Security",
+			&format!("max-age={max_age}; includeSubDomains"),
+		),
+		Hsts::Preload(max_age) => res.header(
+			"Strict-Transport-Security",
+			&format!("max-age={max_age}; includeSubDomains; preload"),
+		),
+	};
 
 	let id_or_vanity = path.trim_start_matches('/');
 
@@ -167,10 +139,10 @@ pub async fn https_redirector(
 	// Set default response headers
 	let mut res = Response::builder();
 	res = res.header("Referrer-Policy", "no-referrer");
-	if config.enable_server {
+	if config.send_server {
 		res = res.header("Server", &*SERVER_NAME);
 	}
-	if config.enable_csp {
+	if config.send_csp {
 		res = res.header(
 			"Content-Security-Policy",
 			concat!(
@@ -180,7 +152,7 @@ pub async fn https_redirector(
 			),
 		);
 	}
-	if config.enable_alt_svc {
+	if config.send_alt_svc {
 		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
 	}
 

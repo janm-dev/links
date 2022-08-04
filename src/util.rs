@@ -26,35 +26,24 @@ pub const A_YEAR: u32 = 365 * 24 * 60 * 60;
 pub const SERVER_HELP: &str = r#"links server
 
 USAGE:
-    server [FLAGS] [OPTIONS] [STORE CONFIG]
+    server [FLAGS] [OPTIONS] [CONFIGURATION]
 
 EXAMPLE:
-    server -tr --disable-server -k './certs/key.pem' --cert './certs/cert.pem' -s redis --store-connect localhost:6379
+    server -c ./config.toml --log-level warn
 
-FLAGS (all default off):
+FLAGS:
  -h --help                   Print this and exit
- -t --tls                    Enable TLS for the HTTPS and gRPC servers. If this is not passed, only HTTP and unencrypted gRPC will be available
- -r --redirect-https         Redirect HTTP to HTTPS before doing the external redirect
-    --disable-hsts           Disable the Strict-Transport-Security header
-    --preload-hsts           Enable HSTS preloading and include subdomains (WARNING: Be very careful about enabling this, see https://hstspreload.org/. Requires hsts-age of at least 1 year.)
-    --enable-alt-svc         Enable the Alt-Svc header advertising HTTP/2 support on port 443
-    --disable-server         Disable the Server HTTP header
-    --disable-csp            Disable the Content-Security-Policy header
-	--example-redirect       Set an example redirect on server start ("example" -> "9dDbKpJP" -> "https://example.com/"), generally only useful for tests
+    --example-redirect       Set an example redirect on server start ("example" -> "9dDbKpJP" -> "https://example.com/")
 
 OPTIONS:
- -l --log LEVEL              Log level ("trace" / "debug" / "info" * / "warning")
- -T --token SECRET           Authentication secret for use by the gRPC API (long random ascii string, will generate one if not present)
- -k --key PATH               PEM-encoded private key to use for HTTPS and gRPC servers ("./key.pem" *)
- -c --cert PATH              PEM-encoded certificate to use for HTTPS and gRPC servers ("./cert.pem" *), must be valid for all domains served by these servers
-    --hsts-age SECONDS       HSTS header max-age (default 2 years)
+ -c --config PATH            Configuration file path. Supported formats: toml (*.toml), yaml/json (*.yaml, *.yml, *.json)
 
-STORE CONFIG:
- -s --store STORE            Store type to use ("memory" * / "redis")
-    --store-[FLAG]           Store-specific configuration, see the store docs
-    --store-[OPTION] VALUE   Store-specific configuration, see the store docs
+CONFIGURATION:
+    --[OPTION] VALUE         Configuration option (in "kebab-case"), see documentation for possible options and values
 
-* Default value for this option
+The FLAGS and OPTIONS above are separate from configuration options, because they influence server behaviour on startup only, and can only be specified on the command-line.
+Configuration options are parsed first from environment variables ("LINKS_[CONFIG_OPTION]"), then from the configuration file, then from command-line arguments ("--[config-option]"), later ones overwriting earlier ones.
+This means that command-line options overwrite everything, config file options overwrite default values and environment variables, environment variable overwrite only defaults, and the default value is used only when an option is not specified anywhere.
 "#;
 
 pub use crate::include_html;

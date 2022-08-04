@@ -15,6 +15,7 @@ pub use tonic::{Code, Request, Response, Status};
 use tracing::{info, instrument, trace};
 
 use crate::{
+	config::Config,
 	id::Id,
 	normalized::{Link, Normalized},
 	store::Store,
@@ -29,17 +30,15 @@ mod rpc_wrapper {
 /// Get a function that checks authentication/authorization of an incoming grpc
 /// API call. The incoming request is checked for the `auth` metadata value,
 /// which should be a shared secret string value, that is simply compared to
-/// the one given to the server on startup. **It is critical that this value is
-/// kept secret and never exposed publicly!**
+/// the one configured. **It is critical that this value is kept secret and
+/// never exposed publicly!**
 ///
 /// # Errors
 /// Returns the `UNAUTHENTICATED` status code if the token is not provided or
 /// is invalid.
 pub fn get_auth_checker(
-	secret: &'static str,
+	config: Config,
 ) -> impl FnMut(Request<()>) -> Result<Request<()>, Status> + Clone {
-	let secret = secret.as_bytes();
-
 	#[allow(clippy::cognitive_complexity)] // Caused by macro expansion
 	move |req: Request<()>| -> Result<Request<()>, Status> {
 		let token = if let Some(token) = req.metadata().get("auth") {
@@ -49,9 +48,11 @@ pub fn get_auth_checker(
 			return Err(Status::new(Code::Unauthenticated, "no auth token provided"));
 		};
 
+		let secret = config.token();
+
 		trace!("checking auth token {token:?}, secret is {secret:?}");
 
-		if secret == token {
+		if secret.as_bytes() == token {
 			trace!("auth token is valid");
 			Ok(req)
 		} else {

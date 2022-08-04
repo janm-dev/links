@@ -7,36 +7,36 @@
 //! about configuring each store backend, see that backend's documentation.
 
 use core::fmt::Debug;
+use std::collections::HashMap;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use pico_args::Arguments;
 
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
+	store::BackendType,
 };
 
 /// The redirect, vanity path, and statistics store trait used by links.
 #[async_trait]
 #[allow(clippy::module_name_repetitions)]
 pub trait StoreBackend: Debug + Send + Sync {
-	/// Get this implementation's backend name. The name (used in e.g. the
-	/// configuration) of the backend store implementing this trait must be a
-	/// human-readable name using only 'a'-'z', '0'-'9', and '_'.
-	fn backend_name() -> &'static str
+	/// Get this implementation's backend store type. This is used in
+	/// e.g. the configuration.
+	fn store_type() -> BackendType
 	where
 		Self: Sized;
 
-	/// Get this implementation's backend name. This can be used on trait
-	/// objects, but is otherwise equivalent to calling `Self::backend_name()`.
-	fn get_backend_name(&self) -> &'static str;
+	/// Get this implementation's backend store type. This can be used on trait
+	/// objects, but is otherwise equivalent to calling `Self::store_type()`.
+	fn get_store_type(&self) -> BackendType;
 
 	/// Create a new instance of this `StoreBackend`. Configuration is provided
 	/// as a collection of `pico-args` arguments beginning with `--store-`. For
 	/// details about configuring each store backend, see that backend's
 	/// documentation.
-	async fn new(config: &mut Arguments) -> Result<Self>
+	async fn new(config: &HashMap<String, String>) -> Result<Self>
 	where
 		Self: Sized;
 

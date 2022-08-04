@@ -5,13 +5,11 @@ mod util;
 use hyper::{header::HeaderValue, StatusCode};
 use reqwest::{redirect::Policy, ClientBuilder};
 
-use self::util::start_server;
-
 /// HTTPS/1.1 redirect tests
 #[tokio::test]
 #[serial_test::serial]
 async fn https1_redirect() {
-	let server = start_server(true);
+	let _terminator = util::start_server(true);
 
 	let client = ClientBuilder::new()
 		.http1_only()
@@ -41,16 +39,13 @@ async fn https1_redirect() {
 	);
 	let redirect_id = redirect_res.headers().get("Link-ID");
 	assert_eq!(redirect_id, Some(&HeaderValue::from_static("9dDbKpJP")));
-
-	server.abort();
-	server.await.unwrap_err();
 }
 
 /// HTTPS/2.0 redirect tests
 #[tokio::test]
 #[serial_test::serial]
 async fn https2_redirect() {
-	let server = start_server(true);
+	let _terminator = util::start_server(true);
 
 	let client = ClientBuilder::new()
 		.http2_prior_knowledge()
@@ -80,7 +75,4 @@ async fn https2_redirect() {
 	);
 	let redirect_id = redirect_res.headers().get("Link-ID");
 	assert_eq!(redirect_id, Some(&HeaderValue::from_static("9dDbKpJP")));
-
-	server.abort();
-	server.await.unwrap_err();
 }

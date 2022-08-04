@@ -8,13 +8,12 @@ use std::collections::HashMap;
 use anyhow::Result;
 use async_trait::async_trait;
 use parking_lot::RwLock;
-use pico_args::Arguments;
 use tracing::instrument;
 
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
-	store::StoreBackend,
+	store::{BackendType, StoreBackend},
 };
 
 /// A fully in-memory `StoreBackend` implementation useful for testing. Not
@@ -25,10 +24,7 @@ use crate::{
 /// **Store backend name:**
 /// `memory`
 ///
-/// **Command-line flags:**
-/// *none*
-///
-/// **Command-line options:**
+/// **Configuration:**
 /// *none*
 #[derive(Debug)]
 pub struct Store {
@@ -38,19 +34,19 @@ pub struct Store {
 
 #[async_trait]
 impl StoreBackend for Store {
-	fn backend_name() -> &'static str
+	fn store_type() -> BackendType
 	where
 		Self: Sized,
 	{
-		"memory"
+		BackendType::Memory
 	}
 
-	fn get_backend_name(&self) -> &'static str {
-		"memory"
+	fn get_store_type(&self) -> BackendType {
+		BackendType::Memory
 	}
 
 	#[instrument(level = "trace", ret, err)]
-	async fn new(_config: &mut Arguments) -> Result<Self> {
+	async fn new(_config: &HashMap<String, String>) -> Result<Self> {
 		Ok(Self {
 			redirects: RwLock::new(HashMap::new()),
 			vanity: RwLock::new(HashMap::new()),
@@ -96,23 +92,23 @@ impl StoreBackend for Store {
 
 #[cfg(test)]
 mod tests {
-	use pico_args::Arguments;
+	use std::collections::HashMap;
 
 	use super::Store;
 	use crate::store::{tests, StoreBackend as _};
 
 	async fn get_store() -> Store {
-		Store::new(&mut Arguments::from_vec(vec![])).await.unwrap()
+		Store::new(&HashMap::from([])).await.unwrap()
 	}
 
 	#[test]
-	fn backend_name() {
-		tests::backend_name::<Store>();
+	fn store_type() {
+		tests::store_type::<Store>();
 	}
 
 	#[tokio::test]
-	async fn get_backend_name() {
-		tests::get_backend_name::<Store>(&get_store().await);
+	async fn get_store_type() {
+		tests::get_store_type::<Store>(&get_store().await);
 	}
 
 	#[tokio::test]

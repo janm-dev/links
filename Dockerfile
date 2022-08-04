@@ -1,10 +1,16 @@
 # Builder image
 FROM rust:latest AS builder
 
-# Install musl libc for static linking and cmake to build .proto files for gRPC
+# Install musl libc for static linking and openssl for Redis store TLS support
 RUN rustup target add x86_64-unknown-linux-musl
-RUN apt update && apt upgrade -y && apt install -y musl-tools musl-dev cmake openssl libssl-dev
+RUN apt update && apt upgrade -y && apt install -y musl-tools musl-dev openssl libssl-dev
 RUN update-ca-certificates
+
+# Install protoc to build .proto files for gRPC
+ENV PROTOC_VERSION=21.4
+RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip
+RUN unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /protoc/
+ENV PROTOC="/protoc/bin/protoc"
 
 # Create user
 ENV USER=links
@@ -43,6 +49,9 @@ WORKDIR /links
 # Copy the build
 COPY --from=builder /links/target/x86_64-unknown-linux-musl/release/server ./
 
+# Copy the config file
+COPY ./docker_config.toml /config.toml
+
 # Use an unprivileged user
 USER links:links
 
@@ -52,4 +61,4 @@ EXPOSE 443
 EXPOSE 530
 
 ENTRYPOINT [ "/links/server" ]
-CMD [ "-t", "-c", "/cert.pem", "-k", "/key.pem" ]
+CMD [ "--config", "/config.toml" ]

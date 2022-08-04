@@ -7,8 +7,8 @@ use crate::{
 	normalized::{Link, Normalized},
 };
 
-pub fn backend_name<S: StoreBackend>() {
-	let name = S::backend_name();
+pub fn store_type<S: StoreBackend>() {
+	let name = S::store_type().to_str();
 
 	assert!(!name.is_empty());
 	assert!(name.is_ascii());
@@ -19,8 +19,8 @@ pub fn backend_name<S: StoreBackend>() {
 			|| c == '_'));
 }
 
-pub fn get_backend_name<S: StoreBackend>(store: &S) {
-	let name = store.get_backend_name();
+pub fn get_store_type<S: StoreBackend>(store: &S) {
+	let name = store.get_store_type().to_str();
 
 	assert!(!name.is_empty());
 	assert!(name.is_ascii());
@@ -29,7 +29,7 @@ pub fn get_backend_name<S: StoreBackend>(store: &S) {
 		.all(|c| (c.is_ascii_alphabetic() && c.is_ascii_lowercase())
 			|| c.is_ascii_digit()
 			|| c == '_'));
-	assert_eq!(name, S::backend_name());
+	assert_eq!(name, S::store_type().to_str());
 }
 
 pub async fn get_redirect(store: &impl StoreBackend) {

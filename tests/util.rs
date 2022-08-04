@@ -1,46 +1,84 @@
 //! Utilities for end-to-end tests of the links redirector server and CLI
 
-use pico_args::Arguments;
-use tokio::task::JoinHandle;
-use tracing::Level;
+use std::process::Command;
 
-/// Start the links redirector server in the background and return a
-/// `JoinHandle` to it. To stop the server, run `abort()` and
-/// `await.unwrap_err()` on the returned handle. The server will listen on all
-/// addresses with default ports (80, 443, and 530), with the default redirect
-/// enabled, the RPC token set to `abc123`, and TLS controlled by the `tls`
-/// argument of this function.
+/// Run a function automatically on drop.
+#[must_use]
+pub struct Terminator<F: FnMut()>(F);
+
+impl<F: FnMut()> Terminator<F> {
+	pub fn new(f: F) -> Self {
+		Self(f)
+	}
+
+	pub fn call(&mut self) {
+		self.0();
+	}
+}
+
+impl<F: FnMut()> Drop for Terminator<F> {
+	fn drop(&mut self) {
+		self.call();
+	}
+}
+
+/// Start the links redirector server in the background with predetermined
+/// arguments. To kill the server process call or drop the returned function.
+/// The server will listen on all addresses with default ports (80, 443, and
+/// 530), with the default redirect enabled, the RPC token set to `abc123`, and
+/// TLS controlled by the `tls` argument of this function. Panics on any error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
-pub fn start_server(tls: bool) -> JoinHandle<()> {
-	let mut args = vec![
-		"--example-redirect".into(),
-		"--token".into(),
-		"abc123".into(),
-	];
+pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
+	let mut args = vec!["--example-redirect", "--token", "abc123"];
 
 	if tls {
 		args.extend([
-			"-t".into(),
-			"-c".into(),
-			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem").into(),
-			"-k".into(),
-			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem").into(),
+			"--tls",
+			"on",
+			"--tls-cert",
+			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
+			"--tls-key",
+			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
 		])
 	}
 
-	tokio::spawn(async {
-		links::server::run(Arguments::from_vec(args), Level::INFO)
-			.await
-			.unwrap();
+	start_server_with_args(args)
+}
+
+/// Start the links redirector server in the background with the specified
+/// command-line arguments. To kill the server process call or drop the returned
+/// function. The server will listen on all addresses with default ports (80,
+/// 443, and 530). Panics on any error.
+#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+pub fn start_server_with_args(args: Vec<&'static str>) -> Terminator<impl FnMut()> {
+	let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
+	cmd.args(args);
+
+	let mut server = cmd.spawn().unwrap();
+	Terminator::new(move || {
+		server.kill().expect("could not kill server process");
+		server.wait().expect("could not wait on server process");
 	})
+}
+
+/// Run the links CLI with the provided arguments, returning the output (from
+/// stdout). No configuration from environment variables will be used. Panics on
+/// any non-cli error.
+#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+pub fn run_cli(args: Vec<&'static str>) -> String {
+	let mut cmd = Command::new(env!("CARGO_BIN_EXE_cli"));
+	cmd.args(args);
+
+	let out = cmd.output().unwrap();
+	String::from_utf8(out.stdout).unwrap()
 }
 
 #[macro_export]
 macro_rules! assert_re {
 	($re:literal, $m:ident) => {
 		let re: &'static str = $re;
-		let m: &str = $m.as_ref();
-		let re = regex::RegexBuilder::new(re)
+		let message: &str = $m.as_ref();
+		let regex = regex::RegexBuilder::new(re)
 			.case_insensitive(false)
 			.dot_matches_new_line(false)
 			.ignore_whitespace(false)
@@ -50,6 +88,6 @@ macro_rules! assert_re {
 			.build()
 			.unwrap();
 
-		assert!(re.is_match(m));
+		assert!(dbg!(regex).is_match(dbg!(message.trim())));
 	};
 }

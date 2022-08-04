@@ -9,9 +9,11 @@ mod redis;
 #[cfg(test)]
 mod tests;
 
-use anyhow::{bail, Result};
+use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr};
+
+use anyhow::Result;
 use backend::StoreBackend;
-use pico_args::Arguments;
+use serde_derive::{Deserialize, Serialize};
 use tracing::instrument;
 
 pub use self::{memory::Store as Memory, redis::Store as Redis};
@@ -19,6 +21,62 @@ use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
 };
+
+/// The type of store backend used by the links redirector server. All variants
+/// must have a canonical human-readable string representation using only
+/// 'a'-'z', '0'-'9', and '_'.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+#[serde(rename_all = "snake_case")]
+pub enum BackendType {
+	/// A fully in-memory store backend, storing all data in RAM
+	/// with no other backups, but without any external dependencies. Not
+	/// recommended outside of tests.
+	#[default]
+	Memory,
+	/// A store backend which stores all data using a Redis 6.2+ server.
+	Redis,
+}
+
+impl BackendType {
+	const fn to_str(self) -> &'static str {
+		match self {
+			Self::Memory => "memory",
+			Self::Redis => "redis",
+		}
+	}
+}
+
+impl FromStr for BackendType {
+	type Err = IntoBackendTypeError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"memory" => Ok(Self::Memory),
+			"redis" => Ok(Self::Redis),
+			s => Err(IntoBackendTypeError(s.to_string())),
+		}
+	}
+}
+
+impl Display for BackendType {
+	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		fmt.write_str(self.to_str())
+	}
+}
+
+/// The error returned by fallible conversions into a [`BackendType`]. Contains
+/// the original input string.
+#[derive(Debug, Clone)]
+pub struct IntoBackendTypeError(String);
+
+impl Display for IntoBackendTypeError {
+	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		fmt.write_fmt(format_args!("unrecognized store backend type {}", self.0))
+	}
+}
+
+impl Error for IntoBackendTypeError {}
 
 /// A wrapper around any `StoreBackend`, providing access to the underlying
 /// store along some with extra things like logging.
@@ -29,8 +87,8 @@ pub struct Store {
 
 impl Store {
 	/// Create a new instance of this `Store`. Configuration is
-	/// backend-specific and is provided as a collection of `pico-args`
-	/// arguments beginning with `--store-`.
+	/// backend-specific and is provided as a `HashMap` from string keys to
+	/// string values, that are parsed by the backend as needed.
 	///
 	/// # Errors
 	/// This function returns an error if the store could not be initialized.
@@ -38,17 +96,14 @@ impl Store {
 	/// backend-specific reasons (such as a file not being createable or a
 	/// network connection not being establishable, etc.).
 	#[instrument(level = "debug", ret, err)]
-	pub async fn new(name: &str, config: &mut Arguments) -> Result<Self> {
-		if name == Memory::backend_name() {
-			Ok(Self {
+	pub async fn new(store_type: BackendType, config: &HashMap<String, String>) -> Result<Self> {
+		match store_type {
+			BackendType::Memory => Ok(Self {
 				store: Box::new(Memory::new(config).await?),
-			})
-		} else if name == Redis::backend_name() {
-			Ok(Self {
+			}),
+			BackendType::Redis => Ok(Self {
 				store: Box::new(Redis::new(config).await?),
-			})
-		} else {
-			bail!(format!("Unknown store \"{name}\""));
+			}),
 		}
 	}
 
@@ -62,8 +117,11 @@ impl Store {
 	/// backend-specific reasons (such as a file not being createable or a
 	/// network connection not being establishable, etc.).
 	#[instrument(level = "trace")]
-	pub async fn new_static(name: &str, config: &mut Arguments) -> Result<&'static Self> {
-		Ok(&*Box::leak(Box::new(Self::new(name, config).await?)))
+	pub async fn new_static(
+		store_type: BackendType,
+		config: &HashMap<String, String>,
+	) -> Result<&'static Self> {
+		Ok(&*Box::leak(Box::new(Self::new(store_type, config).await?)))
 	}
 
 	/// Get the underlying implementation's name. The name (used in e.g. the
@@ -71,7 +129,7 @@ impl Store {
 	/// human-readable name using only 'a'-'z', '0'-'9', and '_'.
 	#[must_use]
 	pub fn backend_name(&self) -> &'static str {
-		self.store.get_backend_name()
+		self.store.get_store_type().to_str()
 	}
 
 	/// Get a redirect. Returns the full `to` link corresponding to the `from`
@@ -160,23 +218,36 @@ impl Store {
 mod store_tests {
 	use super::*;
 
+	#[test]
+	fn type_to_from() {
+		assert_eq!(
+			BackendType::Memory,
+			BackendType::Memory.to_str().parse().unwrap()
+		);
+
+		assert_eq!(
+			BackendType::Redis,
+			BackendType::Redis.to_str().parse().unwrap()
+		);
+	}
+
 	#[tokio::test]
 	async fn new() {
-		Store::new("memory", &mut Arguments::from_vec(vec![]))
+		Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 	}
 
 	#[tokio::test]
 	async fn new_static() {
-		Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 	}
 
 	#[tokio::test]
 	async fn backend_name() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -187,7 +258,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn get_redirect() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -202,7 +273,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn set_redirect() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -216,7 +287,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn rem_redirect() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -232,7 +303,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn get_vanity() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -253,7 +324,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn set_vanity() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -267,7 +338,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn rem_vanity() {
-		let store = Store::new_static("memory", &mut Arguments::from_vec(vec![]))
+		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 

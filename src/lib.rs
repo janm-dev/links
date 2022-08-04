@@ -12,13 +12,13 @@
 	rustdoc::all
 )]
 #![allow(clippy::multiple_crate_versions)]
+#![allow(clippy::use_self)] // False-positives in #[derive(Serialize)] generated code
 
 pub mod api;
-pub mod cli;
+pub mod certs;
 pub mod config;
 pub mod id;
 pub mod normalized;
 pub mod redirector;
-pub mod server;
 pub mod store;
 pub mod util;
