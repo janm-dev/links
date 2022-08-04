@@ -1,6 +1,6 @@
 //! Utilities for end-to-end tests of the links redirector server and CLI
 
-use std::process::Command;
+use std::{process::Command, thread, time::Duration};
 
 /// Run a function automatically on drop.
 #[must_use]
@@ -55,6 +55,9 @@ pub fn start_server_with_args(args: Vec<&'static str>) -> Terminator<impl FnMut(
 	cmd.args(args);
 
 	let mut server = cmd.spawn().unwrap();
+
+	thread::sleep(Duration::from_millis(250));
+
 	Terminator::new(move || {
 		server.kill().expect("could not kill server process");
 		server.wait().expect("could not wait on server process");
