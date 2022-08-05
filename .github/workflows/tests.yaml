@@ -16,7 +16,7 @@ jobs:
   test-rust:
     strategy:
       matrix:
-        version: ["1.61", stable, beta]
+        version: ["1.62", stable, beta]
     name: Test with Rust ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:
