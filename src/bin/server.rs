@@ -344,7 +344,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
 	#[cfg(coverage)]
 	{
-		ctrlc::set_handler(|| std::process::exit(1))?;
+		ctrlc::set_handler(|| std::process::exit(0))?;
 	}
 
 	info!("Links redirector server started");
