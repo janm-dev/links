@@ -19,7 +19,7 @@ redis-tests = []
 vendored-openssl = ["fred/vendored-tls"]
 
 [dependencies]
-anyhow = "1.0.59"
+anyhow = "1.0.60"
 arc-swap = "1.5.1"
 async-trait = "0.1.57"
 clap = { version = "3.2.16", features = [
@@ -28,7 +28,6 @@ clap = { version = "3.2.16", features = [
 	"unstable-v4",
 ] }
 colored = "2.0.0"
-ctrlc = { version = "3.2.2", features = ["termination"] }
 fred = { version = "5.1.0", features = [
 	"enable-tls",
 	"ignore-auth-error",

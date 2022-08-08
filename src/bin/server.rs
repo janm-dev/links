@@ -342,11 +342,6 @@ async fn main() -> Result<(), anyhow::Error> {
 		spawn(async {})
 	};
 
-	#[cfg(coverage)]
-	{
-		ctrlc::set_handler(|| std::process::exit(0))?;
-	}
-
 	info!("Links redirector server started");
 
 	// Wait until the first unhandled error (if any) and exit
