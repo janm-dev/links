@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-08-08*)
+# Dependency Attribution (last updated *2022-08-14*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -115,7 +115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`anyhow 1.0.60`](https://docs.rs/crate/anyhow/1.0.60) by *David Tolnay <dtolnay@gmail.com>*
+## [`anyhow 1.0.61`](https://docs.rs/crate/anyhow/1.0.61) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -454,7 +454,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`axum 0.5.13`](https://docs.rs/crate/axum/0.5.13)
+## [`axum 0.5.15`](https://docs.rs/crate/axum/0.5.15)
 
 ```txt
 Copyright (c) 2019 Axum Contributors
@@ -847,7 +847,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`clap 3.2.16`](https://docs.rs/crate/clap/3.2.16)
+## [`clap 3.2.17`](https://docs.rs/crate/clap/3.2.17)
 
 ```txt
 The MIT License (MIT)
@@ -873,7 +873,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`clap_derive 3.2.15`](https://docs.rs/crate/clap_derive/3.2.15)
+## [`clap_derive 3.2.17`](https://docs.rs/crate/clap_derive/3.2.17)
 
 ```txt
 The MIT License (MIT)
@@ -2338,6 +2338,32 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.
 ```
 
+## [`dashmap 5.3.4`](https://docs.rs/crate/dashmap/5.3.4) by *Acrimon <joel.wejdenstal@gmail.com>*
+
+```txt
+MIT License
+
+Copyright (c) 2019 Acrimon
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## [`derive_more 0.99.17`](https://docs.rs/crate/derive_more/0.99.17) by *Jelte Fennema <github-tech@jeltef.nl>*
 
 ```txt
@@ -3358,7 +3384,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`futures 0.3.21`](https://docs.rs/crate/futures/0.3.21)
+## [`futures 0.3.23`](https://docs.rs/crate/futures/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3389,7 +3415,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-channel 0.3.21`](https://docs.rs/crate/futures-channel/0.3.21)
+## [`futures-channel 0.3.23`](https://docs.rs/crate/futures-channel/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3420,7 +3446,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-core 0.3.21`](https://docs.rs/crate/futures-core/0.3.21)
+## [`futures-core 0.3.23`](https://docs.rs/crate/futures-core/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3451,7 +3477,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-executor 0.3.21`](https://docs.rs/crate/futures-executor/0.3.21)
+## [`futures-executor 0.3.23`](https://docs.rs/crate/futures-executor/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3482,7 +3508,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-io 0.3.21`](https://docs.rs/crate/futures-io/0.3.21)
+## [`futures-io 0.3.23`](https://docs.rs/crate/futures-io/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3513,7 +3539,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-macro 0.3.21`](https://docs.rs/crate/futures-macro/0.3.21)
+## [`futures-macro 0.3.23`](https://docs.rs/crate/futures-macro/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3544,7 +3570,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-sink 0.3.21`](https://docs.rs/crate/futures-sink/0.3.21)
+## [`futures-sink 0.3.23`](https://docs.rs/crate/futures-sink/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3575,7 +3601,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-task 0.3.21`](https://docs.rs/crate/futures-task/0.3.21)
+## [`futures-task 0.3.23`](https://docs.rs/crate/futures-task/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -3606,7 +3632,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`futures-util 0.3.21`](https://docs.rs/crate/futures-util/0.3.21)
+## [`futures-util 0.3.23`](https://docs.rs/crate/futures-util/0.3.23)
 
 ```txt
 Copyright (c) 2016 Alex Crichton
@@ -4549,7 +4575,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`libc 0.2.127`](https://docs.rs/crate/libc/0.2.127) by *The Rust Project Developers*
+## [`libc 0.2.131`](https://docs.rs/crate/libc/0.2.131) by *The Rust Project Developers*
 
 ```txt
 Copyright (c) 2014-2020 The Rust Project Developers
@@ -6413,7 +6439,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`os_str_bytes 6.2.0`](https://docs.rs/crate/os_str_bytes/6.2.0) by *dylni*
+## [`os_str_bytes 6.3.0`](https://docs.rs/crate/os_str_bytes/6.3.0) by *dylni*
 
 ```txt
 MIT License
@@ -8730,34 +8756,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`rustversion 1.0.9`](https://docs.rs/crate/rustversion/1.0.9) by *David Tolnay <dtolnay@gmail.com>*
-
-```txt
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-```
-
 ## [`ryu 1.0.11`](https://docs.rs/crate/ryu/1.0.11) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
@@ -9329,7 +9327,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde 1.0.142`](https://docs.rs/crate/serde/1.0.142) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde 1.0.143`](https://docs.rs/crate/serde/1.0.143) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9357,7 +9355,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_derive 1.0.142`](https://docs.rs/crate/serde_derive/1.0.142) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde_derive 1.0.143`](https://docs.rs/crate/serde_derive/1.0.143) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9443,7 +9441,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_yaml 0.9.4`](https://docs.rs/crate/serde_yaml/0.9.4) by *David Tolnay <dtolnay@gmail.com>*
+## [`serde_yaml 0.9.9`](https://docs.rs/crate/serde_yaml/0.9.9) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9471,7 +9469,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serial_test 0.8.0`](https://docs.rs/crate/serial_test/0.8.0) by *Tom Parker-Shemilt <palfrey@tevp.net>*
+## [`serial_test 0.9.0`](https://docs.rs/crate/serial_test/0.9.0) by *Tom Parker-Shemilt <palfrey@tevp.net>*
 
 ```txt
 Copyright (c) 2018 Tom Parker-Shemilt
@@ -9495,7 +9493,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`serial_test_derive 0.8.0`](https://docs.rs/crate/serial_test_derive/0.8.0) by *Tom Parker-Shemilt <palfrey@tevp.net>*
+## [`serial_test_derive 0.9.0`](https://docs.rs/crate/serial_test_derive/0.9.0) by *Tom Parker-Shemilt <palfrey@tevp.net>*
 
 ```txt
 Copyright (c) 2018 Tom Parker-Shemilt

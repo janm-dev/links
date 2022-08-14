@@ -19,10 +19,10 @@ redis-tests = []
 vendored-openssl = ["fred/vendored-tls"]
 
 [dependencies]
-anyhow = "1.0.60"
+anyhow = "1.0.61"
 arc-swap = "1.5.1"
 async-trait = "0.1.57"
-clap = { version = "3.2.16", features = [
+clap = { version = "3.2.17", features = [
 	"derive",
 	"env",
 	"unstable-v4",
@@ -45,10 +45,10 @@ prost = "0.11.0"
 rand = "0.8.5"
 regex = "1.6.0"
 rustls-pemfile = "1.0.1"
-serde = "1.0.142"
-serde_derive = "1.0.142"
+serde = "1.0.143"
+serde_derive = "1.0.143"
 serde_json = "1.0.83"
-serde_yaml = "0.9.4"
+serde_yaml = "0.9.9"
 thiserror = "1.0.32"
 tokio = { version = "1.20.1", features = [
 	"rt-multi-thread",
@@ -82,7 +82,7 @@ reqwest = { version = "0.11.11", default_features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
 ] }
-serial_test = "0.8.0"
+serial_test = "0.9.0"
 tokio = { version = "1.20.1", features = ["full"] }
 
 [profile.release]
