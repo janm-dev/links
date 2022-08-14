@@ -1,19 +1,20 @@
 //! Test example and docker configuration files.
 
-use std::{env, fs};
+use std::{fs, path::PathBuf, str::FromStr};
 
 use links::config::Partial;
 
 #[test]
-fn valid_config_files() {
-	let path = fs::canonicalize(file!())
+fn config_files_are_valid() {
+	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("../../example_config");
+		.join("example_config");
 
 	// JSON must first have comments removed to be checked.
 	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
-	let json_path = env::temp_dir()
-		.join("links_test_json")
+	let json_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
+		.unwrap()
+		.join("links_test_json-valid_config_files")
 		.with_extension("json");
 	let json = json
 		.lines()
@@ -73,14 +74,15 @@ fn yaml_example_is_complete() {
 
 #[test]
 fn examples_are_equivalent() {
-	let path = fs::canonicalize(file!())
+	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("../../example_config");
+		.join("example_config");
 
 	// JSON must first have comments removed to be checked.
 	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
-	let json_path = env::temp_dir()
-		.join("links_test_json")
+	let json_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
+		.unwrap()
+		.join("links_test_json-examples_are_equivalent")
 		.with_extension("json");
 	let json = json
 		.lines()
@@ -99,9 +101,9 @@ fn examples_are_equivalent() {
 
 #[test]
 fn docker_config_is_valid() {
-	let path = fs::canonicalize(file!())
+	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("../../example_config");
+		.join("example_config");
 
 	let config = Partial::from_file(&path.with_extension("toml"));
 
