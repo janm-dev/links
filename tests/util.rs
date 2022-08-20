@@ -1,6 +1,11 @@
 //! Utilities for end-to-end tests of the links redirector server and CLI
 
-use std::{process::Command, thread, time::Duration};
+use std::{
+	io::Write,
+	process::{Command, Stdio},
+	thread,
+	time::Duration,
+};
 
 /// Run a function automatically on drop.
 #[must_use]
@@ -53,13 +58,27 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 pub fn start_server_with_args(args: Vec<&'static str>) -> Terminator<impl FnMut()> {
 	let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
 	cmd.args(args);
+	cmd.stdin(Stdio::piped());
 
 	let mut server = cmd.spawn().unwrap();
 
 	thread::sleep(Duration::from_millis(250));
 
 	Terminator::new(move || {
-		server.kill().expect("could not kill server process");
+		// When collecting test coverage, the server listens for "x" on stdin
+		// as a stop signal, which (unlike just killing the server process)
+		// allows for the coverage data to be collected and saved
+		if cfg!(coverage) {
+			server
+				.stdin
+				.take()
+				.unwrap()
+				.write_all(b"x")
+				.expect("could not stop server process");
+		} else {
+			server.kill().expect("could not kill server process");
+		}
+
 		server.wait().expect("could not wait on server process");
 	})
 }

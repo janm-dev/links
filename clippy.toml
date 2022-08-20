@@ -1,0 +1,3 @@
+disallowed-methods = [
+	{ path = "std::process::exit", reason = "messes with test coverage (see https://github.com/rust-lang/rust/issues/77553)" },
+]

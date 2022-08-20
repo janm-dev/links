@@ -31,8 +31,6 @@ async fn main() {
 	let res = run(args).await;
 
 	println!("{}", res.unwrap_or_else(|e| e));
-
-	std::process::exit(0);
 }
 
 #[derive(Parser, Debug)]

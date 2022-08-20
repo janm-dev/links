@@ -24,6 +24,7 @@
 
 use std::{net::SocketAddr, sync::Arc};
 
+use anyhow::anyhow;
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links::{
 	api::{self, Api, LinksServer},
@@ -71,15 +72,15 @@ async fn main() -> Result<(), anyhow::Error> {
 	// Set the subscriber as the current default so logs are sent there
 	let subscriber_guard = tracing::subscriber::set_default(tracing_subscriber);
 
-	info!("Getting server configuration");
-
 	// Parse cli args
 	let mut args = Arguments::from_env();
 
 	if args.contains(["-h", "--help"]) {
-		print!("{}", SERVER_HELP);
-		std::process::exit(0);
+		println!("{}", SERVER_HELP);
+		Err(anyhow!(""))?;
 	}
+
+	info!("Getting server configuration");
 
 	// Configure the server
 	let config = Config::new(args.opt_value_from_str(["-c", "--config"])?);
@@ -342,10 +343,40 @@ async fn main() -> Result<(), anyhow::Error> {
 		spawn(async {})
 	};
 
-	info!("Links redirector server started");
+	// During coverage-collecting tests, in order to collect correct coverage
+	// data, use stdin to stop the server instead of relying on a kill signal,
+	// which also stops coverage reporting
+	#[cfg(coverage)]
+	{
+		use std::io::{self, Read};
 
-	// Wait until the first unhandled error (if any) and exit
-	try_join!(rpc_handle, http_handle, https_handle)?;
+		use tokio::task;
+		use tracing::warn;
+
+		// Wait until "x" is received on stdin, then stop the server
+		let stop_handle = task::spawn_blocking(move || loop {
+			let mut buf = [0u8];
+			io::stdin().read_exact(&mut buf[..]).unwrap();
+
+			if buf == *b"x" {
+				warn!("Stopping server");
+				panic!("server stop");
+			}
+		});
+
+		info!("Links redirector server started");
+
+		// Wait until the first unhandled error or until server stop via stdin
+		try_join!(stop_handle, rpc_handle, http_handle, https_handle)?;
+	}
+
+	#[cfg(not(coverage))]
+	{
+		info!("Links redirector server started");
+
+		// Wait until the first unhandled error (if any)
+		try_join!(rpc_handle, http_handle, https_handle)?;
+	}
 
 	Ok(())
 }
