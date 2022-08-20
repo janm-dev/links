@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-08-14*)
+# Dependency Attribution (last updated *2022-08-21*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -115,7 +115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`anyhow 1.0.61`](https://docs.rs/crate/anyhow/1.0.61) by *David Tolnay <dtolnay@gmail.com>*
+## [`anyhow 1.0.62`](https://docs.rs/crate/anyhow/1.0.62) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -638,7 +638,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`bumpalo 3.10.0`](https://docs.rs/crate/bumpalo/3.10.0) by *Nick Fitzgerald <fitzgen@gmail.com>*
+## [`bumpalo 3.11.0`](https://docs.rs/crate/bumpalo/3.11.0) by *Nick Fitzgerald <fitzgen@gmail.com>*
 
 ```txt
 Copyright (c) 2019 Nick Fitzgerald
@@ -1440,7 +1440,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`cpufeatures 0.2.2`](https://docs.rs/crate/cpufeatures/0.2.2) by *RustCrypto Developers*
+## [`cpufeatures 0.2.3`](https://docs.rs/crate/cpufeatures/0.2.3) by *RustCrypto Developers*
 
 ```txt
 Copyright (c) 2020 The RustCrypto Project Developers
@@ -2882,7 +2882,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`either 1.7.0`](https://docs.rs/crate/either/1.7.0) by *bluss*
+## [`either 1.8.0`](https://docs.rs/crate/either/1.8.0) by *bluss*
 
 ```txt
 Copyright (c) 2015
@@ -3761,7 +3761,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`h2 0.3.13`](https://docs.rs/crate/h2/0.3.13) by *Carl Lerche <me@carllerche.com>|Sean McArthur <sean@seanmonstar.com>*
+## [`h2 0.3.14`](https://docs.rs/crate/h2/0.3.14) by *Carl Lerche <me@carllerche.com>|Sean McArthur <sean@seanmonstar.com>*
 
 ```txt
 Copyright (c) 2017 h2 authors
@@ -4575,7 +4575,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`libc 0.2.131`](https://docs.rs/crate/libc/0.2.131) by *The Rust Project Developers*
+## [`libc 0.2.132`](https://docs.rs/crate/libc/0.2.132) by *The Rust Project Developers*
 
 ```txt
 Copyright (c) 2014-2020 The Rust Project Developers
@@ -6247,7 +6247,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`once_cell 1.13.0`](https://docs.rs/crate/once_cell/1.13.0) by *Aleksey Kladov <aleksey.kladov@gmail.com>*
+## [`once_cell 1.13.1`](https://docs.rs/crate/once_cell/1.13.1) by *Aleksey Kladov <aleksey.kladov@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -6794,7 +6794,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## [`pin-project 1.0.11`](https://docs.rs/crate/pin-project/1.0.11)
+## [`pin-project 1.0.12`](https://docs.rs/crate/pin-project/1.0.12)
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -6822,7 +6822,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`pin-project-internal 1.0.11`](https://docs.rs/crate/pin-project-internal/1.0.11)
+## [`pin-project-internal 1.0.12`](https://docs.rs/crate/pin-project-internal/1.0.12)
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9093,7 +9093,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`security-framework 2.6.1`](https://docs.rs/crate/security-framework/2.6.1) by *Steven Fackler <sfackler@gmail.com>|Kornel <kornel@geekhood.net>*
+## [`security-framework 2.7.0`](https://docs.rs/crate/security-framework/2.7.0) by *Steven Fackler <sfackler@gmail.com>|Kornel <kornel@geekhood.net>*
 
 ```txt
 The MIT License (MIT)
