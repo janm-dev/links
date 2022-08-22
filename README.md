@@ -1,4 +1,4 @@
-# ![links - an easy to set up selfhostable link shortener](misc/banner.webp)
+# [![links - an easy to set up selfhostable link shortener](https://raw.githubusercontent.com/janm-dev/links/main/misc/banner.webp)](https://github.com/janm-dev/links)
 
 [![repository license](https://img.shields.io/github/license/janm-dev/links)](https://github.com/janm-dev/links/blob/main/LICENSE)
 [![test coverage](https://codecov.io/gh/janm-dev/links/branch/main/graph/badge.svg?token=SIN9JWZ3BG)](https://codecov.io/gh/janm-dev/links)
