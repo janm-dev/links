@@ -1,4 +1,4 @@
-# Dependency Attribution (last updated *2022-08-21*)
+# Dependency Attribution (last updated *2022-08-23*)
 
 **While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of the following direct and transitive dependencies:**
 
@@ -1440,7 +1440,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## [`cpufeatures 0.2.3`](https://docs.rs/crate/cpufeatures/0.2.3) by *RustCrypto Developers*
+## [`cpufeatures 0.2.4`](https://docs.rs/crate/cpufeatures/0.2.4) by *RustCrypto Developers*
 
 ```txt
 Copyright (c) 2020 The RustCrypto Project Developers
@@ -9327,7 +9327,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde 1.0.143`](https://docs.rs/crate/serde/1.0.143) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde 1.0.144`](https://docs.rs/crate/serde/1.0.144) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9355,7 +9355,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_derive 1.0.143`](https://docs.rs/crate/serde_derive/1.0.143) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde_derive 1.0.144`](https://docs.rs/crate/serde_derive/1.0.144) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9383,7 +9383,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_json 1.0.83`](https://docs.rs/crate/serde_json/1.0.83) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
+## [`serde_json 1.0.85`](https://docs.rs/crate/serde_json/1.0.85) by *Erick Tryzelaar <erick.tryzelaar@gmail.com>|David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
@@ -9441,7 +9441,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## [`serde_yaml 0.9.9`](https://docs.rs/crate/serde_yaml/0.9.9) by *David Tolnay <dtolnay@gmail.com>*
+## [`serde_yaml 0.9.10`](https://docs.rs/crate/serde_yaml/0.9.10) by *David Tolnay <dtolnay@gmail.com>*
 
 ```txt
 Permission is hereby granted, free of charge, to any
