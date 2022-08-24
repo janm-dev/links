@@ -13,8 +13,8 @@ use crate::{config::partial::Partial, store::BackendType, util::A_YEAR};
 /// version, which can be updated from a [`Partial`].
 #[derive(Debug)]
 pub struct Config {
-	inner: Arc<RwLock<ConfigInner>>,
-	file: Arc<Option<PathBuf>>,
+	inner: RwLock<ConfigInner>,
+	file: Option<PathBuf>,
 }
 
 impl Config {
@@ -33,11 +33,31 @@ impl Config {
 		let config = ConfigInner::default();
 
 		let config = Self {
-			inner: Arc::new(RwLock::new(config)),
-			file: Arc::new(file),
+			inner: RwLock::new(config),
+			file,
 		};
 		config.update();
 		config
+	}
+
+	/// Create a new static reference to a new `Config` instance using the
+	/// provided file path as the configuration file. Configuration data is
+	/// parsed from environment variables, the config file, and command-line
+	/// arguments, in that order. If there is an error with the configuration
+	/// file or any other configuration source, no error is emitted. Instead, a
+	/// warning is logged, and the other configuration sources are used.
+	///
+	/// # Memory
+	/// Because this function leaks memory with no (safe) way of freeing it,
+	/// care should be taken not to call this function an unbounded number of
+	/// times.
+	///
+	/// # IO
+	/// This function performs synchronous file IO, and should therefore not be
+	/// used inside of an asynchronous context.
+	#[must_use]
+	pub fn new_static(file: Option<PathBuf>) -> &'static Self {
+		Box::leak(Box::new(Self::new(file)))
 	}
 
 	/// Update this config from environment variables, config file, and
@@ -89,8 +109,8 @@ impl Config {
 
 	/// Get the RPC API token
 	#[must_use]
-	pub fn token(&self) -> String {
-		self.inner.read().token.to_string()
+	pub fn token(&self) -> Arc<str> {
+		Arc::clone(&self.inner.read().token)
 	}
 
 	/// Get the TLS configuration
@@ -137,8 +157,8 @@ impl Config {
 
 	/// Get the configuration file path
 	#[must_use]
-	fn file(&self) -> Arc<Option<PathBuf>> {
-		Arc::clone(&self.file)
+	const fn file(&self) -> &Option<PathBuf> {
+		&self.file
 	}
 }
 
@@ -166,15 +186,6 @@ impl Display for Config {
 	}
 }
 
-impl Clone for Config {
-	fn clone(&self) -> Self {
-		Self {
-			inner: Arc::clone(&self.inner),
-			file: Arc::clone(&self.file),
-		}
-	}
-}
-
 /// Actual configuration storage inside of a [`Config`]
 #[derive(Debug)]
 struct ConfigInner {
@@ -183,7 +194,7 @@ struct ConfigInner {
 	/// deployments.
 	pub log_level: Level,
 	/// API token, used for authentication of gRPC clients
-	pub token: String,
+	pub token: Arc<str>,
 	/// TLS configuration (HTTPS and gRPC)
 	pub tls: Tls,
 	/// HTTP Strict Transport Security setting on redirect
@@ -211,7 +222,7 @@ impl ConfigInner {
 		}
 
 		if let Some(ref token) = partial.token {
-			self.token = token.clone();
+			self.token = Arc::from(token.as_str());
 		}
 
 		if let Some(tls) = partial.tls() {
@@ -253,7 +264,8 @@ impl Default for ConfigInner {
 				.sample_iter(&Alphanumeric)
 				.take(32)
 				.map(char::from)
-				.collect::<String>(),
+				.collect::<String>()
+				.into(),
 			tls: Tls::default(),
 			hsts: Hsts::default(),
 			send_alt_svc: false,

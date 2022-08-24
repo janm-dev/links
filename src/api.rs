@@ -37,7 +37,7 @@ mod rpc_wrapper {
 /// Returns the `UNAUTHENTICATED` status code if the token is not provided or
 /// is invalid.
 pub fn get_auth_checker(
-	config: Config,
+	config: &'static Config,
 ) -> impl FnMut(Request<()>) -> Result<Request<()>, Status> + Clone {
 	#[allow(clippy::cognitive_complexity)] // Caused by macro expansion
 	move |req: Request<()>| -> Result<Request<()>, Status> {

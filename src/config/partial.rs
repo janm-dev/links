@@ -261,7 +261,7 @@ impl From<&Config> for Partial {
 
 		Self {
 			log_level: Some((config.log_level()).into()),
-			token: Some(config.token()),
+			token: Some(config.token().to_string()),
 			tls: Some(tls),
 			tls_key: key_file,
 			tls_cert: cert_file,

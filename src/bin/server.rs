@@ -83,14 +83,12 @@ async fn main() -> Result<(), anyhow::Error> {
 	info!("Getting server configuration");
 
 	// Configure the server
-	let config = Config::new(args.opt_value_from_str(["-c", "--config"])?);
+	let config = Config::new_static(args.opt_value_from_str(["-c", "--config"])?);
 
 	debug!(?config, "Server configuration parsed");
 
 	// Set a tracing filter which can change the minimum log level on the fly.
-	let server_config = config.clone();
-	let tracing_filter =
-		FilterFn::new(move |metadata| metadata.level() <= &server_config.log_level());
+	let tracing_filter = FilterFn::new(move |metadata| metadata.level() <= &config.log_level());
 
 	// Create the permanent global tracing subscriber to collect and show logs
 	let tracing_subscriber = FmtSubscriber::builder()
@@ -172,7 +170,7 @@ async fn main() -> Result<(), anyhow::Error> {
 		let rpc_service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				rpc_service,
-				api::get_auth_checker(config.clone()),
+				api::get_auth_checker(config),
 			))
 			.into_service();
 
@@ -215,7 +213,7 @@ async fn main() -> Result<(), anyhow::Error> {
 		let rpc_service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				rpc_service,
-				api::get_auth_checker(config.clone()),
+				api::get_auth_checker(config),
 			))
 			.into_service();
 
@@ -253,8 +251,6 @@ async fn main() -> Result<(), anyhow::Error> {
 		let redirector_service =
 			service_fn(move |req: Request<Body>| redirector(req, store, redirector_config));
 
-		let config = config.clone();
-
 		spawn(async move {
 			loop {
 				let tcp_stream = match http_listener.accept().await {
@@ -266,7 +262,6 @@ async fn main() -> Result<(), anyhow::Error> {
 				};
 
 				let handler = http_handler.clone();
-				let config = config.clone();
 
 				spawn(async move {
 					match config.tls() {
