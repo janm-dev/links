@@ -54,7 +54,9 @@ jobs:
           sudo apt update
           sudo apt install -y musl-tools musl-dev openssl libssl-dev crossbuild-essential-arm64
           cargo build --release --target ${{ matrix.target }} --features vendored-openssl
-          tar cf ${{ matrix.target }}.tar target/${{ matrix.target }}/release/server target/${{ matrix.target }}/release/cli
+          mv target/${{ matrix.target }}/release/server server
+          mv target/${{ matrix.target }}/release/cli cli
+          tar cf ${{ matrix.target }}.tar server cli
           gzip ${{ matrix.target }}.tar
       - uses: softprops/action-gh-release@v1
         with:
