@@ -1,0 +1,67 @@
+targets = [
+	{ triple = "x86_64-unknown-linux-gnu" },
+	{ triple = "x86_64-unknown-linux-musl" },
+	{ triple = "x86_64-pc-windows-msvc" },
+	{ triple = "aarch64-unknown-linux-gnu" },
+]
+
+[advisories]
+vulnerability = "deny"
+unmaintained = "deny"
+yanked = "deny"
+notice = "warn"
+ignore = [
+	"RUSTSEC-2020-0016", # Needs an update to notify@5.0, currently only a prerelease
+	"RUSTSEC-2021-0139", # Caused by a dependency of tracing-subscriber, awaiting a new release of that crate
+]
+
+[licenses]
+unlicensed = "deny"
+confidence-threshold = 0.9
+allow = [
+	"Unlicense",    # https://spdx.org/licenses/Unlicense
+	"CC0-1.0",      # https://spdx.org/licenses/CC0-1.0
+	"ISC",          # https://spdx.org/licenses/ISC
+	"MIT",          # https://spdx.org/licenses/MIT
+	"BSD-3-Clause", # https://spdx.org/licenses/BSD-3-Clause
+	"Apache-2.0",   # https://spdx.org/licenses/Apache-2.0
+	"MPL-2.0",      # https://spdx.org/licenses/MPL-2.0
+]
+exceptions = [
+	{ name = "links", version = "*", allow = [
+		"AGPL-3.0", # https://spdx.org/licenses/AGPL-3.0-or-later
+	] },
+	{ name = "unicode-ident", version = "*", allow = [
+		"Unicode-DFS-2016", # https://spdx.org/licenses/Unicode-DFS-2016
+	] },
+	{ name = "ring", version = "*", allow = [
+		"OpenSSL", # https://spdx.org/licenses/OpenSSL
+	] },
+]
+
+[[licenses.clarify]]
+name = "ring"
+version = "*"
+expression = "ISC AND MIT AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
+
+[[licenses.clarify]]
+name = "webpki"
+version = "*"
+expression = "ISC AND BSD-3-Clause"
+license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = [
+	"https://github.com/rust-lang/crates.io-index",
+]
+allow-git = []

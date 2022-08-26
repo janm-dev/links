@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - release-*.*.*
+
+permissions:
+  contents: write
+
+jobs:
+  licenses:
+    name: Gather and Publish License Info
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+      - run: |
+          cargo install --locked cargo-about
+          cargo about generate -o ATTRIBUTION.html --all-features about.hbs
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          fail_on_unmatched_files: true
+          append_body: true
+          generate_release_notes: true
+          files: ATTRIBUTION.html
+
+  release:
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+    name: Build and Release - Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+      - if: "!contains(matrix.os, 'musl')"
+        run: cargo build --release --target ${{ matrix.target }}
+      - if: "contains(matrix.os, 'musl')"
+        run: |
+          sudo apt update
+          sudo apt install -y musl-tools musl-dev openssl libssl-dev
+          cargo build --release --target ${{ matrix.target }} --features vendored-openssl
+          tar cf ${{ matrix.target }}.tar target/${{ matrix.target }}/release/server target/${{ matrix.target }}/release/cli
+          gzip ${{ matrix.target }}.tar
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          fail_on_unmatched_files: true
+          append_body: true
+          generate_release_notes: true
+          files: ${{ matrix.target }}.tar.gz
+
+  release-windows:
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+    name: Build and Release - Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+      - run: |
+          cargo build --release --target ${{ matrix.target }}
+          Compress-Archive -Path "target/${{ matrix.target }}/release/cli.exe", "target/${{ matrix.target }}/release/server.exe" -DestinationPath "${{ matrix.target }}.zip"
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          fail_on_unmatched_files: true
+          append_body: true
+          generate_release_notes: true
+          files: ${{ matrix.target }}.zip

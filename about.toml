@@ -1,0 +1,42 @@
+accepted = [
+	"Unlicense",
+	"CC0-1.0",
+	"ISC",
+	"MIT",
+	"BSD-3-Clause",
+	"Apache-2.0",
+	"MPL-2.0",
+]
+
+targets = [
+	"x86_64-unknown-linux-gnu",
+	"x86_64-unknown-linux-musl",
+	"x86_64-pc-windows-msvc",
+	"aarch64-unknown-linux-gnu",
+]
+
+workarounds = ["ring"]
+
+no-clearly-defined = true
+
+[links]
+accepted = ["AGPL-3.0"]
+
+[unicode-ident]
+accepted = ["Unicode-DFS-2016"]
+
+[ring]
+accepted = ["OpenSSL"]
+
+[webpki.clarify]
+license = "ISC AND BSD-3-Clause"
+
+[[webpki.clarify.files]]
+path = "LICENSE"
+license = "ISC"
+checksum = "5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a"
+
+[[webpki.clarify.files]]
+path = "third-party/chromium/LICENSE"
+license = "BSD-3-Clause"
+checksum = "845022e0c1db1abb41a6ba4cd3c4b674ec290f3359d9d3c78ae558d4c0ed9308"

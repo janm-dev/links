@@ -117,7 +117,7 @@ The minimum supported rust version is currently Rust 1.62, but this may change i
 ## Attribution
 
 - The readme header is based on an image of the Gale crater on Mars (where there is a rock outcrop named "Link") courtesy NASA/JPL-Caltech.
-- For software dependency attribution and licenses see [`ATTRIBUTION.md`](./ATTRIBUTION.md).
+- While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of its dependencies. Dependency license information is included with each [release](https://github.com/janm-dev/links/releases).
 
 ## License
 
