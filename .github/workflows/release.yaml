@@ -35,10 +35,10 @@ jobs:
 
   release:
     strategy:
+      fail-fast: false
       matrix:
         target:
           - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-gnu
     name: Build and Release - Linux
     runs-on: ubuntu-latest
@@ -53,13 +53,8 @@ jobs:
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
-      - if: "!contains(matrix.os, 'musl')"
-        run: cargo build --release --target ${{ matrix.target }}
-      - if: "contains(matrix.os, 'musl')"
-        run: |
-          sudo apt update
-          sudo apt install -y musl-tools musl-dev openssl libssl-dev
-          cargo build --release --target ${{ matrix.target }} --features vendored-openssl
+      - run: |
+          cargo build --release --target ${{ matrix.target }}
           tar cf ${{ matrix.target }}.tar target/${{ matrix.target }}/release/server target/${{ matrix.target }}/release/cli
           gzip ${{ matrix.target }}.tar
       - uses: softprops/action-gh-release@v1
@@ -72,6 +67,7 @@ jobs:
 
   release-windows:
     strategy:
+      fail-fast: false
       matrix:
         target:
           - x86_64-pc-windows-msvc
