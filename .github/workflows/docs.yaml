@@ -25,6 +25,9 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
       - uses: actions/configure-pages@v2
         id: pages
       - run: cargo doc --no-deps --document-private-items --all-features
