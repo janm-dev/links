@@ -33,7 +33,7 @@ jobs:
           version: "3.x"
       - uses: actions/configure-pages@v2
         id: pages
-      - run: cargo doc --no-deps --document-private-items --all-features
+      - run: RUSTDOCFLAGS=" --enable-index-page " cargo doc --no-deps --document-private-items --all-features
       - uses: actions/upload-pages-artifact@v1
         with:
           path: target/doc
