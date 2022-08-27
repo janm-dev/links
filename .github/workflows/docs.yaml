@@ -1,0 +1,34 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages-docs
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions/configure-pages@v2
+        id: pages
+      - run: cargo doc --no-deps --document-private-items --all-features
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: target/doc
+      - uses: actions/deploy-pages@v1
