@@ -13,6 +13,8 @@ Links is an all-in-one link shortener, redirecting links like <https://example.c
 Links can be configured via a [command line interface](#cli), or (soon) via an HTTP-based api and website. Redirects are stored in a flexible, configurable way. Currently, a volatile in-memory store <sup>(not recommended)</sup> and [Redis](https://redis.com/) <sup>(recommended)</sup> are supported.
 Links is designed to scale up and down horizontally as much as needed. You can run the links server as a [standalone executable](#standalone-executable) or in a lightweight [Docker container](#docker-container), load-balancing between different redirector servers however necessary (all requests are stateless, so each HTTP/gRPC request can be sent to any redirector).
 
+## [Code documentation](https://docs.links.janm.dev/links/index.html)
+
 ## How to set it up
 
 ### Standalone executable
