@@ -15,6 +15,9 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     concurrency:
       group: pages-docs
       cancel-in-progress: true
@@ -35,3 +38,4 @@ jobs:
         with:
           path: target/doc
       - uses: actions/deploy-pages@v1
+        id: deployment
