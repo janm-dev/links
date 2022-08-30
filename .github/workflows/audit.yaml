@@ -28,14 +28,13 @@ jobs:
         with:
           path: ~/.cargo/bin/
           key: cargo-audit-and-outdated-${{ steps.install-toolchain.outputs.rustc_hash }}
+      - run: cargo install cargo-audit cargo-outdated
       - uses: EmbarkStudios/cargo-deny-action@v1
         if: success() || failure()
       - uses: actions/dependency-review-action@v2
         if: success() || failure()
         with:
           fail-on-severity: low
-      - run: cargo install cargo-audit cargo-outdated
-        if: success() || failure()
       - run: cargo outdated --exit-code 1
         if: success() || failure()
       - run: cargo audit -D warnings
