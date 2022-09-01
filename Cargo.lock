@@ -1222,9 +1222,9 @@ dependencies = [
 
 [[package]]
 name = "minify-html"
-version = "0.9.2"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "640e7546ebd29c7d0fe523684a5a0661281ca93b7cf01fe3023a7fa979eaf17e"
+checksum = "7c47eced264e9639fde0fbb89e245cad6940a0c14cc1ebe4a5f5b36134309748"
 dependencies = [
  "aho-corasick",
  "css-minify",
