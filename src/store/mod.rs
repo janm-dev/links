@@ -108,8 +108,8 @@ impl Store {
 	}
 
 	/// Create a new static reference to a new instance of this `Store`.
-	/// Configuration is backend-specific and is provided as a collection of
-	/// `pico-args` arguments beginning with `--store-`.
+	/// Configuration is backend-specific and is provided as a `HashMap` from
+	/// string keys to string values, that are parsed by the backend as needed.
 	///
 	/// # Errors
 	/// This function returns an error if the store could not be initialized.
