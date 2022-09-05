@@ -78,7 +78,7 @@ tonic-build = "0.8.0"
 
 [dev-dependencies]
 regex = "1.6.0"
-reqwest = { version = "0.11.11", default_features = false, features = [
+reqwest = { version = "0.11.11", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
 ] }
