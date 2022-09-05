@@ -202,7 +202,7 @@ where
 /// Generate random IDs, and return the first unused one, so that the ID is
 /// guaranteed to be unique at the time of the function call. If all IDs are
 /// taken, this will loop forever (but considering that that would be about
-/// 5 TB of IDs alone, that's quite unlikely).\
+/// 5 TB of IDs alone, that's quite unlikely).
 #[allow(clippy::similar_names)] // Caused by `res` and `req`
 async fn gen_unique_id(
 	mut client: LinksClient<Channel>,
