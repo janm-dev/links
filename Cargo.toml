@@ -19,7 +19,7 @@ redis-tests = []
 vendored-openssl = ["fred/vendored-tls"]
 
 [dependencies]
-anyhow = "1.0.63"
+anyhow = "1.0.64"
 arc-swap = "1.5.1"
 async-trait = "0.1.57"
 clap = { version = "3.2.20", features = [
@@ -48,7 +48,7 @@ rustls-pemfile = "1.0.1"
 serde = "1.0.144"
 serde_derive = "1.0.144"
 serde_json = "1.0.85"
-serde_yaml = "0.9.10"
+serde_yaml = "0.9.11"
 thiserror = "1.0.33"
 tokio = { version = "1.20.1", features = [
 	"rt-multi-thread",
@@ -73,7 +73,7 @@ base64 = "0.13.0"
 html-minifier = "3.0.15"
 lol_html = "0.3.1"
 minify-html = "0.10.0"
-sha2 = "0.10.3"
+sha2 = "0.10.5"
 tonic-build = "0.8.0"
 
 [dev-dependencies]
