@@ -55,7 +55,7 @@ tokio = { version = "1.21.0", features = [
 ] }
 tokio-rustls = "0.23.4"
 toml = "0.5.9"
-tonic = { version = "0.8.0", default-features = false, features = [
+tonic = { version = "0.8.1", default-features = false, features = [
 	"gzip",
 	"tls",
 	"tls-roots",
