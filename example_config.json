@@ -13,8 +13,8 @@
 	// Can be any string, but should ideally be long and random
 	"token": "random secret api token value",
 	// Enable/disable TLS for HTTPS and encrypted gRPC
-	// Possible values are "disable" / "off", "enable" / "on", and "force"
-	"tls": "disable",
+	// Can be true to enable TLS, or false to disable
+	"tls_enable": false,
 	// Path to the TLS key, encoded in PEM format
 	"tls_key": "path/to/key.pem",
 	// Path to the TLS cert, encoded in PEM format
@@ -29,6 +29,9 @@
 	"hsts": "enable",
 	// The max-age attribute of the HSTS header in seconds
 	"hsts_max_age": 63072000,
+	// Whether to redirect HTTP requests to HTTPS before the external redirect
+	// Can be true to enable the forced HTTP to HTTPS redirect, or false to disable
+	"https_redirect": false,
 	// Whether to send the Alt-Svc HTTP header advertising h2 (HTTP/2.0 with TLS)
 	// support on port 443
 	// Can be true to enable sending the header, or false to disable

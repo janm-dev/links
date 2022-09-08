@@ -8,7 +8,6 @@ pub use rpc::{
 	RemVanityResponse, SetRedirectRequest, SetRedirectResponse, SetVanityRequest,
 	SetVanityResponse,
 };
-// Do some weird stuff to allow `clippy::pedantic` on generated code.
 use rpc_wrapper::rpc;
 use tokio::time::Instant;
 pub use tonic::{Code, Request, Response, Status};
@@ -18,7 +17,7 @@ use crate::{
 	config::Config,
 	id::Id,
 	normalized::{Link, Normalized},
-	store::Store,
+	store::{Current, Store},
 };
 /// A wrapper around the generated tonic code. Contains the `rpc` module with
 /// all of the actual functionality. This is necessary to allow
@@ -38,7 +37,7 @@ mod rpc_wrapper {
 /// is invalid.
 pub fn get_auth_checker(
 	config: &'static Config,
-) -> impl FnMut(Request<()>) -> Result<Request<()>, Status> + Clone {
+) -> impl Fn(Request<()>) -> Result<Request<()>, Status> + Clone {
 	#[allow(clippy::cognitive_complexity)] // Caused by macro expansion
 	move |req: Request<()>| -> Result<Request<()>, Status> {
 		let token = if let Some(token) = req.metadata().get("auth") {
@@ -66,15 +65,21 @@ pub fn get_auth_checker(
 /// operations are performed. Implements all RPC calls from `links.proto`.
 #[derive(Debug)]
 pub struct Api {
-	store: &'static Store,
+	store: &'static Current,
 }
 
 impl Api {
 	/// Create a new API instance. This instance will operate on the `store`
 	/// provided, and provide access to that store via gRPC.
 	#[instrument(level = "info", skip_all, fields(store = store.backend_name()))]
-	pub fn new(store: &'static Store) -> Self {
+	pub fn new(store: &'static Current) -> Self {
 		Self { store }
+	}
+
+	/// Get a reference to this API's store.
+	#[instrument(level = "trace", skip_all)]
+	pub fn store(&self) -> Store {
+		self.store.get()
 	}
 }
 
@@ -86,13 +91,14 @@ impl Links for Api {
 		req: Request<rpc::GetRedirectRequest>,
 	) -> Result<Response<rpc::GetRedirectResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let id = match Id::try_from(req.into_inner().id) {
 			Ok(id) => id,
 			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
 		};
 
-		let link = match self.store.get_redirect(id).await {
+		let link = match store.get_redirect(id).await {
 			Ok(link) => link,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
@@ -118,6 +124,7 @@ impl Links for Api {
 		req: Request<rpc::SetRedirectRequest>,
 	) -> Result<Response<rpc::SetRedirectResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let rpc::SetRedirectRequest { id, link } = req.into_inner();
 
@@ -131,7 +138,7 @@ impl Links for Api {
 			Err(_) => return Err(Status::new(Code::InvalidArgument, "link is invalid")),
 		};
 
-		let link = match self.store.set_redirect(id, link).await {
+		let link = match store.set_redirect(id, link).await {
 			Ok(link) => link,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
@@ -157,13 +164,14 @@ impl Links for Api {
 		req: Request<rpc::RemRedirectRequest>,
 	) -> Result<Response<rpc::RemRedirectResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let id = match Id::try_from(req.into_inner().id) {
 			Ok(id) => id,
 			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
 		};
 
-		let link = match self.store.rem_redirect(id).await {
+		let link = match store.rem_redirect(id).await {
 			Ok(link) => link,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
@@ -189,10 +197,11 @@ impl Links for Api {
 		req: Request<rpc::GetVanityRequest>,
 	) -> Result<Response<rpc::GetVanityResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
-		let id = match self.store.get_vanity(vanity).await {
+		let id = match store.get_vanity(vanity).await {
 			Ok(id) => id,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
@@ -218,6 +227,7 @@ impl Links for Api {
 		req: Request<rpc::SetVanityRequest>,
 	) -> Result<Response<rpc::SetVanityResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let rpc::SetVanityRequest { vanity, id } = req.into_inner();
 
@@ -228,7 +238,7 @@ impl Links for Api {
 			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
 		};
 
-		let id = match self.store.set_vanity(vanity, id).await {
+		let id = match store.set_vanity(vanity, id).await {
 			Ok(id) => id,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};
@@ -254,10 +264,11 @@ impl Links for Api {
 		req: Request<rpc::RemVanityRequest>,
 	) -> Result<Response<rpc::RemVanityResponse>, Status> {
 		let time = Instant::now();
+		let store = self.store();
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
-		let id = match self.store.rem_vanity(vanity).await {
+		let id = match store.rem_vanity(vanity).await {
 			Ok(id) => id,
 			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
 		};

@@ -65,17 +65,20 @@ pub struct Partial {
 	pub log_level: Option<LogLevel>,
 	/// API token, used for authentication of gRPC clients
 	pub token: Option<String>,
-	/// TLS configuration (HTTPS and gRPC)
-	pub tls: Option<PartialTls>,
-	/// TLS key file path, required when TLS is enabled or forced
+	/// Enable TLS for HTTPS and encrypted gRPC, requires `tls_key` and
+	/// `tls_cert` to be set
+	pub tls_enable: Option<bool>,
+	/// TLS key file path, required when TLS is enabled
 	pub tls_key: Option<PathBuf>,
-	/// TLS certificate file path, required when TLS is enabled or forced
+	/// TLS certificate file path, required when TLS is enabled
 	pub tls_cert: Option<PathBuf>,
 	/// HTTP Strict Transport Security setting on redirect
 	pub hsts: Option<PartialHsts>,
 	/// HTTP Strict Transport Security `max_age` header attribute (retention
 	/// time in seconds)
 	pub hsts_max_age: Option<u32>,
+	/// Redirect from HTTP to HTTPS before the external redirect
+	pub https_redirect: Option<bool>,
 	/// Send the `Alt-Svc` header advertising `h2` (HTTP/2.0 with TLS) support
 	/// on port 443
 	pub send_alt_svc: Option<bool>,
@@ -157,11 +160,12 @@ impl Partial {
 		Self {
 			log_level: args.opt_value_from_str("--log-level").unwrap_or(None),
 			token: args.opt_value_from_str("--token").unwrap_or(None),
-			tls: args.opt_value_from_str("--tls").unwrap_or(None),
+			tls_enable: args.opt_value_from_str("--tls-enable").unwrap_or(None),
 			tls_key: args.opt_value_from_str("--tls-key").unwrap_or(None),
 			tls_cert: args.opt_value_from_str("--tls-cert").unwrap_or(None),
 			hsts: args.opt_value_from_str("--hsts").unwrap_or(None),
 			hsts_max_age: args.opt_value_from_str("--hsts-max-age").unwrap_or(None),
+			https_redirect: args.opt_value_from_str("--https-redirect").unwrap_or(None),
 			send_alt_svc: args.opt_value_from_str("--send-alt-svc").unwrap_or(None),
 			send_server: args.opt_value_from_str("--send-server").unwrap_or(None),
 			send_csp: args.opt_value_from_str("--send-csp").unwrap_or(None),
@@ -183,11 +187,12 @@ impl Partial {
 		Self {
 			log_level: parse_env_var("LINKS_LOG_LEVEL"),
 			token: parse_env_var("LINKS_TOKEN"),
-			tls: parse_env_var("LINKS_TLS"),
+			tls_enable: parse_env_var("LINKS_TLS_ENABLE"),
 			tls_key: parse_env_var("LINKS_TLS_KEY"),
 			tls_cert: parse_env_var("LINKS_TLS_CERT"),
 			hsts: parse_env_var("LINKS_HSTS"),
 			hsts_max_age: parse_env_var("LINKS_HSTS_MAX_AGE"),
+			https_redirect: parse_env_var("LINKS_HTTPS_REDIRECT"),
 			send_alt_svc: parse_env_var("LINKS_SEND_ALT_SVC"),
 			send_server: parse_env_var("LINKS_SEND_SERVER"),
 			send_csp: parse_env_var("LINKS_SEND_CSP"),
@@ -216,40 +221,25 @@ impl Partial {
 	/// Get TLS configuration information from this partial config, if present
 	#[must_use]
 	pub fn tls(&self) -> Option<Tls> {
-		match self.tls? {
-			PartialTls::Disable => Some(Tls::Disable),
-			PartialTls::Enable => Some(Tls::Enable {
+		if self.tls_enable? {
+			Some(Tls::Enable {
 				key_file: self.tls_key.as_ref()?.clone(),
 				cert_file: self.tls_cert.as_ref()?.clone(),
-			}),
-			PartialTls::Force => Some(Tls::Force {
-				key_file: self.tls_key.as_ref()?.clone(),
-				cert_file: self.tls_cert.as_ref()?.clone(),
-			}),
+			})
+		} else {
+			Some(Tls::Disable)
 		}
 	}
 }
 
 impl From<&Config> for Partial {
 	fn from(config: &Config) -> Self {
-		let (tls, key_file, cert_file) = match config.tls() {
-			Tls::Disable => (PartialTls::Disable, None, None),
+		let (tls_enable, key_file, cert_file) = match config.tls() {
+			Tls::Disable => (false, None, None),
 			Tls::Enable {
 				ref key_file,
 				ref cert_file,
-			} => (
-				PartialTls::Enable,
-				Some(key_file.clone()),
-				Some(cert_file.clone()),
-			),
-			Tls::Force {
-				ref key_file,
-				ref cert_file,
-			} => (
-				PartialTls::Force,
-				Some(key_file.clone()),
-				Some(cert_file.clone()),
-			),
+			} => (true, Some(key_file.clone()), Some(cert_file.clone())),
 		};
 
 		let (hsts, hsts_max_age) = match config.hsts() {
@@ -262,11 +252,12 @@ impl From<&Config> for Partial {
 		Self {
 			log_level: Some((config.log_level()).into()),
 			token: Some(config.token().to_string()),
-			tls: Some(tls),
+			tls_enable: Some(tls_enable),
 			tls_key: key_file,
 			tls_cert: cert_file,
 			hsts: Some(hsts),
 			hsts_max_age,
+			https_redirect: Some(config.https_redirect()),
 			send_alt_svc: Some(config.send_alt_svc()),
 			send_server: Some(config.send_server()),
 			send_csp: Some(config.send_csp()),
@@ -358,59 +349,6 @@ impl From<Level> for LogLevel {
 			Level::WARN => LogLevel::Warn,
 			Level::ERROR => LogLevel::Error,
 		}
-	}
-}
-
-/// TLS enabling options as seen from the user's perspective.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[allow(clippy::module_name_repetitions)]
-#[serde(rename_all = "snake_case")]
-pub enum PartialTls {
-	/// Disable TLS. Only HTTP (no HTTPS) and unencrypted gRPC will be
-	/// available.
-	#[default]
-	Disable,
-	/// Enable TLS. HTTP, HTTPS, and encrypted gRPC will be available.
-	Enable,
-	/// Enable and force TLS. HTTP, HTTPS, and encrypted gRPC will be available,
-	/// however HTTP will only redirect to HTTPS (before any external redirect).
-	Force,
-}
-
-/// The error returned by fallible conversions from a string to [`PartialTls`].
-/// Includes the original input string.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-#[allow(clippy::module_name_repetitions)]
-pub struct PartialTlsParseError(String);
-
-impl Error for PartialTlsParseError {}
-
-impl Display for PartialTlsParseError {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		fmt.write_fmt(format_args!("unknown TLS option: {}", self.0))
-	}
-}
-
-impl FromStr for PartialTls {
-	type Err = PartialTlsParseError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"disable" | "off" => Ok(Self::Disable),
-			"enable" | "on" => Ok(Self::Enable),
-			"force" => Ok(Self::Force),
-			_ => Err(PartialTlsParseError(s.to_string())),
-		}
-	}
-}
-
-impl Display for PartialTls {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		fmt.write_str(match self {
-			Self::Disable => "disable",
-			Self::Enable => "enable",
-			Self::Force => "force",
-		})
 	}
 }
 

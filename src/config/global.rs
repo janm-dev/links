@@ -125,6 +125,12 @@ impl Config {
 		self.inner.read().hsts
 	}
 
+	/// Get the `https_redirect` configuration option
+	#[must_use]
+	pub fn https_redirect(&self) -> bool {
+		self.inner.read().https_redirect
+	}
+
 	/// Get the `send_alt_svc` configuration option
 	#[must_use]
 	pub fn send_alt_svc(&self) -> bool {
@@ -188,6 +194,7 @@ impl Display for Config {
 
 /// Actual configuration storage inside of a [`Config`]
 #[derive(Debug)]
+#[allow(clippy::struct_excessive_bools)]
 struct ConfigInner {
 	/// Minimum level of logs to be collected/displayed. Debug and trace levels
 	/// may expose secret information, so are not recommended for production
@@ -199,6 +206,9 @@ struct ConfigInner {
 	pub tls: Tls,
 	/// HTTP Strict Transport Security setting on redirect
 	pub hsts: Hsts,
+	/// Redirect incoming HTTP requests to HTTPS first, before the actual
+	/// external redirect
+	pub https_redirect: bool,
 	/// Send the `Alt-Svc` header advertising `h2` (HTTP/2.0 with TLS) support
 	/// on port 443
 	pub send_alt_svc: bool,
@@ -231,6 +241,10 @@ impl ConfigInner {
 
 		if let Some(hsts) = partial.hsts() {
 			self.hsts = hsts;
+		}
+
+		if let Some(https_redirect) = partial.https_redirect {
+			self.https_redirect = https_redirect;
 		}
 
 		if let Some(send_alt_svc) = partial.send_alt_svc {
@@ -266,6 +280,7 @@ impl Default for ConfigInner {
 				.map(char::from)
 				.collect::<String>()
 				.into(),
+			https_redirect: false,
 			tls: Tls::default(),
 			hsts: Hsts::default(),
 			send_alt_svc: false,
@@ -362,31 +377,19 @@ impl Default for Hsts {
 /// the RPC API.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Tls {
-	/// Disable TLS. With this option only HTTP *without* TLS (no HTTPS) are
-	/// supported, and gRPC traffic is unencrypted. Not recommended.
+	/// Disable TLS. With this option only HTTP *without* TLS (no HTTPS) is
+	/// supported, and gRPC traffic is unencrypted. Incoming TLS connections
+	/// will be rejected. Not recommended.
 	#[default]
 	Disable,
-	/// Enable TLS. Both HTTP and HTTPS are supported, gRPC traffic is
-	/// encrypted.
+	/// Enable TLS. TLS listeners can be created using the provided key and cert
+	/// files. Recommended.
 	Enable {
 		/// Path to the file containing a PEM-encoded TLS private key. All file
 		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
 		/// are supported.
 		key_file: PathBuf,
 		/// Path to the file containing a PEM-encoded TLS certificate. All file
-		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
-		/// are supported.
-		cert_file: PathBuf,
-	},
-	/// Enable TLS, and redirect HTTP traffic to HTTPS. Both HTTP and HTTPS are
-	/// supported, but the HTTP server *only* redirects to HTTPS, before any
-	/// external redirect happens. gRPC traffic is encrypted. Recommended.
-	Force {
-		/// Path to the file containing a PEM-encoded TLS private key. All
-		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
-		/// are supported.
-		key_file: PathBuf,
-		/// Path to the file containing a PEM-encoded TLS certificate. All
 		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
 		/// are supported.
 		cert_file: PathBuf,

@@ -26,12 +26,14 @@ async fn http_to_https_redirect() {
 		"--example-redirect",
 		"--token",
 		"abc123",
-		"--tls",
-		"force",
+		"--tls-enable",
+		"true",
 		"--tls-cert",
 		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
 		"--tls-key",
 		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
+		"--https-redirect",
+		"true",
 	]);
 
 	let client = ClientBuilder::new()

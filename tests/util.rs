@@ -38,8 +38,8 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 
 	if tls {
 		args.extend([
-			"--tls",
-			"on",
+			"--tls-enable",
+			"true",
 			"--tls-cert",
 			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
 			"--tls-key",

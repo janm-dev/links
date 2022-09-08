@@ -23,7 +23,7 @@ use crate::{
 #[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
 pub async fn redirector(
 	req: Request<Body>,
-	store: &Store,
+	store: Store,
 	config: Config,
 ) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();

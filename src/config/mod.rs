@@ -7,16 +7,18 @@
 //!   `info`, `warn`, `error`. **Default `info`**.
 //! - `token` - RPC API authentication token, should be long and random.
 //!   **Default [randomly generated string]**.
-//! - `tls` - TLS (for HTTP and RPC) options. Possible values: `off`, `on`,
-//!   `force`. **Default `off`**.
-//! - `tls_key` - TLS private key file path. Required if TLS is set to on or
-//!   force. **No default**.
-//! - `tls_cert` - TLS certificate file path. Required if TLS is set to on or
-//!   force. **No default**.
+//! - `tls_enable` - Whether to enable TLS for HTTPS and RPC. **Default
+//!   `false`**.
+//! - `tls_key` - TLS private key file path. Required if TLS is enabled. **No
+//!   default**.
+//! - `tls_cert` - TLS certificate file path. Required if TLS is enabled. **No
+//!   default**.
 //! - `hsts` - HTTP strict transport security setting. Possible values:
 //!   `disable`, `enable`, `includeSubDomains`, `preload`. **Default `enable`**.
 //! - `hsts_max_age` - The HSTS max-age setting (in seconds). **Default
 //!   `63072000` (2 years)**.
+//! - `https_redirect` - Whether to redirect HTTP requests to HTTPS before the
+//!   external redirect. **Default `false`**.
 //! - `send_alt_svc` - Whether to send the Alt-Svc HTTP header (`Alt-Svc:
 //!   h2=":443"; ma=31536000`). **Default `false`**.
 //! - `send_server` - Whether to send the Server HTTP header (`Server:
@@ -33,5 +35,5 @@ mod partial;
 
 pub use self::{
 	global::{Config, Hsts, Redirector, Tls},
-	partial::{IntoPartialError, LogLevel as PartialLogLevel, Partial, PartialHsts, PartialTls},
+	partial::{IntoPartialError, LogLevel as PartialLogLevel, Partial, PartialHsts},
 };

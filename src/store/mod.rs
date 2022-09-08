@@ -9,10 +9,11 @@ mod redis;
 #[cfg(test)]
 mod tests;
 
-use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr};
+use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr, sync::Arc};
 
 use anyhow::Result;
 use backend::StoreBackend;
+use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
 use tracing::instrument;
 
@@ -78,11 +79,59 @@ impl Display for IntoBackendTypeError {
 
 impl Error for IntoBackendTypeError {}
 
-/// A wrapper around any `StoreBackend`, providing access to the underlying
-/// store along some with extra things like logging.
+/// A holder for a [`Store`], which allows the store to be updated on the fly.
 #[derive(Debug)]
+pub struct Current {
+	store: RwLock<Store>,
+}
+
+impl Current {
+	/// Create a new [`Current`]. The store passed into this function will be
+	/// returned by calls to `get`.
+	#[must_use]
+	pub const fn new(store: Store) -> Self {
+		Self {
+			store: RwLock::new(store),
+		}
+	}
+
+	/// Create a new static reference to a new [`Current`]. The store passed
+	/// into this function will be returned by calls to `get`.
+	///
+	/// # Memory
+	/// This function leaks memory. Make sure it is not called an unbounded
+	/// number of times.
+	#[must_use]
+	pub fn new_static(store: Store) -> &'static Self {
+		Box::leak(Box::new(Self::new(store)))
+	}
+
+	/// Get the current [`Store`]. The returned store itself will remain
+	/// unchanged even if the [`Current`] is updated.
+	pub fn get(&self) -> Store {
+		self.store.read().clone()
+	}
+
+	/// Update the store inside this [`Current`]. All future calls to `get` will
+	/// return this store instead, but all still-active stores will remain
+	/// unchanged.
+	pub fn update(&self, store: Store) {
+		*self.store.write() = store;
+	}
+
+	/// Get the current store's backend name. This is (slightly) more efficient
+	/// than `current.get().backend_name()`, because it doesn't need to update
+	/// the store's internal reference count.
+	pub fn backend_name(&self) -> &'static str {
+		self.store.read().backend_name()
+	}
+}
+
+/// A wrapper around any [`StoreBackend`], providing access to the underlying
+/// store along some with extra things like logging.
+#[derive(Debug, Clone)]
 pub struct Store {
-	store: Box<dyn StoreBackend>,
+	store: Arc<dyn StoreBackend>,
 }
 
 impl Store {
@@ -99,29 +148,12 @@ impl Store {
 	pub async fn new(store_type: BackendType, config: &HashMap<String, String>) -> Result<Self> {
 		match store_type {
 			BackendType::Memory => Ok(Self {
-				store: Box::new(Memory::new(config).await?),
+				store: Arc::new(Memory::new(config).await?),
 			}),
 			BackendType::Redis => Ok(Self {
-				store: Box::new(Redis::new(config).await?),
+				store: Arc::new(Redis::new(config).await?),
 			}),
 		}
-	}
-
-	/// Create a new static reference to a new instance of this `Store`.
-	/// Configuration is backend-specific and is provided as a `HashMap` from
-	/// string keys to string values, that are parsed by the backend as needed.
-	///
-	/// # Errors
-	/// This function returns an error if the store could not be initialized.
-	/// This may happen if the configuration is invalid or for other
-	/// backend-specific reasons (such as a file not being createable or a
-	/// network connection not being establishable, etc.).
-	#[instrument(level = "trace")]
-	pub async fn new_static(
-		store_type: BackendType,
-		config: &HashMap<String, String>,
-	) -> Result<&'static Self> {
-		Ok(&*Box::leak(Box::new(Self::new(store_type, config).await?)))
 	}
 
 	/// Get the underlying implementation's name. The name (used in e.g. the
@@ -218,6 +250,37 @@ impl Store {
 mod store_tests {
 	use super::*;
 
+	#[tokio::test]
+	async fn current() {
+		let id = Id::from([1, 2, 3, 4, 5]);
+		let link = Link::from_str("https://example.com").unwrap();
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
+			.await
+			.unwrap();
+		store.set_redirect(id, link.clone()).await.unwrap();
+
+		let current = Current::new(store.clone());
+		let static_current = Current::new_static(store);
+
+		assert_eq!(
+			current.get().get_redirect(id).await.unwrap(),
+			Some(link.clone())
+		);
+		assert_eq!(
+			static_current.get().get_redirect(id).await.unwrap(),
+			Some(link)
+		);
+
+		let new_store = Store::new("memory".parse().unwrap(), &HashMap::new())
+			.await
+			.unwrap();
+		current.update(new_store.clone());
+		static_current.update(new_store.clone());
+
+		assert_eq!(current.get().get_redirect(id).await.unwrap(), None);
+		assert_eq!(static_current.get().get_redirect(id).await.unwrap(), None);
+	}
+
 	#[test]
 	fn type_to_from() {
 		assert_eq!(
@@ -232,6 +295,32 @@ mod store_tests {
 	}
 
 	#[tokio::test]
+	async fn cheap_clone() {
+		let store_a = Store::new("memory".parse().unwrap(), &HashMap::new())
+			.await
+			.unwrap();
+		let store_b = Store::new("memory".parse().unwrap(), &HashMap::new())
+			.await
+			.unwrap();
+		let store_c = store_a.clone();
+		let id = Id::from([0, 1, 2, 3, 4]);
+
+		store_a
+			.set_redirect(id, Link::new("https://example.com/test").unwrap())
+			.await
+			.unwrap();
+
+		assert_eq!(
+			store_a.get_redirect(id).await.unwrap(),
+			store_c.get_redirect(id).await.unwrap(),
+		);
+		assert_ne!(
+			store_a.get_redirect(id).await.unwrap(),
+			store_b.get_redirect(id).await.unwrap(),
+		);
+	}
+
+	#[tokio::test]
 	async fn new() {
 		Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
@@ -239,15 +328,8 @@ mod store_tests {
 	}
 
 	#[tokio::test]
-	async fn new_static() {
-		Store::new_static("memory".parse().unwrap(), &HashMap::new())
-			.await
-			.unwrap();
-	}
-
-	#[tokio::test]
 	async fn backend_name() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -258,7 +340,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn get_redirect() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -273,7 +355,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn set_redirect() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -287,7 +369,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn rem_redirect() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -303,7 +385,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn get_vanity() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -324,7 +406,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn set_vanity() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
@@ -338,7 +420,7 @@ mod store_tests {
 
 	#[tokio::test]
 	async fn rem_vanity() {
-		let store = Store::new_static("memory".parse().unwrap(), &HashMap::new())
+		let store = Store::new("memory".parse().unwrap(), &HashMap::new())
 			.await
 			.unwrap();
 
