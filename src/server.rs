@@ -30,6 +30,7 @@ use std::{
 	fmt::{Debug, Formatter, Result as FmtResult},
 	net::SocketAddr,
 	sync::Arc,
+	thread,
 };
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
@@ -359,6 +360,19 @@ impl Listener {
 	/// port `0` can be used to indicate an OS-assigned port (not generally
 	/// recommended for a server).
 	///
+	/// # Drop
+	/// When dropped, a listener will wait until its internal task is fully
+	/// cancelled, which can take some time to complete. Dropping a listener
+	/// should therefore be considered blocking, and only done in synchronous
+	/// contexts or via the [`spawn_blocking` function][spawn_blocking].
+	/// Additionally, because the `drop` function blocks its thread until the
+	/// async runtime completes the cancellation of the task in the background,
+	/// a listener requires more than one thread to drop, and can not
+	/// successfully be dropped inside of a single-threaded tokio runtime (the
+	/// entire program will block indefinitely).
+	///
+	/// [spawn_blocking]: fn@tokio::task::spawn_blocking
+	///
 	/// # Errors
 	/// This function returns an error if it can not bind to the address.
 	pub async fn new(
@@ -387,8 +401,18 @@ impl Listener {
 }
 
 impl Drop for Listener {
+	/// Cancel the task responsible for listening
+	///
+	/// # Blocking
+	/// This functions blocks the current thread until the task is fully
+	/// aborted. Additionally, if used in the context of a single-threaded tokio
+	/// runtime, this function can completely block the entire program.
 	fn drop(&mut self) {
 		self.handle.abort();
+
+		while !self.handle.is_finished() {
+			thread::yield_now();
+		}
 	}
 }
 
@@ -412,4 +436,53 @@ pub async fn store_setup(config: &Config, example_redirect: bool) -> Result<Stor
 	}
 
 	Ok(store)
+}
+
+#[cfg(test)]
+mod tests {
+	use std::time::Instant;
+
+	use super::*;
+
+	/// A mock [`Acceptor`] that does nothing.
+	#[derive(Debug, Copy, Clone)]
+	struct UnAcceptor;
+
+	#[async_trait::async_trait]
+	impl Acceptor<TcpStream> for UnAcceptor {
+		async fn accept(&self, _: TcpStream, _: SocketAddr, _: SocketAddr) {
+			spawn(async {});
+		}
+	}
+
+	#[tokio::test(flavor = "multi_thread")]
+	async fn listener() {
+		let addr = ([127, 0, 0, 1], 8000);
+
+		let listener = Listener::new(addr, UnAcceptor).await.unwrap();
+
+		let start = Instant::now();
+		drop(listener);
+		let duration = start.elapsed();
+
+		let _listener = Listener::new(addr, UnAcceptor).await.unwrap();
+
+		assert!(duration.as_micros() < 1000);
+	}
+
+	#[tokio::test]
+	async fn fn_store_setup() {
+		let with_example = store_setup(&Config::new(None), true).await.unwrap();
+		let without_example = store_setup(&Config::new(None), false).await.unwrap();
+
+		assert_eq!(
+			with_example.get_vanity("example".into()).await.unwrap(),
+			Some(Id::MAX.try_into().unwrap())
+		);
+
+		assert_eq!(
+			without_example.get_vanity("example".into()).await.unwrap(),
+			None
+		);
+	}
 }

@@ -67,3 +67,54 @@ async fn http_to_https_redirect() {
 	let redirect_id = redirect_res.headers().get("Link-ID");
 	assert_eq!(redirect_id, None);
 }
+
+/// HTTPS to HTTPS (should not be an internal) redirect
+#[tokio::test]
+#[serial_test::serial]
+async fn https_to_https_no_redirect() {
+	let _terminator = util::start_server_with_args(vec![
+		"--example-redirect",
+		"--token",
+		"abc123",
+		"--tls-enable",
+		"true",
+		"--tls-cert",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
+		"--tls-key",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
+		"--https-redirect",
+		"true",
+	]);
+
+	let client = ClientBuilder::new()
+		.redirect(Policy::none())
+		.build()
+		.unwrap();
+
+	let nonexistent_res = client
+		.get("https://localhost/nonexistent")
+		.send()
+		.await
+		.unwrap();
+	let status_redirect = nonexistent_res.status();
+	assert_eq!(status_redirect, StatusCode::NOT_FOUND);
+	let redirect_dest = nonexistent_res.headers().get("Location");
+	assert_eq!(redirect_dest, None);
+	let redirect_id = nonexistent_res.headers().get("Link-ID");
+	assert_eq!(redirect_id, None);
+
+	let redirect_res = client
+		.get("https://localhost/example")
+		.send()
+		.await
+		.unwrap();
+	let status_redirect = redirect_res.status();
+	assert_eq!(status_redirect, StatusCode::FOUND);
+	let redirect_dest = redirect_res.headers().get("Location");
+	assert_eq!(
+		redirect_dest,
+		Some(&HeaderValue::from_static("https://example.com/"))
+	);
+	let redirect_id = redirect_res.headers().get("Link-ID");
+	assert_eq!(redirect_id, Some(&HeaderValue::from_static("9dDbKpJP")));
+}
