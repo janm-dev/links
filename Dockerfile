@@ -50,7 +50,7 @@ WORKDIR /links
 COPY --from=builder /links/target/x86_64-unknown-linux-musl/release/server ./
 
 # Copy the config file
-COPY ./docker_config.toml /config.toml
+COPY ./docker-config.toml /config.toml
 
 # Use an unprivileged user
 USER links:links

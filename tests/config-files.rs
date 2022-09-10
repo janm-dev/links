@@ -8,7 +8,7 @@ use links::config::Partial;
 fn config_files_are_valid() {
 	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("example_config");
+		.join("example-config");
 
 	// JSON must first have comments removed to be checked.
 	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
@@ -36,7 +36,7 @@ fn config_files_are_valid() {
 #[test]
 fn json_example_is_complete() {
 	let config = Partial::from_json(
-		&include_str!("../example_config.json")
+		&include_str!("../example-config.json")
 			.lines()
 			.filter(|l| !l.trim().starts_with("//"))
 			.collect::<String>(),
@@ -52,7 +52,7 @@ fn json_example_is_complete() {
 
 #[test]
 fn toml_example_is_complete() {
-	let config = Partial::from_toml(include_str!("../example_config.toml")).unwrap();
+	let config = Partial::from_toml(include_str!("../example-config.toml")).unwrap();
 
 	assert!(!format!("{config:?}").contains("None"));
 	assert_eq!(
@@ -63,7 +63,7 @@ fn toml_example_is_complete() {
 
 #[test]
 fn yaml_example_is_complete() {
-	let config = Partial::from_yaml(include_str!("../example_config.yaml")).unwrap();
+	let config = Partial::from_yaml(include_str!("../example-config.yaml")).unwrap();
 
 	assert!(!format!("{config:?}").contains("None"));
 	assert_eq!(
@@ -76,7 +76,7 @@ fn yaml_example_is_complete() {
 fn examples_are_equivalent() {
 	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("example_config");
+		.join("example-config");
 
 	// JSON must first have comments removed to be checked.
 	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
@@ -103,7 +103,7 @@ fn examples_are_equivalent() {
 fn docker_config_is_valid() {
 	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("example_config");
+		.join("example-config");
 
 	let config = Partial::from_file(&path.with_extension("toml"));
 
