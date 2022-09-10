@@ -163,7 +163,7 @@ impl Config {
 
 	/// Get the configuration file path
 	#[must_use]
-	const fn file(&self) -> &Option<PathBuf> {
+	pub const fn file(&self) -> &Option<PathBuf> {
 		&self.file
 	}
 }

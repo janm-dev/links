@@ -1,5 +1,7 @@
 //! Miscellaneous statics, utilities, and macros used throughout links.
 
+use std::collections::HashMap;
+
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -17,6 +19,27 @@ lazy_static! {
 	/// where `hyper` refers to the HTTP library used, `links` is this crate's
 	/// name, and the version is `util::VERSION`.
 	pub static ref SERVER_NAME: String = format!("hyperlinks/{}", &*VERSION);
+}
+
+/// Make a decent-looking and readable string out of a string -> string map
+pub fn stringify_map<K, V, H>(map: &HashMap<K, V, H>) -> String
+where
+	K: AsRef<str>,
+	V: AsRef<str>,
+{
+	let mut buf = String::with_capacity(map.len() * 16);
+	buf += "{ ";
+
+	for (i, (k, v)) in map.iter().enumerate() {
+		buf += k.as_ref();
+		buf += " = ";
+		buf += v.as_ref();
+		if i < map.len() - 1 {
+			buf += ", ";
+		}
+	}
+
+	buf + " }"
 }
 
 /// One year in seconds

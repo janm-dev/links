@@ -28,7 +28,7 @@ use std::{
 		mpsc::{self, RecvTimeoutError},
 		Arc,
 	},
-	time::Duration,
+	time::{Duration, Instant},
 };
 
 use anyhow::anyhow;
@@ -39,18 +39,23 @@ use links::{
 		store_setup, Listener, PlainHttpAcceptor, PlainRpcAcceptor, TlsHttpAcceptor, TlsRpcAcceptor,
 	},
 	store::Current,
-	util::{SERVER_HELP, SERVER_NAME},
+	util::{stringify_map, SERVER_HELP, SERVER_NAME},
 };
 use notify::{RecursiveMode, Watcher};
 use pico_args::Arguments;
 use tokio::runtime::Builder;
 use tracing::{debug, error, info, Level};
-use tracing_subscriber::{filter::FilterFn, prelude::*, FmtSubscriber};
+use tracing_subscriber::{filter::DynFilterFn, prelude::*, FmtSubscriber};
 
 #[cfg(not(coverage))]
 const WATCHER_TIMEOUT: Duration = Duration::from_secs(5);
 #[cfg(coverage)]
 const WATCHER_TIMEOUT: Duration = Duration::from_millis(50);
+
+#[cfg(not(coverage))]
+const WATCHER_DEBOUNCE_TIMEOUT: Duration = Duration::from_secs(1);
+#[cfg(coverage)]
+const WATCHER_DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(50);
 
 /// Run the links redirector server using configuration from the provided
 /// command line arguments. This is essentially the entire server binary, but
@@ -92,7 +97,8 @@ fn main() -> Result<(), anyhow::Error> {
 	debug!(?config, "Server configuration parsed");
 
 	// Set a tracing filter which can change the minimum log level on the fly.
-	let tracing_filter = FilterFn::new(move |metadata| metadata.level() <= &config.log_level());
+	let tracing_filter =
+		DynFilterFn::new(move |metadata, _| metadata.level() <= &config.log_level());
 
 	// Create the permanent global tracing subscriber to collect and show logs
 	let tracing_subscriber = FmtSubscriber::builder()
@@ -168,6 +174,10 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	})?;
 
+	if let Some(config_file) = config.file() {
+		file_watcher.watch(config_file, RecursiveMode::NonRecursive)?;
+	}
+
 	if let Tls::Enable {
 		key_file,
 		cert_file,
@@ -177,26 +187,107 @@ fn main() -> Result<(), anyhow::Error> {
 		file_watcher.watch(&cert_file, RecursiveMode::NonRecursive)?;
 	}
 
+	let mut last_file_event = None;
+
 	info!(%config, "Links redirector server started");
 
 	loop {
-		match watcher_rx.recv_timeout(WATCHER_TIMEOUT) {
+		match watcher_rx.recv_timeout(if last_file_event.is_none() {
+			WATCHER_TIMEOUT
+		} else {
+			WATCHER_TIMEOUT.min(WATCHER_DEBOUNCE_TIMEOUT) / 2
+		}) {
 			Ok(event) => {
 				debug!(?event, "Received file event from watcher");
+				last_file_event = Some(Instant::now());
+			}
+			Err(RecvTimeoutError::Disconnected) => error!("File watching error"),
+			Err(RecvTimeoutError::Timeout) => (),
+		}
+
+		if last_file_event.is_some()
+			&& last_file_event.unwrap().elapsed() > WATCHER_DEBOUNCE_TIMEOUT
+		{
+			// Reset file event debouncing timeout
+			last_file_event = None;
+
+			// Retain some old config options, then update config
+			let old_tls = config.tls();
+			let old_store = (config.store(), config.store_config());
+			config.update();
+			let new_tls = config.tls();
+			let new_store = (config.store(), config.store_config());
+
+			// If TLS file paths changed, watch those instead of the old ones
+			if old_tls != new_tls {
+				if let Tls::Enable {
+					key_file,
+					cert_file,
+				} = old_tls
+				{
+					match file_watcher.unwatch(&key_file) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File watching error"),
+					}
+					match file_watcher.unwatch(&cert_file) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File watching error"),
+					}
+				}
 
 				if let Tls::Enable {
 					key_file,
 					cert_file,
-				} = config.tls()
+				} = new_tls
 				{
-					info!("Updating TLS certificate and key");
-					cert_resolver.update(get_certkey(&cert_file, &key_file).ok().map(Arc::new));
-				} else {
-					debug!("Not updating TLS certificate and key because TLS is disabled")
+					info!(
+						"Using new TLS files: {} (cert) and {} (key)",
+						cert_file.to_string_lossy(),
+						key_file.to_string_lossy()
+					);
+
+					match file_watcher.watch(&key_file, RecursiveMode::NonRecursive) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File watching error"),
+					}
+					match file_watcher.watch(&cert_file, RecursiveMode::NonRecursive) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File watching error"),
+					}
 				}
 			}
-			Err(RecvTimeoutError::Disconnected) => error!("File watching error"),
-			Err(RecvTimeoutError::Timeout) => (),
+
+			// Update the cert resolver with new TLS cert and key
+			if let Tls::Enable {
+				key_file,
+				cert_file,
+			} = config.tls()
+			{
+				info!("Updating TLS certificate and key");
+				cert_resolver.update(get_certkey(&cert_file, &key_file).ok().map(Arc::new));
+			} else {
+				info!("TLS is disabled, removing any old certificates");
+				cert_resolver.update(None);
+			}
+
+			// If the store type or config changed, create a new store to replace the
+			// existing one
+			if old_store != new_store {
+				info!(
+					"Updating store: {} ({})",
+					new_store.0,
+					stringify_map(&new_store.1)
+				);
+
+				match rt.block_on(store_setup(config, false)) {
+					Ok(store) => current_store.update(store),
+					Err(err) => {
+						error!(?err, "Error creating new store, retaining old store")
+					}
+				}
+			} else {
+				debug!("Store config not changed, continuing with existing store");
+			}
 		}
 
 		// During coverage-collecting tests, in order to collect correct coverage
