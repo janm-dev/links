@@ -182,6 +182,7 @@ impl Display for Config {
 			)
 			.field("tls", &self.tls())
 			.field("hsts", &self.hsts())
+			.field("https_redirect", &self.https_redirect())
 			.field("send_alt_svc", &self.send_alt_svc())
 			.field("send_server", &self.send_server())
 			.field("send_csp", &self.send_csp())
