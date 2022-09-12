@@ -467,7 +467,7 @@ mod tests {
 
 		let _listener = Listener::new(addr, UnAcceptor).await.unwrap();
 
-		assert!(duration.as_micros() < 1000);
+		assert!(dbg!(duration.as_micros()) < 10000);
 	}
 
 	#[tokio::test]
