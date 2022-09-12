@@ -236,8 +236,37 @@ impl ConfigInner {
 			self.token = Arc::from(token.as_str());
 		}
 
-		if let Some(tls) = partial.tls() {
-			self.tls = tls;
+		match (
+			partial.tls_enable,
+			partial.tls_key.as_ref(),
+			partial.tls_cert.as_ref(),
+		) {
+			(Some(false), ..) => self.tls = Tls::Disable,
+			(Some(true), Some(key_file), Some(cert_file)) => {
+				self.tls = Tls::Enable {
+					key_file: key_file.clone(),
+					cert_file: cert_file.clone(),
+				}
+			}
+			(None, Some(key_file), Some(cert_file)) if self.tls.is_enable() => {
+				self.tls = Tls::Enable {
+					key_file: key_file.clone(),
+					cert_file: cert_file.clone(),
+				}
+			}
+			(None, Some(key_file), None) if self.tls.is_enable() => {
+				self.tls = Tls::Enable {
+					key_file: key_file.clone(),
+					cert_file: self.tls.cert_file().expect("TLS is enabled").clone(),
+				}
+			}
+			(None, None, Some(cert_file)) if self.tls.is_enable() => {
+				self.tls = Tls::Enable {
+					key_file: self.tls.key_file().expect("TLS is enabled").clone(),
+					cert_file: cert_file.clone(),
+				}
+			}
+			_ => (),
 		}
 
 		if let Some(hsts) = partial.hsts() {
@@ -395,4 +424,115 @@ pub enum Tls {
 		/// are supported.
 		cert_file: PathBuf,
 	},
+}
+
+impl Tls {
+	/// Check if this [`Tls`] is [`Tls::Enable`]
+	#[must_use]
+	pub fn is_enable(&self) -> bool {
+		!self.is_disable()
+	}
+
+	/// Check if this [`Tls`] is [`Tls::Disable`]
+	#[must_use]
+	pub fn is_disable(&self) -> bool {
+		*self == Self::Disable
+	}
+
+	/// Get the certificate file path if TLS is enabled
+	#[must_use]
+	pub const fn cert_file(&self) -> Option<&PathBuf> {
+		match self {
+			Self::Disable => None,
+			Self::Enable {
+				key_file: _,
+				cert_file,
+			} => Some(cert_file),
+		}
+	}
+
+	/// Get the key file path if TLS is enabled
+	#[must_use]
+	pub const fn key_file(&self) -> Option<&PathBuf> {
+		match self {
+			Self::Disable => None,
+			Self::Enable {
+				key_file,
+				cert_file: _,
+			} => Some(key_file),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn config_inner_update_from_partial_tls() {
+		let mut inner = ConfigInner::default();
+
+		assert!(inner.tls.is_disable());
+
+		inner.update_from_partial(&Partial {
+			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
+			tls_key: Some(PathBuf::from("/path/to/key.pem")),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_disable());
+
+		inner.update_from_partial(&Partial {
+			tls_enable: Some(true),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_disable());
+
+		inner.update_from_partial(&Partial {
+			tls_enable: Some(true),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_disable());
+
+		inner.update_from_partial(&Partial {
+			tls_enable: Some(true),
+			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_disable());
+
+		inner.update_from_partial(&Partial {
+			tls_enable: Some(true),
+			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
+			tls_key: Some(PathBuf::from("/path/to/key.pem")),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_enable());
+		assert_eq!(inner.tls.cert_file(), Some(&"/path/to/cert.pem".into()));
+		assert_eq!(inner.tls.key_file(), Some(&"/path/to/key.pem".into()));
+
+		let mut inner = ConfigInner {
+			tls: Tls::Enable {
+				key_file: "/path/to/key.pem".into(),
+				cert_file: "/path/to/cert.pem".into(),
+			},
+			..Default::default()
+		};
+
+		inner.update_from_partial(&Partial {
+			tls_cert: Some(PathBuf::from("/path/to/some-other-cert.pem")),
+			..Default::default()
+		});
+
+		assert!(inner.tls.is_enable());
+		assert_eq!(
+			inner.tls.cert_file(),
+			Some(&"/path/to/some-other-cert.pem".into())
+		);
+		assert_eq!(inner.tls.key_file(), Some(&"/path/to/key.pem".into()));
+	}
 }

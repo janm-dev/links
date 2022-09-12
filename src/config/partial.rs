@@ -217,19 +217,6 @@ impl Partial {
 			PartialHsts::Preload => Some(Hsts::Preload(self.hsts_max_age?)),
 		}
 	}
-
-	/// Get TLS configuration information from this partial config, if present
-	#[must_use]
-	pub fn tls(&self) -> Option<Tls> {
-		if self.tls_enable? {
-			Some(Tls::Enable {
-				key_file: self.tls_key.as_ref()?.clone(),
-				cert_file: self.tls_cert.as_ref()?.clone(),
-			})
-		} else {
-			Some(Tls::Disable)
-		}
-	}
 }
 
 impl From<&Config> for Partial {
