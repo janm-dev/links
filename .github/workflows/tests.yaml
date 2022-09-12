@@ -15,6 +15,7 @@ jobs:
 
   test-rust:
     strategy:
+      fail-fast: false
       matrix:
         version: ["1.62", stable, beta]
     name: Test with Rust ${{ matrix.version }}
@@ -37,6 +38,7 @@ jobs:
 
   test-redis:
     strategy:
+      fail-fast: false
       matrix:
         version: [6.2-alpine, 7.0-alpine]
     name: Test with Redis ${{ matrix.version }}
