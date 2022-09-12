@@ -60,6 +60,8 @@ FLAGS:
 
 OPTIONS:
  -c --config PATH            Configuration file path. Supported formats: toml (*.toml), yaml/json (*.yaml, *.yml, *.json)
+    --watcher-timeout MS     File watcher timeout in milliseconds, default 10000
+    --watcher-debounce MS    File watcher debounce time in milliseconds, default 1000
 
 CONFIGURATION:
     --[OPTION] VALUE         Configuration option (in "kebab-case"), see documentation for possible options and values

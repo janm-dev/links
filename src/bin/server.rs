@@ -47,16 +47,6 @@ use tokio::runtime::Builder;
 use tracing::{debug, error, info, Level};
 use tracing_subscriber::{filter::DynFilterFn, prelude::*, FmtSubscriber};
 
-#[cfg(not(coverage))]
-const WATCHER_TIMEOUT: Duration = Duration::from_secs(5);
-#[cfg(coverage)]
-const WATCHER_TIMEOUT: Duration = Duration::from_millis(50);
-
-#[cfg(not(coverage))]
-const WATCHER_DEBOUNCE_TIMEOUT: Duration = Duration::from_secs(1);
-#[cfg(coverage)]
-const WATCHER_DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(50);
-
 /// Run the links redirector server using configuration from the provided
 /// command line arguments. This is essentially the entire server binary, but
 /// exposed via `lib.rs` to aid in integration tests.
@@ -188,14 +178,25 @@ fn main() -> Result<(), anyhow::Error> {
 	}
 
 	let mut last_file_event = None;
+	let watcher_timeout = Duration::from_millis(
+		args.opt_value_from_str("--watcher-timeout")
+			.unwrap_or_default()
+			.unwrap_or(10000u64),
+	);
+
+	let watcher_debounce = Duration::from_millis(
+		args.opt_value_from_str("--watcher-debounce")
+			.unwrap_or_default()
+			.unwrap_or(1000u64),
+	);
 
 	info!(%config, "Links redirector server started");
 
 	loop {
 		match watcher_rx.recv_timeout(if last_file_event.is_none() {
-			WATCHER_TIMEOUT
+			watcher_timeout
 		} else {
-			WATCHER_TIMEOUT.min(WATCHER_DEBOUNCE_TIMEOUT) / 2
+			watcher_debounce.min(watcher_timeout) / 4
 		}) {
 			Ok(event) => {
 				debug!(?event, "Received file event from watcher");
@@ -205,9 +206,7 @@ fn main() -> Result<(), anyhow::Error> {
 			Err(RecvTimeoutError::Timeout) => (),
 		}
 
-		if last_file_event.is_some()
-			&& last_file_event.unwrap().elapsed() > WATCHER_DEBOUNCE_TIMEOUT
-		{
+		if last_file_event.is_some() && last_file_event.unwrap().elapsed() > watcher_debounce {
 			// Reset file event debouncing timeout
 			last_file_event = None;
 
@@ -288,6 +287,8 @@ fn main() -> Result<(), anyhow::Error> {
 			} else {
 				debug!("Store config not changed, continuing with existing store");
 			}
+
+			info!("Configuration and TLS cert/key reloaded");
 		}
 
 		// During coverage-collecting tests, in order to collect correct coverage

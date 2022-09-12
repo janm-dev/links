@@ -1,6 +1,7 @@
 //! Utilities for end-to-end tests of the links redirector server and CLI
 
 use std::{
+	ffi::OsStr,
 	io::Write,
 	process::{Command, Stdio},
 	thread,
@@ -34,7 +35,15 @@ impl<F: FnMut()> Drop for Terminator<F> {
 /// TLS controlled by the `tls` argument of this function. Panics on any error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
 pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
-	let mut args = vec!["--example-redirect", "--token", "abc123"];
+	let mut args = vec![
+		"--example-redirect",
+		"--token",
+		"abc123",
+		"--watcher-timeout",
+		"100",
+		"--watcher-debounce",
+		"100",
+	];
 
 	if tls {
 		args.extend([
@@ -55,7 +64,7 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 /// function. The server will listen on all addresses with default ports (80,
 /// 443, and 530). Panics on any error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
-pub fn start_server_with_args(args: Vec<&'static str>) -> Terminator<impl FnMut()> {
+pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl FnMut()> {
 	let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
 	cmd.args(args);
 	cmd.stdin(Stdio::piped());
@@ -87,7 +96,7 @@ pub fn start_server_with_args(args: Vec<&'static str>) -> Terminator<impl FnMut(
 /// stdout). No configuration from environment variables will be used. Panics on
 /// any non-cli error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
-pub fn run_cli(args: Vec<&'static str>) -> String {
+pub fn run_cli(args: Vec<impl AsRef<OsStr>>) -> String {
 	let mut cmd = Command::new(env!("CARGO_BIN_EXE_cli"));
 	cmd.args(args);
 

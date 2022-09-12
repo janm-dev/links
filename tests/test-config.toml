@@ -1,0 +1,10 @@
+log_level = "info"
+token = "abc123"
+tls_enable = false
+hsts = "enable"
+hsts_max_age = 63072000
+https_redirect = true
+send_alt_svc = true
+send_server = true
+send_csp = true
+store = "memory"
