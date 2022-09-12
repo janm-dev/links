@@ -440,7 +440,7 @@ pub async fn store_setup(config: &Config, example_redirect: bool) -> Result<Stor
 
 #[cfg(test)]
 mod tests {
-	use std::time::Instant;
+	use std::time::{Duration, Instant};
 
 	use super::*;
 
@@ -467,7 +467,9 @@ mod tests {
 
 		let _listener = Listener::new(addr, UnAcceptor).await.unwrap();
 
-		assert!(dbg!(duration.as_micros()) < 10000);
+		assert!(
+			dbg!(duration) < Duration::from_millis(if cfg!(debug_assertions) { 100 } else { 1 })
+		);
 	}
 
 	#[tokio::test]
