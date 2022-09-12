@@ -69,7 +69,7 @@ impl Config {
 	/// # IO
 	/// This function performs synchronous file IO, and should therefore not be
 	/// used inside of an asynchronous context.
-	#[instrument]
+	#[instrument(level = "info", fields(%self))]
 	pub fn update(&self) {
 		let mut config = ConfigInner::default();
 
