@@ -190,6 +190,27 @@ fn main() -> Result<(), anyhow::Error> {
 			.unwrap_or(1000u64),
 	);
 
+	// During coverage-collecting tests, in order to collect correct coverage
+	// data, use stdin to stop the server instead of relying on a kill signal,
+	// which also stops coverage reporting
+	#[cfg(coverage)]
+	let rx = {
+		use std::{
+			io::{self, Read},
+			thread,
+		};
+
+		let (tx, rx) = mpsc::channel::<u8>();
+
+		thread::spawn(move || {
+			let mut buf = [0u8];
+			io::stdin().read_exact(&mut buf[..]).unwrap();
+			tx.send(buf[0]).unwrap();
+		});
+
+		rx
+	};
+
 	info!(%config, "Links redirector server started");
 
 	loop {
@@ -291,22 +312,17 @@ fn main() -> Result<(), anyhow::Error> {
 			info!("Configuration and TLS cert/key reloaded");
 		}
 
-		// During coverage-collecting tests, in order to collect correct coverage
-		// data, use stdin to stop the server instead of relying on a kill signal,
-		// which also stops coverage reporting
 		#[cfg(coverage)]
 		{
-			use std::io::{self, Read};
+			use std::sync::mpsc::TryRecvError;
 
-			use tracing::warn;
-
-			// Wait until "x" is received on stdin, then stop the server
-			let mut buf = [0u8];
-			io::stdin().read_exact(&mut buf[..]).unwrap();
-
-			if buf == *b"x" {
-				warn!("Stopping server");
-				break Ok(());
+			match rx.try_recv() {
+				Ok(b) if b == b'x' => {
+					tracing::warn!("Stopping server");
+					return Ok(());
+				}
+				Err(TryRecvError::Disconnected) => panic!("Server stopping listening error"),
+				_ => (),
 			}
 		}
 	}
