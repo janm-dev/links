@@ -143,13 +143,10 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Set up listeners
 	let _listeners = vec![
-		rt.block_on(Listener::new(([0, 0, 0, 0], 80), plain_http_acceptor))?,
-		rt.block_on(Listener::new(([0, 0, 0, 0], 443), tls_http_acceptor))?,
-		if let Tls::Disable = config.tls() {
-			rt.block_on(Listener::new(([0, 0, 0, 0], 530), plain_rpc_acceptor))?
-		} else {
-			rt.block_on(Listener::new(([0, 0, 0, 0], 530), tls_rpc_acceptor))?
-		},
+		rt.block_on(Listener::new(None, None, plain_http_acceptor))?,
+		rt.block_on(Listener::new(None, None, tls_http_acceptor))?,
+		rt.block_on(Listener::new(None, None, plain_rpc_acceptor))?,
+		rt.block_on(Listener::new(None, None, tls_rpc_acceptor))?,
 	];
 
 	let (watcher_tx, watcher_rx) = mpsc::channel();

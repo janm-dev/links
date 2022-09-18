@@ -27,14 +27,18 @@
 //! redirector, and one RPC handler.
 
 use std::{
-	fmt::{Debug, Formatter, Result as FmtResult},
-	net::SocketAddr,
+	error::Error,
+	fmt::{Debug, Display, Formatter, Result as FmtResult},
+	net::{IpAddr, Ipv6Addr, SocketAddr},
+	os::raw::c_int,
+	str::FromStr,
 	sync::Arc,
 	thread,
 };
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use parking_lot::Mutex;
+use socket2::{Domain, Protocol as SocketProtocol, Socket, Type};
 use tokio::{
 	io::{AsyncRead, AsyncWrite, Error as IoError},
 	net::{TcpListener, TcpStream},
@@ -75,6 +79,13 @@ pub async fn http_handler(
 		error!(?err, "Error while handling HTTP connection");
 	}
 }
+
+/// Number of incoming connections that can be kept in the TCP socket backlog of
+/// a listener (see `listen`'s [linux man page] or [winsock docs] for details)
+///
+/// [linux man page]: https://linux.die.net/man/2/listen
+/// [winsock docs]: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-listen
+const LISTENER_TCP_BACKLOG_SIZE: c_int = 1024;
 
 /// A handler that redirects incoming requests to their original URL, but with
 /// the HTTPS scheme instead.
@@ -127,6 +138,9 @@ pub trait Acceptor<S: AsyncRead + AsyncWrite + Send + Unpin + 'static>:
 	///
 	/// [spawn]: tokio::task
 	async fn accept(&self, stream: S, local_addr: SocketAddr, remote_addr: SocketAddr);
+
+	/// Get the [`Protocol`] that this acceptor processes
+	fn protocol(&self) -> Protocol;
 }
 
 /// An acceptor for plaintext (unencrypted) HTTP requests. Supports HTTP/1.0,
@@ -164,6 +178,10 @@ impl Acceptor<TcpStream> for PlainHttpAcceptor {
 				http_handler(stream, current_store.get(), config).await;
 			}
 		});
+	}
+
+	fn protocol(&self) -> Protocol {
+		Protocol::Http
 	}
 }
 
@@ -218,6 +236,10 @@ impl Acceptor<TcpStream> for TlsHttpAcceptor {
 			}
 		});
 	}
+
+	fn protocol(&self) -> Protocol {
+		Protocol::Https
+	}
 }
 
 impl Debug for TlsHttpAcceptor {
@@ -269,6 +291,10 @@ impl Acceptor<TcpStream> for PlainRpcAcceptor {
 
 			rpc_handler(stream, service).await;
 		});
+	}
+
+	fn protocol(&self) -> Protocol {
+		Protocol::Grpc
 	}
 }
 
@@ -328,6 +354,10 @@ impl Acceptor<TcpStream> for TlsRpcAcceptor {
 			}
 		});
 	}
+
+	fn protocol(&self) -> Protocol {
+		Protocol::Grpcs
+	}
 }
 
 impl Debug for TlsRpcAcceptor {
@@ -342,23 +372,108 @@ impl Debug for TlsRpcAcceptor {
 	}
 }
 
+/// The error returned by fallible conversions into [`Protocol`], containing the
+/// invalid input value
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntoProtocolError(String);
+
+impl Error for IntoProtocolError {}
+
+impl Display for IntoProtocolError {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
+		fmt.write_fmt(format_args!(
+			"\"{}\" is not a protocol supported by links",
+			self.0
+		))
+	}
+}
+
+/// The protocols that links redirector servers can listen on
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Protocol {
+	/// HTTP/1.0, HTTP/1.1, and HTTP/2 (h2c) over TCP (unencrypted)
+	Http,
+	/// HTTP/1.0, HTTP/1.1, and HTTP/2 (h2) over TCP with TLS
+	Https,
+	/// gRPC over HTTP/2 (h2c) over TCP (unencrypted)
+	Grpc,
+	/// gRPC over HTTP/2 (h2) over TCP with TLS
+	Grpcs,
+}
+
+impl Protocol {
+	/// Default port for the `grpcs` protocol
+	pub const GRPCS_DEFAULT_PORT: u16 = 530;
+	/// Default port for the `grpc` protocol
+	pub const GRPC_DEFAULT_PORT: u16 = 50051;
+	/// Default port for the `https` protocol
+	pub const HTTPS_DEFAULT_PORT: u16 = 443;
+	/// Default port for the `http` protocol
+	pub const HTTP_DEFAULT_PORT: u16 = 80;
+
+	/// Get the default port for this [`Protocol`]
+	#[must_use]
+	pub const fn default_port(&self) -> u16 {
+		match self {
+			Self::Http => Self::HTTP_DEFAULT_PORT,
+			Self::Https => Self::HTTPS_DEFAULT_PORT,
+			Self::Grpc => Self::GRPC_DEFAULT_PORT,
+			Self::Grpcs => Self::GRPCS_DEFAULT_PORT,
+		}
+	}
+}
+
+impl FromStr for Protocol {
+	type Err = IntoProtocolError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let s = s.to_lowercase();
+
+		match s.as_str() {
+			"http" => Ok(Self::Http),
+			"https" => Ok(Self::Https),
+			"grpc" => Ok(Self::Grpc),
+			"grpcs" => Ok(Self::Grpcs),
+			_ => Err(IntoProtocolError(s)),
+		}
+	}
+}
+
 /// A links redirector listener. This listens for incoming network connections
 /// on a specified address using a specified protocol in an async task in the
 /// background. On drop, the async task is aborted in order to stop listening.
 #[derive(Debug)]
 pub struct Listener {
-	/// The address of this listener's socket. `0.0.0.0` and `[::]` can be used
-	/// as wildcards, accepting traffic to any address.
-	pub addr: SocketAddr,
+	/// The address this listener will listen on. No address indicates that this
+	/// listener will accept all traffic on any address (IPv4 and IPv6),
+	/// `0.0.0.0` means any IPv4 address (but not IPv6), `[::]` means any IPv6
+	/// address (but not IPv4).
+	pub addr: Option<IpAddr>,
+	/// The port this listener will listen on. Currently, this is a TCP port,
+	/// but may in the future also additionally indicate a UDP port.
+	pub port: u16,
+	/// The protocol of the acceptor/handler this listener uses to process
+	/// requests
+	pub proto: Protocol,
 	handle: JoinHandle<()>,
 }
 
 impl Listener {
 	/// Create a new [`Listener`] on the specified address, which will use the
-	/// specified acceptor to accept incoming connections. The addresses
-	/// `0.0.0.0` and `[::]` can be used to listen on all local addresses, and
-	/// port `0` can be used to indicate an OS-assigned port (not generally
-	/// recommended for a server).
+	/// specified acceptor to accept incoming connections. If no address is
+	/// specified, the listener will listen on all IPv4 and IPv6 addresses.
+	/// Address `0.0.0.0` can be used to listen on all IPv4 (but not IPv6)
+	/// addresses, and address `[::]` can be used to listen on all IPv6 (but not
+	/// IPv4) addresses. If the port is not specified, the protocol's default
+	/// port will be used (see [`Protocol`] for details).
+	///
+	/// **Note:**
+	/// Support for dual stack sockets (IPv4 and IPv6 in one socket, available
+	/// in links via an empty address) is not universal on all platforms (such
+	/// as some BSDs). On those platforms, an empty address and `[::]` will
+	/// behave the same, i.e. an empty address will only listen on IPv6, not
+	/// IPv4. To get the desired result (IPv4 *and* IPv6), you must use two
+	/// listeners, one listening on `0.0.0.0` and the other on `[::]`.
 	///
 	/// # Drop
 	/// When dropped, a listener will wait until its internal task is fully
@@ -374,29 +489,63 @@ impl Listener {
 	/// [spawn_blocking]: fn@tokio::task::spawn_blocking
 	///
 	/// # Errors
-	/// This function returns an error if it can not bind to the address.
+	/// This function returns an error if it can not set up the listening
+	/// socket.
 	pub async fn new(
-		addr: impl Into<SocketAddr> + Send,
+		addr: Option<IpAddr>,
+		port: Option<u16>,
 		acceptor: impl Acceptor<TcpStream>,
 	) -> Result<Self, IoError> {
-		let addr = addr.into();
-		let listener = TcpListener::bind(addr).await?;
+		let proto = acceptor.protocol();
+		let port = port.unwrap_or_else(|| proto.default_port());
+		let socket_addr = (addr.unwrap_or(IpAddr::V6(Ipv6Addr::UNSPECIFIED)), port).into();
+
+		let socket = Socket::new(
+			Domain::for_address(socket_addr),
+			Type::STREAM,
+			Some(SocketProtocol::TCP),
+		)?;
+
+		// `SO_REUSEADDR` has different meanings across platforms:
+		// - On Windows, it allows multiple listeners per socket (which is very bad)
+		// - On Unix-like OSs, it allows a process to bind to a recently-closed socket
+		//   (which can occasionally speed up socket initialization)
+		socket.set_reuse_address(cfg!(unix))?;
+		// Set the socket into IPv6-only mode if the address is configured as IPv6 (even
+		// if it's `[::]`). This is done because the default depends on the OS and
+		// sometimes user configuration, and we want consistency across platforms.
+		if socket_addr.is_ipv6() {
+			socket.set_only_v6(addr.is_some())?;
+		}
+		// Required for Tokio to properly use async listeners
+		socket.set_nonblocking(true)?;
+		// Improves latency when sending responses
+		socket.set_nodelay(true)?;
+
+		socket.bind(&socket_addr.into())?;
+		socket.listen(LISTENER_TCP_BACKLOG_SIZE)?;
+		let listener = TcpListener::from_std(socket.into())?;
 
 		let handle = spawn(async move {
 			loop {
 				match listener.accept().await {
 					Ok((stream, remote_addr)) => {
-						acceptor.accept(stream, addr, remote_addr).await;
+						acceptor.accept(stream, socket_addr, remote_addr).await;
 					}
 					Err(err) => {
-						warn!("Error accepting TCP connection on {addr}: {err:?}");
+						warn!("Error accepting TCP connection on {socket_addr}: {err:?}");
 						continue;
 					}
 				}
 			}
 		});
 
-		Ok(Self { addr, handle })
+		Ok(Self {
+			addr,
+			port,
+			proto,
+			handle,
+		})
 	}
 }
 
@@ -444,7 +593,7 @@ mod tests {
 
 	use super::*;
 
-	/// A mock [`Acceptor`] that does nothing.
+	/// A mock [`Acceptor`] that does nothing, while pretending to do HTTP
 	#[derive(Debug, Copy, Clone)]
 	struct UnAcceptor;
 
@@ -453,19 +602,24 @@ mod tests {
 		async fn accept(&self, _: TcpStream, _: SocketAddr, _: SocketAddr) {
 			spawn(async {});
 		}
+
+		fn protocol(&self) -> Protocol {
+			Protocol::Http
+		}
 	}
 
 	#[tokio::test(flavor = "multi_thread")]
-	async fn listener() {
-		let addr = ([127, 0, 0, 1], 8000);
+	async fn listener_new_drop() {
+		let addr = Some([127, 0, 0, 1].into());
+		let port = Some(8000);
 
-		let listener = Listener::new(addr, UnAcceptor).await.unwrap();
+		let listener = Listener::new(addr, port, UnAcceptor).await.unwrap();
 
 		let start = Instant::now();
 		drop(listener);
 		let duration = start.elapsed();
 
-		let _listener = Listener::new(addr, UnAcceptor).await.unwrap();
+		let _listener = Listener::new(addr, port, UnAcceptor).await.unwrap();
 
 		assert!(
 			dbg!(duration) < Duration::from_millis(if cfg!(debug_assertions) { 100 } else { 1 })
