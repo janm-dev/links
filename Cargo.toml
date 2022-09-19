@@ -71,7 +71,6 @@ uriparse = "0.6.4"
 
 [build-dependencies]
 base64 = "0.13.0"
-html-minifier = "3.0.15"
 lol_html = "0.3.1"
 minify-html = "0.10.0"
 sha2 = "0.10.6"
