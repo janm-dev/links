@@ -5,7 +5,7 @@ use hyper::{
 	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
 };
 use tokio::time::Instant;
-use tracing::{debug, info, instrument, trace};
+use tracing::{debug, field::Empty, instrument, trace};
 
 use crate::{
 	config::{Hsts, Redirector as Config},
@@ -19,15 +19,14 @@ use crate::{
 /// the `store`) or returns a `404 Not Found` response. When redirecting, the
 /// status code is `302 Found` when the method is GET, and `307 Temporary
 /// Redirect` otherwise.
-#[instrument(level = "trace", name = "request-details")]
-#[instrument(level = "info", name = "request", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name()))]
+#[instrument(level = "debug", name = "redirect-external", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name(), time_ns = Empty, link = Empty, id = Empty, vanity = Empty, status_code = Empty))]
 pub async fn redirector(
 	req: Request<Body>,
 	store: Store,
 	config: Config,
 ) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();
-	debug!(?req);
+	trace!(?req);
 
 	let path = req.uri().path();
 	let mut res = Response::builder();
@@ -111,14 +110,25 @@ pub async fn redirector(
 
 	let redirect_time = redirect_start.elapsed();
 
-	debug!(?res);
-	info!(
-		time_ns = %redirect_time.as_nanos(),
-		link = %link.map_or_else(|| "[none]".to_string(), |link| link.to_string()),
-		id = %id.map_or_else(|| "[none]".to_string(), |id| id.to_string()),
-		vanity = %vanity.map_or_else(|| "[none]".to_string(), |vanity| vanity.to_string()),
-		status_code = %res.status(),
-		"redirect processed in {:.6} seconds",
+	trace!(?res);
+	let span = tracing::Span::current();
+	span.record("time_ns", redirect_time.as_nanos());
+	span.record(
+		"link",
+		link.map_or_else(|| "[none]".to_string(), |link| link.to_string()),
+	);
+	span.record(
+		"id",
+		id.map_or_else(|| "[none]".to_string(), |id| id.to_string()),
+	);
+	span.record(
+		"vanity",
+		vanity.map_or_else(|| "[none]".to_string(), |vanity| vanity.to_string()),
+	);
+	span.record("status_code", res.status().as_u16());
+
+	debug!(
+		"External redirect processed in {:.6} seconds",
 		redirect_time.as_secs_f64()
 	);
 
@@ -127,14 +137,13 @@ pub async fn redirector(
 
 /// Redirects an incoming request to the same host and path, but with the
 /// `https` scheme.
-#[instrument(level = "trace", name = "request-https-details")]
-#[instrument(level = "info", name = "request-https", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method()))]
+#[instrument(level = "debug", name = "redirect-https", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), time_ns = Empty, link = Empty, status_code = Empty))]
 pub async fn https_redirector(
 	req: Request<Body>,
 	config: Config,
 ) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();
-	debug!(?req);
+	trace!(?req);
 
 	// Set default response headers
 	let mut res = Response::builder();
@@ -186,12 +195,14 @@ pub async fn https_redirector(
 
 	let redirect_time = redirect_start.elapsed();
 
-	debug!(?res);
-	info!(
-		time_ns = %redirect_time.as_nanos(),
-		link = %link.map_or_else(|| "[none]".to_string(), |link| link),
-		status_code = %res.status(),
-		"redirect processed in {:.6} seconds",
+	trace!(?res);
+	let span = tracing::Span::current();
+	span.record("time_ns", redirect_time.as_nanos());
+	span.record("link", link.unwrap_or_else(|| "[none]".to_string()));
+	span.record("status_code", res.status().as_u16());
+
+	debug!(
+		"HTTP-to-HTTPS redirect processed in {:.6} seconds",
 		redirect_time.as_secs_f64()
 	);
 

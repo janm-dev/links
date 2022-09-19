@@ -10,9 +10,9 @@ use std::{
 
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
-use tracing::{debug, instrument, warn, Level};
+use tracing::{debug, instrument, warn};
 
-use super::ListenAddress;
+use super::{ListenAddress, LogLevel};
 use crate::{config::partial::Partial, server::Protocol, store::BackendType, util::A_YEAR};
 
 /// Global configuration for the links redirector server. This is the more
@@ -123,7 +123,7 @@ impl Config {
 
 	/// Get the configured log level
 	#[must_use]
-	pub fn log_level(&self) -> Level {
+	pub fn log_level(&self) -> LogLevel {
 		self.inner.read().log_level
 	}
 
@@ -227,7 +227,7 @@ struct ConfigInner {
 	/// Minimum level of logs to be collected/displayed. Debug and trace levels
 	/// may expose secret information, so are not recommended for production
 	/// deployments.
-	pub log_level: Level,
+	pub log_level: LogLevel,
 	/// API token, used for authentication of gRPC clients
 	pub token: Arc<str>,
 	/// Addresses on which the links redirector server will listen on
@@ -257,7 +257,7 @@ impl ConfigInner {
 	/// of this [`Config`] from the provided [`Partial`], if they are set in
 	/// that partial config.
 	fn update_from_partial(&mut self, partial: &Partial) {
-		if let Some(log_level) = partial.log_level() {
+		if let Some(log_level) = partial.log_level {
 			self.log_level = log_level;
 		}
 
@@ -336,7 +336,7 @@ impl ConfigInner {
 impl Default for ConfigInner {
 	fn default() -> Self {
 		Self {
-			log_level: Level::INFO,
+			log_level: LogLevel::default(),
 			token: rand::thread_rng()
 				.sample_iter(&Alphanumeric)
 				.take(32)

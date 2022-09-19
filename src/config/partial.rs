@@ -18,12 +18,12 @@ use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
 use thiserror::Error;
 use toml::de::Error as TomlError;
-use tracing::{instrument, Level};
+use tracing::instrument;
 
 use crate::{
 	config::{
 		global::{Config, Hsts, Tls},
-		ListenAddress,
+		ListenAddress, LogLevel,
 	},
 	store::BackendType,
 };
@@ -216,12 +216,6 @@ impl Partial {
 		}
 	}
 
-	/// Get the log level as a `tracing::Level`, if present
-	#[must_use]
-	pub fn log_level(&self) -> Option<Level> {
-		self.log_level.map(Into::into)
-	}
-
 	/// Get HSTS configuration information from this partial config, if present
 	#[must_use]
 	pub fn hsts(&self) -> Option<Hsts> {
@@ -252,7 +246,7 @@ impl From<&Config> for Partial {
 		};
 
 		Self {
-			log_level: Some((config.log_level()).into()),
+			log_level: Some(config.log_level()),
 			token: Some(config.token().to_string()),
 			listeners: Some(config.listeners()),
 			tls_enable: Some(tls_enable),
@@ -266,91 +260,6 @@ impl From<&Config> for Partial {
 			send_csp: Some(config.send_csp()),
 			store: Some(config.store()),
 			store_config: Some(config.store_config()),
-		}
-	}
-}
-
-/// Log level as seen from the user's perspective.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum LogLevel {
-	/// Lowest log level. Log everything, including very verbose debug/trace
-	/// info. May expose private/secret information in logs.
-	Trace,
-	/// Log most things, including more verbose debug info. May expose
-	/// private/secret information in logs.
-	Debug,
-	/// Recommended log level. Logs general information, warnings, and errors.
-	#[default]
-	Info,
-	/// Log only warnings and errors. Generally not recommended, as this hides a
-	/// lot of useful information from logs.
-	Warn,
-	/// Log only critical errors. Generally not recommended, as this hides a lot
-	/// of useful information from logs.
-	Error,
-}
-
-/// The error returned by fallible conversions from a string to [`LogLevel`].
-/// Includes the original input string.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct LogLevelParseError(String);
-
-impl Error for LogLevelParseError {}
-
-impl Display for LogLevelParseError {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		fmt.write_fmt(format_args!("unknown log level: {}", self.0))
-	}
-}
-
-impl FromStr for LogLevel {
-	type Err = LogLevelParseError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"trace" => Ok(Self::Trace),
-			"debug" => Ok(Self::Debug),
-			"info" => Ok(Self::Info),
-			"warn" | "warning" => Ok(Self::Warn),
-			"error" => Ok(Self::Error),
-			_ => Err(LogLevelParseError(s.to_string())),
-		}
-	}
-}
-
-impl Display for LogLevel {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		fmt.write_str(match self {
-			Self::Trace => "trace",
-			Self::Debug => "debug",
-			Self::Info => "info",
-			Self::Warn => "warn",
-			Self::Error => "error",
-		})
-	}
-}
-
-impl From<LogLevel> for Level {
-	fn from(log_level: LogLevel) -> Self {
-		match log_level {
-			LogLevel::Trace => Level::TRACE,
-			LogLevel::Debug => Level::DEBUG,
-			LogLevel::Info => Level::INFO,
-			LogLevel::Warn => Level::WARN,
-			LogLevel::Error => Level::ERROR,
-		}
-	}
-}
-
-impl From<Level> for LogLevel {
-	fn from(log_level: Level) -> Self {
-		match log_level {
-			Level::TRACE => LogLevel::Trace,
-			Level::DEBUG => LogLevel::Debug,
-			Level::INFO => LogLevel::Info,
-			Level::WARN => LogLevel::Warn,
-			Level::ERROR => LogLevel::Error,
 		}
 	}
 }

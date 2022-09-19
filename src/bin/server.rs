@@ -34,7 +34,7 @@ use std::{
 use anyhow::anyhow;
 use links::{
 	certs::{get_certkey, CertificateResolver},
-	config::{Config, Tls},
+	config::{Config, LogLevel, Tls},
 	server::{
 		store_setup, Listener, PlainHttpAcceptor, PlainRpcAcceptor, Protocol, TlsHttpAcceptor,
 		TlsRpcAcceptor,
@@ -87,8 +87,19 @@ fn main() -> Result<(), anyhow::Error> {
 	debug!(?config, "Server configuration parsed");
 
 	// Set a tracing filter which can change the minimum log level on the fly.
-	let tracing_filter =
-		DynFilterFn::new(move |metadata, _| metadata.level() <= &config.log_level());
+	let tracing_filter = DynFilterFn::new(move |metadata, _| {
+		let log_level = config.log_level();
+		let level = metadata.level();
+		if log_level == LogLevel::Verbose {
+			let module = metadata.module_path();
+			level <= &Level::INFO
+				|| (module.is_some()
+					&& (module.unwrap().starts_with("links::") || module.unwrap() == "server")
+					&& level <= &Level::DEBUG)
+		} else {
+			level <= &Level::from(log_level)
+		}
+	});
 
 	// Create the permanent global tracing subscriber to collect and show logs
 	let tracing_subscriber = FmtSubscriber::builder()

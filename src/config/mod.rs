@@ -4,7 +4,7 @@
 //! options:
 //!
 //! - `log_level` - Tracing log level. Possible values: `trace`, `debug`,
-//!   `info`, `warn`, `error`. **Default `info`**.
+//!   `verbose`, `info`, `warn`, `error`. **Default `info`**.
 //! - `token` - RPC API authentication token, should be long and random.
 //!   **Default \[randomly generated string\]**.
 //! - `listeners` - A list of listener addresses (strings) in the format of
@@ -37,6 +37,7 @@ mod global;
 mod partial;
 
 use std::{
+	error::Error,
 	fmt::{Debug, Display, Formatter, Result as FmtResult},
 	net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
 	num::ParseIntError,
@@ -44,10 +45,11 @@ use std::{
 };
 
 use serde_derive::{Deserialize, Serialize};
+use tracing::Level;
 
 pub use self::{
 	global::{Config, Hsts, Redirector, Tls},
-	partial::{IntoPartialError, LogLevel as PartialLogLevel, Partial, PartialHsts},
+	partial::{IntoPartialError, Partial, PartialHsts},
 };
 use crate::server::{IntoProtocolError, Protocol};
 
@@ -181,6 +183,98 @@ impl TryFrom<&str> for ListenAddress {
 impl From<ListenAddress> for String {
 	fn from(address: ListenAddress) -> Self {
 		address.to_string()
+	}
+}
+
+/// Log level, corresponding roughly to `tracing`'s, but with the addition of
+/// [`Verbose`][`LogLevel::Verbose`] between debug and info.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LogLevel {
+	/// Lowest log level. Log everything, including very verbose debug/trace
+	/// info. May expose private/secret information in logs.
+	Trace,
+	/// Log most things, including more verbose debug info. May expose
+	/// private/secret information in logs.
+	Debug,
+	/// Logs more verbose information (`debug`-level or higher) from links,
+	/// while only logging `info`-level or higher information from dependencies.
+	/// May expose private/secret information in logs.
+	Verbose,
+	/// Recommended log level. Logs general information, warnings, and errors.
+	#[default]
+	Info,
+	/// Log only warnings and errors. Generally not recommended, as this hides a
+	/// lot of useful information from logs.
+	Warn,
+	/// Log only critical errors. Generally not recommended, as this hides a lot
+	/// of useful information from logs.
+	Error,
+}
+
+/// The error returned by fallible conversions from a string to [`LogLevel`].
+/// Includes the original input string.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LogLevelParseError(String);
+
+impl Error for LogLevelParseError {}
+
+impl Display for LogLevelParseError {
+	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		fmt.write_fmt(format_args!("unknown log level: {}", self.0))
+	}
+}
+
+impl FromStr for LogLevel {
+	type Err = LogLevelParseError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"trace" => Ok(Self::Trace),
+			"debug" => Ok(Self::Debug),
+			"verbose" => Ok(Self::Verbose),
+			"info" => Ok(Self::Info),
+			"warn" | "warning" => Ok(Self::Warn),
+			"error" => Ok(Self::Error),
+			_ => Err(LogLevelParseError(s.to_string())),
+		}
+	}
+}
+
+impl Display for LogLevel {
+	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		fmt.write_str(match self {
+			Self::Trace => "trace",
+			Self::Debug => "debug",
+			Self::Verbose => "verbose",
+			Self::Info => "info",
+			Self::Warn => "warn",
+			Self::Error => "error",
+		})
+	}
+}
+
+impl From<LogLevel> for Level {
+	fn from(log_level: LogLevel) -> Self {
+		match log_level {
+			LogLevel::Trace => Level::TRACE,
+			LogLevel::Debug => Level::DEBUG,
+			LogLevel::Verbose | LogLevel::Info => Level::INFO,
+			LogLevel::Warn => Level::WARN,
+			LogLevel::Error => Level::ERROR,
+		}
+	}
+}
+
+impl From<Level> for LogLevel {
+	fn from(log_level: Level) -> Self {
+		match log_level {
+			Level::TRACE => LogLevel::Trace,
+			Level::DEBUG => LogLevel::Debug,
+			Level::INFO => LogLevel::Info,
+			Level::WARN => LogLevel::Warn,
+			Level::ERROR => LogLevel::Error,
+		}
 	}
 }
 
@@ -415,6 +509,24 @@ mod tests {
 				address: None,
 				port: Some(1000)
 			}
+		);
+	}
+
+	#[test]
+	fn log_level() {
+		assert_eq!("verbose".parse(), Ok(LogLevel::Verbose));
+		assert_eq!("info".parse(), Ok(LogLevel::Info));
+		assert_eq!("warn".parse(), Ok(LogLevel::Warn));
+		assert_eq!("warning".parse(), Ok(LogLevel::Warn));
+
+		assert_eq!("info".parse::<LogLevel>().map(Into::into), Ok(Level::INFO));
+		assert_eq!(
+			"verbose".parse::<LogLevel>().map(Into::into),
+			Ok(Level::INFO)
+		);
+		assert_eq!(
+			"error".parse::<LogLevel>().map(Into::into),
+			Ok(Level::ERROR)
 		);
 	}
 }

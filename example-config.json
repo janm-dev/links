@@ -7,7 +7,7 @@
 // beginning with "//" is removed.
 {
 	// The minimum level of logs to retain
-	// Possible values are "trace", "debug", "info", "warn" / "warning", and "error"
+	// Possible values are "trace", "debug", "verbose", "info", "warn" / "warning", and "error"
 	"log_level": "info",
 	// Secret API token used to authenticate with the gRPC API
 	// Can be any string, but should ideally be long and random
