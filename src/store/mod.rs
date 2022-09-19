@@ -2,7 +2,7 @@
 //! paths, and statistics are stored in links. For details about configuring
 //! each store backend, see that backend's documentation.
 
-mod backend;
+pub mod backend;
 mod memory;
 mod redis;
 
