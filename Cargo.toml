@@ -22,7 +22,7 @@ vendored-openssl = ["fred/vendored-tls"]
 anyhow = "1.0.65"
 arc-swap = "1.5.1"
 async-trait = "0.1.57"
-clap = { version = "3.2.21", features = [
+clap = { version = "3.2.22", features = [
 	"derive",
 	"env",
 	"unstable-v4",
@@ -66,7 +66,7 @@ tonic = { version = "0.8.1", default-features = false, features = [
 ] }
 tracing = "0.1.36"
 tracing-subscriber = "0.3.15"
-unicode-normalization = "0.1.21"
+unicode-normalization = "0.1.22"
 uriparse = "0.6.4"
 
 [build-dependencies]
