@@ -37,17 +37,6 @@ pub async fn redirector(
 		res = res.header("Server", SERVER_NAME);
 	}
 
-	if config.send_csp {
-		res = res.header(
-			"Content-Security-Policy",
-			concat!(
-				"default-src 'none'; style-src ",
-				csp_hashes!("style"),
-				"; sandbox allow-top-navigation"
-			),
-		);
-	}
-
 	if config.send_alt_svc {
 		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
 	}
@@ -90,6 +79,17 @@ pub async fn redirector(
 		res = res.header("Location", &link);
 		res = res.header("Link-Id", &id.unwrap().to_string());
 
+		if config.send_csp {
+			res = res.header(
+				"Content-Security-Policy",
+				concat!(
+					"default-src 'none'; style-src ",
+					csp_hashes!("redirect", "style"),
+					"; sandbox allow-top-navigation"
+				),
+			);
+		}
+
 		if req.method() == Method::GET {
 			res = res.status(StatusCode::FOUND);
 		} else {
@@ -105,6 +105,18 @@ pub async fn redirector(
 	} else {
 		res = res.status(StatusCode::NOT_FOUND);
 		res = res.header("Content-Type", "text/html; charset=UTF-8");
+
+		if config.send_csp {
+			res = res.header(
+				"Content-Security-Policy",
+				concat!(
+					"default-src 'none'; style-src ",
+					csp_hashes!("not-found", "style"),
+					"; sandbox allow-top-navigation"
+				),
+			);
+		}
+
 		res.body(include_html!("not-found").to_string())?
 	};
 
@@ -151,16 +163,6 @@ pub async fn https_redirector(
 	if config.send_server {
 		res = res.header("Server", SERVER_NAME);
 	}
-	if config.send_csp {
-		res = res.header(
-			"Content-Security-Policy",
-			concat!(
-				"default-src 'none'; style-src ",
-				csp_hashes!("style"),
-				"; sandbox allow-top-navigation"
-			),
-		);
-	}
 	if config.send_alt_svc {
 		res = res.header("Alt-Svc", "h2=\":443\"; ma=31536000");
 	}
@@ -182,12 +184,34 @@ pub async fn https_redirector(
 			res = res.status(StatusCode::TEMPORARY_REDIRECT);
 		}
 
+		if config.send_csp {
+			res = res.header(
+				"Content-Security-Policy",
+				concat!(
+					"default-src 'none'; style-src ",
+					csp_hashes!("https-redirect", "style"),
+					"; sandbox allow-top-navigation"
+				),
+			);
+		}
+
 		res = res.header("Content-Type", "text/html; charset=UTF-8");
 		(
 			res.body(include_html!("https-redirect").to_string())?,
 			Some(link),
 		)
 	} else {
+		if config.send_csp {
+			res = res.header(
+				"Content-Security-Policy",
+				concat!(
+					"default-src 'none'; style-src ",
+					csp_hashes!("bad-request", "style"),
+					"; sandbox allow-top-navigation"
+				),
+			);
+		}
+
 		res = res.status(StatusCode::BAD_REQUEST);
 		res = res.header("Content-Type", "text/html; charset=UTF-8");
 		(res.body(include_html!("bad-request").to_string())?, None)

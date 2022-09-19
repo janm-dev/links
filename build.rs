@@ -80,11 +80,11 @@ fn minify(name: &str, path: PathBuf) {
 
 /// Generate the hashes for all `<tag_name>` elements in the provided generated
 /// html files, and store them in a CSP-ready format in
-/// `OUT_DIR/tag_name.hash`. Must be run **after** the minifying step.
+/// `OUT_DIR/file_name.tag_name.hash`. Must be run **after** the minifying step.
 fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static str>) {
-	let contents = Rc::new(RefCell::new(Vec::<String>::new()));
-
 	for name in names {
+		let contents = Rc::new(RefCell::new(Vec::<String>::new()));
+
 		let file = PathBuf::from(env::var_os("OUT_DIR").unwrap())
 			.join(name)
 			.with_extension("html");
@@ -117,23 +117,22 @@ fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static st
 			..RewriteStrSettings::default()
 		})
 		.unwrap();
+
+		let contents = contents
+			.take()
+			.into_iter()
+			.map(|v| {
+				let mut hasher = Sha256::new();
+				hasher.update(v);
+				let res = hasher.finalize();
+				"'sha256-".to_string() + &base64::encode(res) + "'"
+			})
+			.collect::<Vec<String>>()[..]
+			.join(" ");
+
+		let out_path =
+			PathBuf::from(env::var_os("OUT_DIR").unwrap()).join(format!("{name}.{tag_name}.hash"));
+
+		fs::write(out_path, contents).unwrap();
 	}
-
-	let contents = contents
-		.take()
-		.into_iter()
-		.map(|v| {
-			let mut hasher = Sha256::new();
-			hasher.update(v);
-			let res = hasher.finalize();
-			"'sha256-".to_string() + &base64::encode(res) + "'"
-		})
-		.collect::<Vec<String>>()[..]
-		.join(" ");
-
-	let out_path = PathBuf::from(env::var_os("OUT_DIR").unwrap())
-		.join(tag_name)
-		.with_extension("hash");
-
-	fs::write(out_path, contents).unwrap();
 }
