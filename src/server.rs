@@ -50,12 +50,12 @@ use tonic::{
 	codegen::{CompressionEncoding, InterceptedService},
 	transport::{server::Routes, Server as RpcServer},
 };
-use tracing::{error, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 use crate::{
 	api::{self, Api, LinksServer},
 	certs::CertificateResolver,
-	config::Config,
+	config::{Config, ListenAddress},
 	id::Id,
 	normalized::{Link, Normalized},
 	redirector::{https_redirector, redirector},
@@ -130,7 +130,7 @@ pub async fn rpc_handler(
 /// [mod]: crate::server
 #[async_trait::async_trait]
 pub trait Acceptor<S: AsyncRead + AsyncWrite + Send + Unpin + 'static>:
-	Send + Sync + 'static
+	Clone + Send + Sync + 'static
 {
 	/// Accept an incoming connection in `stream` from `remote_addr` to
 	/// `local_addr`. This function should [spawn a task][spawn] to handle the
@@ -257,9 +257,9 @@ impl Debug for TlsHttpAcceptor {
 
 /// An acceptor for plaintext (unencrypted) RPC calls. Supports `gRPC` over
 /// unencrypted HTTP/2.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlainRpcAcceptor {
-	service: Mutex<Routes>,
+	service: Arc<Mutex<Routes>>,
 }
 
 impl PlainRpcAcceptor {
@@ -276,7 +276,7 @@ impl PlainRpcAcceptor {
 			.into_service();
 
 		Self {
-			service: Mutex::new(service),
+			service: Arc::new(Mutex::new(service)),
 		}
 	}
 }
@@ -300,8 +300,9 @@ impl Acceptor<TcpStream> for PlainRpcAcceptor {
 
 /// An acceptor for TLS-encrypted RPC calls. Supports `gRPC` over
 /// HTTP/2 with HTTPS.
+#[derive(Clone)]
 pub struct TlsRpcAcceptor {
-	service: Mutex<Routes>,
+	service: Arc<Mutex<Routes>>,
 	tls_acceptor: TlsAcceptor,
 }
 
@@ -333,7 +334,7 @@ impl TlsRpcAcceptor {
 			.into_service();
 
 		Self {
-			service: Mutex::new(service),
+			service: Arc::new(Mutex::new(service)),
 			tls_acceptor,
 		}
 	}
@@ -420,6 +421,17 @@ impl Protocol {
 			Self::Grpc => Self::GRPC_DEFAULT_PORT,
 			Self::Grpcs => Self::GRPCS_DEFAULT_PORT,
 		}
+	}
+}
+
+impl Display for Protocol {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
+		fmt.write_str(match self {
+			Self::Http => "http",
+			Self::Https => "https",
+			Self::Grpc => "grpc",
+			Self::Grpcs => "grpcs",
+		})
 	}
 }
 
@@ -540,12 +552,28 @@ impl Listener {
 			}
 		});
 
+		debug!("Opened new listener on {}", ListenAddress {
+			protocol: proto,
+			address: addr,
+			port: Some(port),
+		});
+
 		Ok(Self {
 			addr,
 			port,
 			proto,
 			handle,
 		})
+	}
+
+	/// Get the [`ListenAddress`] of this listener
+	#[must_use]
+	pub const fn listen_address(&self) -> ListenAddress {
+		ListenAddress {
+			protocol: self.proto,
+			address: self.addr,
+			port: Some(self.port),
+		}
 	}
 }
 
@@ -557,11 +585,15 @@ impl Drop for Listener {
 	/// aborted. Additionally, if used in the context of a single-threaded tokio
 	/// runtime, this function can completely block the entire program.
 	fn drop(&mut self) {
+		trace!("Closing listener on {}", self.listen_address());
+
 		self.handle.abort();
 
 		while !self.handle.is_finished() {
 			thread::yield_now();
 		}
+
+		debug!("Closed listener on {}", self.listen_address());
 	}
 }
 

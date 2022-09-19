@@ -16,6 +16,7 @@ use links::{
 	},
 	id::{ConversionError, Id},
 	normalized::{Link, Normalized},
+	server::Protocol,
 };
 use tonic::{
 	codec::CompressionEncoding,
@@ -47,8 +48,8 @@ struct Cli {
 	#[clap(short = 'H', long, env = "LINKS_RPC_HOST", default_value = "localhost")]
 	host: String,
 
-	/// Redirector gRPC port
-	#[clap(short = 'P', long, env = "LINKS_RPC_PORT", default_value = "530")]
+	/// Redirector gRPC port (0 means the default port)
+	#[clap(short = 'P', long, env = "LINKS_RPC_PORT", default_value = "0")]
 	port: u16,
 
 	/// gRPC API authentication token
@@ -163,11 +164,21 @@ where
 	// Get command-line args
 	let cli = Cli::parse_from(args);
 
+	let port = if cli.port == 0 {
+		if cli.tls {
+			Protocol::GRPCS_DEFAULT_PORT
+		} else {
+			Protocol::GRPC_DEFAULT_PORT
+		}
+	} else {
+		cli.port
+	};
+
 	// Connect to gRPC API with native CA certs
 	let client = if cli.tls {
 		let tls_config = ClientTlsConfig::new();
 
-		let channel = Channel::from_shared(format!("grpc://{}:{}", cli.host, cli.port))
+		let channel = Channel::from_shared(format!("grpc://{}:{}", cli.host, port))
 			.format_err("The host or port is invalid")?
 			.tls_config(tls_config)
 			.expect("Invalid TLS config")
@@ -179,7 +190,7 @@ where
 			.send_compressed(CompressionEncoding::Gzip)
 			.accept_compressed(CompressionEncoding::Gzip)
 	} else {
-		LinksClient::connect(format!("grpc://{}:{}", cli.host, cli.port))
+		LinksClient::connect(format!("grpc://{}:{}", cli.host, port))
 			.await
 			.format_err("Could not connect to gRPC API server")?
 			.send_compressed(CompressionEncoding::Gzip)

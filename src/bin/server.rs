@@ -36,7 +36,8 @@ use links::{
 	certs::{get_certkey, CertificateResolver},
 	config::{Config, Tls},
 	server::{
-		store_setup, Listener, PlainHttpAcceptor, PlainRpcAcceptor, TlsHttpAcceptor, TlsRpcAcceptor,
+		store_setup, Listener, PlainHttpAcceptor, PlainRpcAcceptor, Protocol, TlsHttpAcceptor,
+		TlsRpcAcceptor,
 	},
 	store::Current,
 	util::{stringify_map, SERVER_HELP, SERVER_NAME},
@@ -142,12 +143,30 @@ fn main() -> Result<(), anyhow::Error> {
 	let tls_rpc_acceptor = TlsRpcAcceptor::new(config, current_store, cert_resolver.clone());
 
 	// Set up listeners
-	let _listeners = vec![
-		rt.block_on(Listener::new(None, None, plain_http_acceptor))?,
-		rt.block_on(Listener::new(None, None, tls_http_acceptor))?,
-		rt.block_on(Listener::new(None, None, plain_rpc_acceptor))?,
-		rt.block_on(Listener::new(None, None, tls_rpc_acceptor))?,
-	];
+	let mut listeners = Vec::new();
+
+	for addr in config.listeners() {
+		listeners.push(match addr.protocol {
+			Protocol::Http => {
+				rt.block_on(Listener::new(addr.address, addr.port, plain_http_acceptor))?
+			}
+			Protocol::Https => rt.block_on(Listener::new(
+				addr.address,
+				addr.port,
+				tls_http_acceptor.clone(),
+			))?,
+			Protocol::Grpc => rt.block_on(Listener::new(
+				addr.address,
+				addr.port,
+				plain_rpc_acceptor.clone(),
+			))?,
+			Protocol::Grpcs => rt.block_on(Listener::new(
+				addr.address,
+				addr.port,
+				tls_rpc_acceptor.clone(),
+			))?,
+		})
+	}
 
 	let (watcher_tx, watcher_rx) = mpsc::channel();
 	let mut file_watcher = notify::recommended_watcher(move |res| match res {
@@ -231,9 +250,11 @@ fn main() -> Result<(), anyhow::Error> {
 			// Retain some old config options, then update config
 			let old_tls = config.tls();
 			let old_store = (config.store(), config.store_config());
+			let old_listeners = config.listeners();
 			config.update();
 			let new_tls = config.tls();
 			let new_store = (config.store(), config.store_config());
+			let new_listeners = config.listeners();
 
 			// If TLS file paths changed, watch those instead of the old ones
 			if old_tls != new_tls {
@@ -305,6 +326,73 @@ fn main() -> Result<(), anyhow::Error> {
 			} else {
 				debug!("Store config not changed, continuing with existing store");
 			}
+
+			// Update listeners per the new config
+			listeners = listeners
+				.into_iter()
+				.filter(|l| new_listeners.contains(&l.listen_address()))
+				.collect();
+
+			for addr in new_listeners {
+				if !old_listeners.contains(&addr) {
+					listeners.push(match addr.protocol {
+						Protocol::Http => {
+							match rt.block_on(Listener::new(
+								addr.address,
+								addr.port,
+								plain_http_acceptor,
+							)) {
+								Ok(listener) => listener,
+								Err(err) => {
+									error!("Error creating new listener on \"{addr}\": {err}");
+									continue;
+								}
+							}
+						}
+						Protocol::Https => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							tls_http_acceptor.clone(),
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+						Protocol::Grpc => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							plain_rpc_acceptor.clone(),
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+						Protocol::Grpcs => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							tls_rpc_acceptor.clone(),
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+					})
+				}
+			}
+
+			debug!(
+				"Updated listeners, currently active: {:?}",
+				listeners
+					.iter()
+					.map(|l| l.listen_address())
+					.collect::<Vec<_>>()
+			);
 
 			info!("Configuration and TLS cert/key reloaded");
 		}

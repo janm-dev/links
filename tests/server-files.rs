@@ -27,6 +27,15 @@ fn get_client_with_cert(cert: &[u8]) -> Client {
 		.unwrap()
 }
 
+/// Create a new client that trust all OS-installed root certificates. This
+/// function panics on any error. The client will not follow redirects.
+fn get_client() -> Client {
+	ClientBuilder::new()
+		.redirect(Policy::none())
+		.build()
+		.unwrap()
+}
+
 #[tokio::test]
 #[serial_test::serial]
 async fn config_reload() {
@@ -35,11 +44,6 @@ async fn config_reload() {
 		.join("links_test_file_reload-config_reload")
 		.with_extension("toml");
 	fs::write(&config_path, TEST_CONFIG).await.unwrap();
-
-	let client = ClientBuilder::new()
-		.redirect(Policy::none())
-		.build()
-		.unwrap();
 
 	let _terminator = util::start_server_with_args(vec![
 		"-c",
@@ -50,7 +54,11 @@ async fn config_reload() {
 		"50",
 	]);
 
-	let res_before = client.get("http://localhost/example").send().await.unwrap();
+	let res_before = get_client()
+		.get("http://localhost/example")
+		.send()
+		.await
+		.unwrap();
 
 	fs::write(
 		&config_path,
@@ -61,7 +69,11 @@ async fn config_reload() {
 
 	time::sleep(Duration::from_millis(500)).await;
 
-	let res_after = client.get("http://localhost/example").send().await.unwrap();
+	let res_after = get_client()
+		.get("http://localhost/example")
+		.send()
+		.await
+		.unwrap();
 
 	assert!(dbg!(res_before.headers()).get("Server").is_some());
 	assert!(dbg!(res_after.headers()).get("Server").is_none());
@@ -127,4 +139,61 @@ async fn tls_reload() {
 
 	assert!(dbg!(res_after).is_err());
 	assert!(dbg!(other_res_after).is_ok());
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn listeners_reload() {
+	let config_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
+		.unwrap()
+		.join("links_test_file_reload-listeners_reload")
+		.with_extension("toml");
+	fs::write(&config_path, TEST_CONFIG).await.unwrap();
+
+	let _terminator = util::start_server_with_args(vec![
+		"-c",
+		config_path.to_str().unwrap(),
+		"--watcher-timeout",
+		"50",
+		"--watcher-debounce",
+		"50",
+	]);
+
+	let res_before_a = get_client()
+		.get("http://localhost:80/example")
+		.send()
+		.await
+		.unwrap();
+
+	let res_before_b = get_client().get("http://localhost:81/example").send().await;
+
+	fs::write(&config_path, TEST_CONFIG.replace("http::80", "http::81"))
+		.await
+		.unwrap();
+
+	time::sleep(Duration::from_millis(500)).await;
+
+	let res_after_a = get_client().get("http://localhost:80/example").send().await;
+	let res_after_b = get_client()
+		.get("http://localhost:81/example")
+		.send()
+		.await
+		.unwrap();
+
+	fs::write(
+		&config_path,
+		TEST_CONFIG.replace("http::80", "http:198.51.100.5:81"),
+	)
+	.await
+	.unwrap();
+
+	time::sleep(Duration::from_millis(500)).await;
+
+	let res_after_c = get_client().get("http://localhost:81/example").send().await;
+
+	assert!(dbg!(res_before_a.headers()).get("Server").is_some());
+	assert!(dbg!(res_before_b.unwrap_err()).is_connect());
+	assert!(dbg!(res_after_a.unwrap_err()).is_connect());
+	assert!(dbg!(res_after_b.headers()).get("Server").is_some());
+	assert!(dbg!(res_after_c.unwrap_err()).is_connect());
 }

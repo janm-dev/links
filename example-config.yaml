@@ -11,9 +11,41 @@ log_level: info
 # Can be any string, but should ideally be long and random
 token: random secret api token value
 
+# Incoming connections will be processed by listeners on the following addresses.
+#
+# The format for these is `protocol:ip-address:port`, but the address can be
+# omitted to listen on all local addresses (IPv4 and IPv6). If the port is not
+# specified, the default port for the protocol will be used. The protocol can
+# not be omitted.
+#
+# IP address `0.0.0.0` can be used to listen on all IPv4 (but not IPv6)
+# addresses, and `[::]` can be used to listen on all IPv6 (but not IPv4)
+# addresses. Note that support for dual stack sockets (IPv4 and IPv6 in one
+# listener) is not universally available. On platforms which don't support dual
+# stack sockets an empty address will listen on IPv6 only (just like `[::]`). To
+# listen on IPv4 and IPv6, two listeners must be used, one listening on
+# `0.0.0.0` and the other on `[::]` with the same protocol and port.
+#
+# Links supports the following protocols:
+# - `http` for unencrypted HTTP/1.0, HTTP/1.1, and HTTP/2 (default port 80)
+# - `https` for TLS-encrypted HTTP/1.0, HTTP/1.1, and HTTP/2 (default port 443)
+# - `grpc` for unencrypted gRPC over HTTP/2 (default port 50051)
+# - `grpcs` for TLS-encrypted gRPC over HTTP/2 (default port 530)
+#
+# TLS-encrypted listeners can be configured even when TLS is disabled, but will
+# reject all incoming connections unless TLS is enabled and configured with a
+# valid certificate and key.
+listeners:
+  - http:0.0.0.0:80
+  - http:[::]:80
+  - "https::"
+  - "grpc:127.0.0.1:"
+  - "grpc:[::1]:"
+  - grpcs::530
+
 # Enable/disable TLS for HTTPS and encrypted gRPC
 # Can be true to enable TLS, or false to disable
-tls_enable: false
+tls_enable: true
 
 # Path to the TLS key, encoded in PEM format
 tls_key: path/to/key.pem

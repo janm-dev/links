@@ -55,7 +55,7 @@ COPY ./docker-config.toml /config.toml
 # Use an unprivileged user
 USER links:links
 
-# Expose all usual ports (80 for HTTP, 443 for HTTPS, 530 for gRPC)
+# Expose all usual ports (80 for HTTP, 443 for HTTPS, 530 for gRPCS)
 EXPOSE 80
 EXPOSE 443
 EXPOSE 530

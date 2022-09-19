@@ -118,3 +118,47 @@ async fn https_to_https_no_redirect() {
 	let redirect_id = redirect_res.headers().get("Link-ID");
 	assert_eq!(redirect_id, Some(&HeaderValue::from_static("9dDbKpJP")));
 }
+
+/// Listener specification via command-line arguments
+#[tokio::test]
+#[serial_test::serial]
+async fn listeners_args() {
+	let _terminator = util::start_server_with_args(vec![
+		"--example-redirect",
+		"--token",
+		"abc123",
+		"--tls-enable",
+		"true",
+		"--tls-cert",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
+		"--tls-key",
+		concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
+		"--https-redirect",
+		"true",
+		"--listeners",
+		r#"["http::8080", "https::8443"]"#,
+	]);
+
+	let client = ClientBuilder::new()
+		.redirect(Policy::none())
+		.build()
+		.unwrap();
+
+	assert!(client
+		.get("http://localhost:80/example")
+		.send()
+		.await
+		.is_err());
+
+	assert!(client
+		.get("http://localhost:8080/example")
+		.send()
+		.await
+		.is_ok());
+
+	assert!(client
+		.get("https://localhost:8443/example")
+		.send()
+		.await
+		.is_ok());
+}

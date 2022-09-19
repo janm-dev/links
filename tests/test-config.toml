@@ -1,9 +1,17 @@
 log_level = "info"
 token = "abc123"
+listeners = [
+	"http::80",
+	"https:[::]:",
+	"https:0.0.0.0:",
+	"grpc:127.0.0.1:",
+	"grpc:[::1]:",
+	"grpcs::530",
+]
 tls_enable = false
 hsts = "enable"
 hsts_max_age = 63072000
-https_redirect = true
+https_redirect = false
 send_alt_svc = true
 send_server = true
 send_csp = true

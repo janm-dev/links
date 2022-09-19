@@ -1,12 +1,19 @@
 //! Global redirector server configuration.
 
-use std::{collections::HashMap, fmt::Display, path::PathBuf, sync::Arc};
+use std::{
+	collections::HashMap,
+	fmt::Display,
+	net::{IpAddr, Ipv6Addr},
+	path::PathBuf,
+	sync::Arc,
+};
 
 use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
 use tracing::{debug, instrument, warn, Level};
 
-use crate::{config::partial::Partial, store::BackendType, util::A_YEAR};
+use super::ListenAddress;
+use crate::{config::partial::Partial, server::Protocol, store::BackendType, util::A_YEAR};
 
 /// Global configuration for the links redirector server. This is the more
 /// idiomatic, easier to use (in rust code), and shareable-across-threads
@@ -60,6 +67,19 @@ impl Config {
 		Box::leak(Box::new(Self::new(file)))
 	}
 
+	/// Create a new [`Config`] from the provided [`ConfigInner`]. This function
+	/// is only for testing purposes. Use [`Config::new`][new] outside of tests.
+	///
+	/// [new]: fn@links::config::global::Config::new
+	#[cfg(test)]
+	#[must_use]
+	const fn from_inner(inner: ConfigInner) -> Self {
+		Self {
+			inner: RwLock::new(inner),
+			file: None,
+		}
+	}
+
 	/// Update this config from environment variables, config file, and
 	/// command-line arguments. This function starts with defaults for each
 	/// option, then updates those from environment variables, then from the
@@ -111,6 +131,12 @@ impl Config {
 	#[must_use]
 	pub fn token(&self) -> Arc<str> {
 		Arc::clone(&self.inner.read().token)
+	}
+
+	/// Get the list of listener addresses
+	#[must_use]
+	pub fn listeners(&self) -> Vec<ListenAddress> {
+		self.inner.read().listeners.clone()
 	}
 
 	/// Get the TLS configuration
@@ -180,6 +206,7 @@ impl Display for Config {
 					.chain("...".chars())
 					.collect::<String>(),
 			)
+			.field("listeners", &serde_json::to_string(&self.listeners()))
 			.field("tls", &self.tls())
 			.field("hsts", &self.hsts())
 			.field("https_redirect", &self.https_redirect())
@@ -194,7 +221,7 @@ impl Display for Config {
 }
 
 /// Actual configuration storage inside of a [`Config`]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 struct ConfigInner {
 	/// Minimum level of logs to be collected/displayed. Debug and trace levels
@@ -203,6 +230,8 @@ struct ConfigInner {
 	pub log_level: Level,
 	/// API token, used for authentication of gRPC clients
 	pub token: Arc<str>,
+	/// Addresses on which the links redirector server will listen on
+	pub listeners: Vec<ListenAddress>,
 	/// TLS configuration (HTTPS and gRPC)
 	pub tls: Tls,
 	/// HTTP Strict Transport Security setting on redirect
@@ -234,6 +263,10 @@ impl ConfigInner {
 
 		if let Some(ref token) = partial.token {
 			self.token = Arc::from(token.as_str());
+		}
+
+		if let Some(ref listeners) = partial.listeners {
+			self.listeners = listeners.clone();
 		}
 
 		match (
@@ -310,6 +343,28 @@ impl Default for ConfigInner {
 				.map(char::from)
 				.collect::<String>()
 				.into(),
+			listeners: vec![
+				ListenAddress {
+					protocol: Protocol::Http,
+					address: None,
+					port: None,
+				},
+				ListenAddress {
+					protocol: Protocol::Https,
+					address: None,
+					port: None,
+				},
+				ListenAddress {
+					protocol: Protocol::Grpc,
+					address: Some(IpAddr::V6(Ipv6Addr::LOCALHOST)),
+					port: None,
+				},
+				ListenAddress {
+					protocol: Protocol::Grpcs,
+					address: None,
+					port: None,
+				},
+			],
 			https_redirect: false,
 			tls: Tls::default(),
 			hsts: Hsts::default(),
@@ -534,5 +589,53 @@ mod tests {
 			Some(&"/path/to/some-other-cert.pem".into())
 		);
 		assert_eq!(inner.tls.key_file(), Some(&"/path/to/key.pem".into()));
+	}
+
+	#[test]
+	fn config_inner_update_from_partial_all() {
+		let mut inner = ConfigInner::default();
+		let empty_partial = Partial::default();
+		let full_partial = Partial::from_toml(include_str!("../../example-config.toml")).unwrap();
+
+		inner.update_from_partial(&empty_partial);
+
+		assert_eq!(inner, ConfigInner {
+			// This would otherwise be randomly generated and fail the test
+			token: Arc::clone(&inner.token),
+			..Default::default()
+		});
+
+		inner.update_from_partial(&full_partial);
+
+		assert!(!dbg!(format!(
+			"{:?}",
+			Partial::from(&Config::from_inner(dbg!(inner)))
+		))
+		.contains("None"));
+	}
+
+	#[test]
+	fn config_inner_update_from_partial_overwrite_listeners() {
+		let mut inner = ConfigInner::default();
+		let first = Partial {
+			listeners: Some(vec![ListenAddress {
+				protocol: Protocol::Http,
+				address: Some("::1".parse().unwrap()),
+				port: None,
+			}]),
+			..Default::default()
+		};
+		let second = Partial {
+			listeners: Some(vec![]),
+			..Default::default()
+		};
+
+		inner.update_from_partial(&first);
+
+		assert!(!inner.listeners.is_empty());
+
+		inner.update_from_partial(&second);
+
+		assert!(inner.listeners.is_empty());
 	}
 }

@@ -21,7 +21,10 @@ use toml::de::Error as TomlError;
 use tracing::{instrument, Level};
 
 use crate::{
-	config::global::{Config, Hsts, Tls},
+	config::{
+		global::{Config, Hsts, Tls},
+		ListenAddress,
+	},
 	store::BackendType,
 };
 
@@ -65,6 +68,8 @@ pub struct Partial {
 	pub log_level: Option<LogLevel>,
 	/// API token, used for authentication of gRPC clients
 	pub token: Option<String>,
+	/// Listener addresses, see [`ListenAddress`] for details
+	pub listeners: Option<Vec<ListenAddress>>,
 	/// Enable TLS for HTTPS and encrypted gRPC, requires `tls_key` and
 	/// `tls_cert` to be set
 	pub tls_enable: Option<bool>,
@@ -145,12 +150,17 @@ impl Partial {
 		parse(&fs::read_to_string(path)?)
 	}
 
-	/// Parse command-line arguments into a [`Partial`]. Store configuration is
-	/// parsed from a json string (the value of `--store-config`).
+	/// Parse command-line arguments into a [`Partial`]. Listeners and store
+	/// configuration are parsed from json strings.
 	#[must_use]
 	#[instrument(level = "debug", ret)]
 	pub fn from_args() -> Self {
 		let mut args = Arguments::from_env();
+
+		let listeners = args
+			.opt_value_from_fn("--listeners", |s| serde_json::from_str(s))
+			.ok()
+			.flatten();
 
 		let store_config = args
 			.opt_value_from_fn("--store-config", |s| serde_json::from_str(s))
@@ -160,6 +170,7 @@ impl Partial {
 		Self {
 			log_level: args.opt_value_from_str("--log-level").unwrap_or(None),
 			token: args.opt_value_from_str("--token").unwrap_or(None),
+			listeners,
 			tls_enable: args.opt_value_from_str("--tls-enable").unwrap_or(None),
 			tls_key: args.opt_value_from_str("--tls-key").unwrap_or(None),
 			tls_cert: args.opt_value_from_str("--tls-cert").unwrap_or(None),
@@ -175,11 +186,14 @@ impl Partial {
 	}
 
 	/// Parse environment variables with the prefix `LINKS_` into a [`Partial`].
-	/// Store configuration is parsed from a json string (the value of
-	/// `LINKS_STORE_CONFIG`).
+	/// Listeners and store configuration are parsed from json strings.
 	#[must_use]
 	#[instrument(level = "debug", ret)]
 	pub fn from_env_vars() -> Self {
+		let listeners = env::var("LINKS_LISTENERS")
+			.map_or(None, |s| serde_json::from_str(&s).ok())
+			.flatten();
+
 		let store_config = env::var("LINKS_STORE_CONFIG")
 			.map_or(None, |s| serde_json::from_str(&s).ok())
 			.flatten();
@@ -187,6 +201,7 @@ impl Partial {
 		Self {
 			log_level: parse_env_var("LINKS_LOG_LEVEL"),
 			token: parse_env_var("LINKS_TOKEN"),
+			listeners,
 			tls_enable: parse_env_var("LINKS_TLS_ENABLE"),
 			tls_key: parse_env_var("LINKS_TLS_KEY"),
 			tls_cert: parse_env_var("LINKS_TLS_CERT"),
@@ -239,6 +254,7 @@ impl From<&Config> for Partial {
 		Self {
 			log_level: Some((config.log_level()).into()),
 			token: Some(config.token().to_string()),
+			listeners: Some(config.listeners()),
 			tls_enable: Some(tls_enable),
 			tls_key: key_file,
 			tls_cert: cert_file,

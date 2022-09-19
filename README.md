@@ -19,7 +19,7 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 ### Standalone executable
 
-To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments. The server will listen for incoming HTTP requests on port 80 and for API calls on port 530 on all interfaces and addresses.
+To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments. The server will listen for incoming HTTP requests on port 80 on all interfaces and addresses and for API calls on port 50051 on localhost. There will also be inactive (due to no TLS configuration) listeners ready on port 443 for HTTPS and port 530 for encrypted gRPC API calls, both on all interfaces.
 
 To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), a certificate and key are required. You can get some for free from [Let's Encrypt](https://letsencrypt.org/). Once you have both of them saved somewhere in `pem` format, run the links server with `--tls-enable true` to enable tls, and pass the certificate file path with `--tls-cert` and the key file path with `--tls-key` (i.e. `links-server --tls-enable true --tls-cert path/to/cert.pem --tls-key path/to/key.pem`). Optionally, you can use `--https-redirect true` to redirect all HTTP requests to HTTPS first, before the external redirect. The command-line options have the same name as the same config option in the file, but they are in `kebab-case`, e.g. `--log-level ...`. For information about other optional arguments, run the links server with the `--help` flag.
 

@@ -30,9 +30,10 @@ impl<F: FnMut()> Drop for Terminator<F> {
 
 /// Start the links redirector server in the background with predetermined
 /// arguments. To kill the server process call or drop the returned function.
-/// The server will listen on all addresses with default ports (80, 443, and
-/// 530), with the default redirect enabled, the RPC token set to `abc123`, and
-/// TLS controlled by the `tls` argument of this function. Panics on any error.
+/// The server will listen on all addresses with default ports (80, 443, 50051,
+/// and 530), with the default redirect enabled, the RPC token set to `abc123`,
+/// and TLS controlled by the `tls` argument of this function. Panics on any
+/// error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
 pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 	let mut args = vec![
@@ -62,7 +63,7 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 /// Start the links redirector server in the background with the specified
 /// command-line arguments. To kill the server process call or drop the returned
 /// function. The server will listen on all addresses with default ports (80,
-/// 443, and 530). Panics on any error.
+/// 443, 50051, and 530). Panics on any error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
 pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl FnMut()> {
 	let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
