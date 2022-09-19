@@ -2,7 +2,7 @@
 
 use std::{
 	collections::HashMap,
-	fmt::Display,
+	fmt::{Display, Formatter, Result as FmtResult},
 	net::{IpAddr, Ipv6Addr},
 	path::PathBuf,
 	sync::Arc,
@@ -195,7 +195,7 @@ impl Config {
 }
 
 impl Display for Config {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.debug_struct("Config")
 			.field("log_level", &(self.log_level()).to_string())
 			.field(

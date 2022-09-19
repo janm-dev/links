@@ -9,7 +9,13 @@ mod redis;
 #[cfg(test)]
 mod tests;
 
-use std::{collections::HashMap, error::Error, fmt::Display, str::FromStr, sync::Arc};
+use std::{
+	collections::HashMap,
+	error::Error,
+	fmt::{Display, Formatter, Result as FmtResult},
+	str::FromStr,
+	sync::Arc,
+};
 
 use anyhow::Result;
 use backend::StoreBackend;
@@ -61,7 +67,7 @@ impl FromStr for BackendType {
 }
 
 impl Display for BackendType {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_str(self.to_str())
 	}
 }
@@ -72,7 +78,7 @@ impl Display for BackendType {
 pub struct IntoBackendTypeError(String);
 
 impl Display for IntoBackendTypeError {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_fmt(format_args!("unrecognized store backend type {}", self.0))
 	}
 }

@@ -1,7 +1,7 @@
 //! Links server certificate handling.
 
 use std::{
-	fmt::{Debug, Formatter},
+	fmt::{Debug, Formatter, Result as FmtResult},
 	fs,
 	io::Error as IoError,
 	path::Path,
@@ -109,7 +109,7 @@ impl ResolvesServerCert for CertificateResolver {
 }
 
 impl Debug for CertificateResolver {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
 		f.debug_struct("CertificateResolver")
 			.field("current", &"Arc<[REDACTED]>")
 			.finish()

@@ -5,7 +5,7 @@ use std::{
 	env,
 	error::Error,
 	ffi::OsStr,
-	fmt::Display,
+	fmt::{Display, Formatter, Result as FmtResult},
 	fs,
 	io::Error as IoError,
 	path::{Path, PathBuf},
@@ -327,7 +327,7 @@ pub struct PartialHstsParseError(String);
 impl Error for PartialHstsParseError {}
 
 impl Display for PartialHstsParseError {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_fmt(format_args!("unknown HSTS option: {}", self.0))
 	}
 }
@@ -347,7 +347,7 @@ impl FromStr for PartialHsts {
 }
 
 impl Display for PartialHsts {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_str(match self {
 			Self::Disable => "disable",
 			Self::Enable => "enable",

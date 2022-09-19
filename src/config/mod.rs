@@ -220,7 +220,7 @@ pub struct LogLevelParseError(String);
 impl Error for LogLevelParseError {}
 
 impl Display for LogLevelParseError {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_fmt(format_args!("unknown log level: {}", self.0))
 	}
 }
@@ -242,7 +242,7 @@ impl FromStr for LogLevel {
 }
 
 impl Display for LogLevel {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		fmt.write_str(match self {
 			Self::Trace => "trace",
 			Self::Debug => "debug",
