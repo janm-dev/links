@@ -34,7 +34,7 @@ jobs:
         id: pages
       - run: |
           cargo doc --no-deps --document-private-items --all-features
-          echo '<html><head><meta charset="utf-8" /><meta http-equiv="refresh" content="0; url=./links/index.html" /></head><body><h1><a href="./links/index.html">Docs are at /links.</a></h1></body></html>' > target/doc/index.html
+          cat misc/docs.html > target/doc/index.html
       - uses: actions/upload-pages-artifact@v1
         with:
           path: target/doc
