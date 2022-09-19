@@ -69,8 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
 	// Set the subscriber as the current default so logs are sent there
 	let subscriber_guard = tracing::subscriber::set_default(tracing_subscriber);
 
-	let server = &*SERVER_NAME;
-	info!(%server, "Starting links");
+	info!(server = SERVER_NAME, "Starting links");
 
 	// Parse cli args
 	let mut args = Arguments::from_env();

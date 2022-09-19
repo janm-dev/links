@@ -35,7 +35,7 @@ pub async fn redirector(
 	// Set default response headers
 	res = res.header("Referrer-Policy", "unsafe-url");
 	if config.send_server {
-		res = res.header("Server", &*SERVER_NAME);
+		res = res.header("Server", SERVER_NAME);
 	}
 
 	if config.send_csp {
@@ -140,7 +140,7 @@ pub async fn https_redirector(
 	let mut res = Response::builder();
 	res = res.header("Referrer-Policy", "no-referrer");
 	if config.send_server {
-		res = res.header("Server", &*SERVER_NAME);
+		res = res.header("Server", SERVER_NAME);
 	}
 	if config.send_csp {
 		res = res.header(

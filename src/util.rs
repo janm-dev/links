@@ -2,24 +2,33 @@
 
 use std::collections::HashMap;
 
-use lazy_static::lazy_static;
+/// A string representation of this crate's version. In debug builds, this
+/// is in the form of `[full semver crate version]+debug`. In release
+/// builds this gets shortened to `MAJOR.MINOR`.
+pub const VERSION: &str = if cfg!(debug_assertions) {
+	concat!(env!("CARGO_PKG_VERSION"), "+debug")
+} else {
+	concat!(
+		env!("CARGO_PKG_VERSION_MAJOR"),
+		".",
+		env!("CARGO_PKG_VERSION_MINOR")
+	)
+};
 
-lazy_static! {
-	/// A string representation of this crate's version. In debug builds, this
-	/// is in the form of `[full semver crate version]+debug`. In release
-	/// builds this gets shortened to `MAJOR.MINOR`.
-	pub static ref VERSION: String = if cfg!(debug_assertions) {
-		env!("CARGO_PKG_VERSION").to_string() + "+debug"
-	} else {
-		env!("CARGO_PKG_VERSION_MAJOR").to_string() + "." + env!("CARGO_PKG_VERSION_MINOR")
-	};
-
-	/// The name of the HTTP(S) server implemented by this crate. Used in e.g.
-	/// the `Server` HTTP header. Currently this is `hyperlinks/[version]`,
-	/// where `hyper` refers to the HTTP library used, `links` is this crate's
-	/// name, and the version is `util::VERSION`.
-	pub static ref SERVER_NAME: String = format!("hyperlinks/{}", &*VERSION);
-}
+/// The name of the HTTP(S) server implemented by this crate. Used in e.g.
+/// the `Server` HTTP header. Currently this is `hyperlinks/[version]`,
+/// where `hyper` refers to the HTTP library used, `links` is this crate's
+/// name, and the version is `util::VERSION`.
+pub const SERVER_NAME: &str = if cfg!(debug_assertions) {
+	concat!("hyperlinks/", env!("CARGO_PKG_VERSION"), "+debug")
+} else {
+	concat!(
+		"hyperlinks/",
+		env!("CARGO_PKG_VERSION_MAJOR"),
+		".",
+		env!("CARGO_PKG_VERSION_MINOR")
+	)
+};
 
 /// Make a decent-looking and readable string out of a string -> string map
 pub fn stringify_map<K, V, H>(map: &HashMap<K, V, H>) -> String
