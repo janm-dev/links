@@ -130,7 +130,7 @@ pub async fn rpc_handler(
 /// [mod]: crate::server
 #[async_trait::async_trait]
 pub trait Acceptor<S: AsyncRead + AsyncWrite + Send + Unpin + 'static>:
-	Clone + Send + Sync + 'static
+	Send + Sync + 'static
 {
 	/// Accept an incoming connection in `stream` from `remote_addr` to
 	/// `local_addr`. This function should [spawn a task][spawn] to handle the
@@ -146,7 +146,7 @@ pub trait Acceptor<S: AsyncRead + AsyncWrite + Send + Unpin + 'static>:
 /// An acceptor for plaintext (unencrypted) HTTP requests. Supports HTTP/1.0,
 /// HTTP/1.1, and HTTP/2 (in its rare unencrypted variety usually not found in
 /// any browsers).
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct PlainHttpAcceptor {
 	config: &'static Config,
 	current_store: &'static Current,
@@ -155,11 +155,15 @@ pub struct PlainHttpAcceptor {
 impl PlainHttpAcceptor {
 	/// Create a new [`PlainHttpAcceptor`] with the provided [`Config`] and
 	/// [`Current`]
-	pub const fn new(config: &'static Config, current_store: &'static Current) -> Self {
-		Self {
+	///
+	/// # Memory
+	/// This function leaks memory, and should therefore not be called an
+	/// unbounded number of times
+	pub fn new(config: &'static Config, current_store: &'static Current) -> &'static Self {
+		Box::leak(Box::new(Self {
 			config,
 			current_store,
-		}
+		}))
 	}
 }
 
@@ -187,7 +191,6 @@ impl Acceptor<TcpStream> for PlainHttpAcceptor {
 
 /// An acceptor for TLS-encrypted HTTPS requests. Supports HTTP/1.0, HTTP/1.1,
 /// and HTTP/2.
-#[derive(Clone)]
 pub struct TlsHttpAcceptor {
 	config: &'static Config,
 	current_store: &'static Current,
@@ -198,11 +201,15 @@ impl TlsHttpAcceptor {
 	/// Create a new [`TlsHttpAcceptor`] with the provided [`Config`],
 	/// [`Current`], and a reference-counted (via [`Arc`])
 	/// [`CertificateResolver`]
+	///
+	/// # Memory
+	/// This function leaks memory, and should therefore not be called an
+	/// unbounded number of times
 	pub fn new(
 		config: &'static Config,
 		current_store: &'static Current,
 		cert_resolver: Arc<CertificateResolver>,
-	) -> Self {
+	) -> &'static Self {
 		let mut server_config = ServerConfig::builder()
 			.with_safe_defaults()
 			.with_no_client_auth()
@@ -212,11 +219,11 @@ impl TlsHttpAcceptor {
 		let server_config = Arc::new(server_config);
 		let tls_acceptor = TlsAcceptor::from(server_config);
 
-		Self {
+		Box::leak(Box::new(Self {
 			config,
 			current_store,
 			tls_acceptor,
-		}
+		}))
 	}
 }
 
@@ -257,15 +264,19 @@ impl Debug for TlsHttpAcceptor {
 
 /// An acceptor for plaintext (unencrypted) RPC calls. Supports `gRPC` over
 /// unencrypted HTTP/2.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PlainRpcAcceptor {
-	service: Arc<Mutex<Routes>>,
+	service: Mutex<Routes>,
 }
 
 impl PlainRpcAcceptor {
 	/// Create a new [`PlainRpcAcceptor`] with the provided [`Config`] and
 	/// [`Current`]
-	pub fn new(config: &'static Config, current_store: &'static Current) -> Self {
+	///
+	/// # Memory
+	/// This function leaks memory, and should therefore not be called an
+	/// unbounded number of times
+	pub fn new(config: &'static Config, current_store: &'static Current) -> &'static Self {
 		let service = RpcServer::builder()
 			.add_service(InterceptedService::new(
 				LinksServer::new(Api::new(current_store))
@@ -275,9 +286,9 @@ impl PlainRpcAcceptor {
 			))
 			.into_service();
 
-		Self {
-			service: Arc::new(Mutex::new(service)),
-		}
+		Box::leak(Box::new(Self {
+			service: Mutex::new(service),
+		}))
 	}
 }
 
@@ -300,7 +311,6 @@ impl Acceptor<TcpStream> for PlainRpcAcceptor {
 
 /// An acceptor for TLS-encrypted RPC calls. Supports `gRPC` over
 /// HTTP/2 with HTTPS.
-#[derive(Clone)]
 pub struct TlsRpcAcceptor {
 	service: Arc<Mutex<Routes>>,
 	tls_acceptor: TlsAcceptor,
@@ -310,11 +320,15 @@ impl TlsRpcAcceptor {
 	/// Create a new [`TlsRpcAcceptor`] with the provided [`Config`],
 	/// [`Current`], and a reference-counted (via [`Arc`])
 	/// [`CertificateResolver`]
+	///
+	/// # Memory
+	/// This function leaks memory, and should therefore not be called an
+	/// unbounded number of times
 	pub fn new(
 		config: &'static Config,
 		current_store: &'static Current,
 		cert_resolver: Arc<CertificateResolver>,
-	) -> Self {
+	) -> &'static Self {
 		let mut server_config = ServerConfig::builder()
 			.with_safe_defaults()
 			.with_no_client_auth()
@@ -333,10 +347,10 @@ impl TlsRpcAcceptor {
 			))
 			.into_service();
 
-		Self {
+		Box::leak(Box::new(Self {
 			service: Arc::new(Mutex::new(service)),
 			tls_acceptor,
-		}
+		}))
 	}
 }
 
@@ -506,7 +520,7 @@ impl Listener {
 	pub async fn new(
 		addr: Option<IpAddr>,
 		port: Option<u16>,
-		acceptor: impl Acceptor<TcpStream>,
+		acceptor: &'static impl Acceptor<TcpStream>,
 	) -> Result<Self, IoError> {
 		let proto = acceptor.protocol();
 		let port = port.unwrap_or_else(|| proto.default_port());
@@ -645,13 +659,13 @@ mod tests {
 		let addr = Some([127, 0, 0, 1].into());
 		let port = Some(8000);
 
-		let listener = Listener::new(addr, port, UnAcceptor).await.unwrap();
+		let listener = Listener::new(addr, port, &UnAcceptor).await.unwrap();
 
 		let start = Instant::now();
 		drop(listener);
 		let duration = start.elapsed();
 
-		let _listener = Listener::new(addr, port, UnAcceptor).await.unwrap();
+		let _listener = Listener::new(addr, port, &UnAcceptor).await.unwrap();
 
 		assert!(
 			dbg!(duration) < Duration::from_millis(if cfg!(debug_assertions) { 100 } else { 1 })

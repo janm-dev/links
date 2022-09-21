@@ -160,21 +160,15 @@ fn main() -> Result<(), anyhow::Error> {
 			Protocol::Http => {
 				rt.block_on(Listener::new(addr.address, addr.port, plain_http_acceptor))?
 			}
-			Protocol::Https => rt.block_on(Listener::new(
-				addr.address,
-				addr.port,
-				tls_http_acceptor.clone(),
-			))?,
-			Protocol::Grpc => rt.block_on(Listener::new(
-				addr.address,
-				addr.port,
-				plain_rpc_acceptor.clone(),
-			))?,
-			Protocol::Grpcs => rt.block_on(Listener::new(
-				addr.address,
-				addr.port,
-				tls_rpc_acceptor.clone(),
-			))?,
+			Protocol::Https => {
+				rt.block_on(Listener::new(addr.address, addr.port, tls_http_acceptor))?
+			}
+			Protocol::Grpc => {
+				rt.block_on(Listener::new(addr.address, addr.port, plain_rpc_acceptor))?
+			}
+			Protocol::Grpcs => {
+				rt.block_on(Listener::new(addr.address, addr.port, tls_rpc_acceptor))?
+			}
 		})
 	}
 
@@ -362,7 +356,7 @@ fn main() -> Result<(), anyhow::Error> {
 						Protocol::Https => match rt.block_on(Listener::new(
 							addr.address,
 							addr.port,
-							tls_http_acceptor.clone(),
+							tls_http_acceptor,
 						)) {
 							Ok(listener) => listener,
 							Err(err) => {
@@ -373,7 +367,7 @@ fn main() -> Result<(), anyhow::Error> {
 						Protocol::Grpc => match rt.block_on(Listener::new(
 							addr.address,
 							addr.port,
-							plain_rpc_acceptor.clone(),
+							plain_rpc_acceptor,
 						)) {
 							Ok(listener) => listener,
 							Err(err) => {
@@ -384,7 +378,7 @@ fn main() -> Result<(), anyhow::Error> {
 						Protocol::Grpcs => match rt.block_on(Listener::new(
 							addr.address,
 							addr.port,
-							tls_rpc_acceptor.clone(),
+							tls_rpc_acceptor,
 						)) {
 							Ok(listener) => listener,
 							Err(err) => {
