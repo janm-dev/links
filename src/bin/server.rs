@@ -332,10 +332,7 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 
 			// Update listeners per the new config
-			listeners = listeners
-				.into_iter()
-				.filter(|l| new_listeners.contains(&l.listen_address()))
-				.collect();
+			listeners.retain(|l| new_listeners.contains(&l.listen_address()));
 
 			for addr in new_listeners {
 				if !old_listeners.contains(&addr) {
