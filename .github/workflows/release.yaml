@@ -22,6 +22,7 @@ jobs:
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           cargo install --locked cargo-about
           cargo about generate -o ATTRIBUTION.html --all-features about.hbs
@@ -50,6 +51,7 @@ jobs:
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           sudo apt update
           sudo apt install -y musl-tools musl-dev openssl libssl-dev crossbuild-essential-arm64
@@ -82,6 +84,7 @@ jobs:
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           cargo build --release --target ${{ matrix.target }}
           Compress-Archive -Path "target/${{ matrix.target }}/release/cli.exe", "target/${{ matrix.target }}/release/server.exe" -DestinationPath "${{ matrix.target }}.zip"
