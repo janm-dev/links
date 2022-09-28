@@ -50,7 +50,7 @@ serde_derive = "1.0.145"
 serde_json = "1.0.85"
 serde_yaml = "0.9.13"
 socket2 = "0.4.7"
-thiserror = "1.0.36"
+thiserror = "1.0.37"
 tokio = { version = "1.21.2", features = [
 	"rt-multi-thread",
 ] }
