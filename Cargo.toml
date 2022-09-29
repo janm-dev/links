@@ -74,7 +74,7 @@ base64 = "0.13.0"
 lol_html = "0.3.1"
 minify-html = "0.10.1"
 sha2 = "0.10.6"
-tonic-build = "0.8.0"
+tonic-build = "0.8.2"
 
 [dev-dependencies]
 regex = "1.6.0"
