@@ -1144,9 +1144,9 @@ checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
 name = "minify-html"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d14fbf5c1cb61efaf3086895eb0bc3400ff9c064b93d847a8e860321db803a27"
+checksum = "e16321f124e57bed2916c6e28ef67b94c9a9d85f234b4c33ac2882eaacd8736c"
 dependencies = [
  "aho-corasick",
  "css-minify",
@@ -1157,13 +1157,12 @@ dependencies = [
 
 [[package]]
 name = "minify-js"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35e057de7e5b920675f6c9de1a7d1b6862685f4e57953ee083ce01233e4b5cac"
+checksum = "f9d890bc383f372079d3220fadadc3d6886a4716f0f5f1233d10479c1e2bb2d2"
 dependencies = [
- "aho-corasick",
  "lazy_static",
- "memchr",
+ "parse-js",
 ]
 
 [[package]]
@@ -1402,6 +1401,17 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-sys",
+]
+
+[[package]]
+name = "parse-js"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66cb826006b578328705a1c0ee8ffc2d5b55db6a9d8240e7367bdf16ab1d0f4d"
+dependencies = [
+ "aho-corasick",
+ "lazy_static",
+ "memchr",
 ]
 
 [[package]]
