@@ -21,12 +21,14 @@ use anyhow::Result;
 use backend::StoreBackend;
 use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
-use tracing::instrument;
+use tokio::spawn;
+use tracing::{debug, instrument, trace};
 
 pub use self::{memory::Store as Memory, redis::Store as Redis};
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
+	stats::{Statistic, StatisticDescription, StatisticValue},
 };
 
 /// The type of store backend used by the links redirector server. All variants
@@ -249,6 +251,68 @@ impl Store {
 	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
 	pub async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		self.store.rem_vanity(from).await
+	}
+
+	/// Get statistics' values by their description. Returns all matching
+	/// [statistics][`Statistic`] and their values for the provided [statistic
+	/// description][`StatisticDescription`]. Statistics not having been
+	/// collected is not an error, if no matching statistics are found, an empty
+	/// iterator is returned.
+	///
+	/// # Error
+	/// An error is only returned if something fails when it should have worked.
+	/// A statistic not existing or the store not supporting statistics is not
+	/// considered an error.
+	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
+	pub async fn get_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<impl Iterator<Item = (Statistic, StatisticValue)>> {
+		Ok(self.store.get_statistics(description).await?.into_iter())
+	}
+
+	/// Increment multiple statistics' count for the given id and/or vanity
+	/// path. Each of the provided [statistic][`Statistic`]s' values for the
+	/// provided [id][`Id`] and [vanity path][`Normalized`] are incremented by 1
+	/// in a spawned tokio task in the background.
+	///
+	/// # Error
+	/// This function failing in any way is not considered an error, because
+	/// statistics are done on a best-effort basis. However, any errors that
+	/// occur are logged.
+	pub fn incr_statistics<I>(&self, statistics: I)
+	where
+		I: IntoIterator<Item = Statistic> + Send + 'static,
+		<I as IntoIterator>::IntoIter: Send,
+	{
+		let store = self.store.clone();
+		spawn(async move {
+			for stat in statistics {
+				match store.incr_statistic(stat.clone()).await {
+					Ok(val) => trace!(?val, ?stat, "statistic incremented"),
+					Err(err) => debug!(?err, ?stat, "statistic incrementing failed"),
+				}
+			}
+		});
+	}
+
+	/// Remove statistics by their description. Deletes all
+	/// [statistics][`Statistic`] that match the provided
+	/// [description][`StatisticDescription`] and returns their values before
+	/// they were deleted, if they're available. A statistic not having been
+	/// collected is not an error, if no matching statistics are found, an empty
+	/// iterator is returned.
+	///
+	/// # Error
+	/// An error is only returned if something fails when it should have worked.
+	/// A statistic not existing or the store not supporting statistics is not
+	/// considered an error.
+	#[instrument(level = "debug", skip(self), fields(name = self.backend_name()), ret, err)]
+	pub async fn rem_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<impl Iterator<Item = (Statistic, StatisticValue)>> {
+		Ok(self.store.rem_statistics(description).await?.into_iter())
 	}
 }
 

@@ -61,6 +61,7 @@ pub const REVERSE_CHARSET_BASE_38_OFFSET: usize = 54;
 
 /// The 40 bit ID used to identify links in links.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "&str", into = "String")]
 pub struct Id([u8; 5]);
 
 impl Id {
@@ -340,6 +341,19 @@ mod tests {
 		);
 
 		assert!(Id::from_value(RedisValue::Null).is_err());
+	}
+
+	#[test]
+	fn serde() {
+		assert_eq!(
+			serde_json::to_string(&Id([0x73, 0x65, 0x72, 0x64, 0x65])).unwrap(),
+			r#""4Ld9TJrd""#
+		);
+
+		assert_eq!(
+			serde_json::from_str::<Id>(r#""4Ld9TJrd""#).unwrap(),
+			Id([0x73, 0x65, 0x72, 0x64, 0x65])
+		);
 	}
 
 	#[test]

@@ -9,7 +9,7 @@
 
 ## What it does
 
-Links is an all-in-one link shortener, redirecting links like <https://example.com/07Qdzc9W> or <https://example.com/my-cool-link> to wherever you want, all while (soon) optionally collecting useful, but privacy-focused, statistics.
+Links is an all-in-one link shortener, redirecting links like <https://example.com/07Qdzc9W> or <https://example.com/my-cool-link> to wherever you want, all while optionally collecting useful, but privacy-focused, statistics.
 Links can be configured via a [command line interface](#cli), or (soon) via an HTTP-based api and website. Redirects are stored in a flexible, configurable way. Currently, a volatile in-memory store <sup>(not recommended)</sup> and [Redis](https://redis.com/) <sup>(recommended)</sup> are supported.
 Links is designed to scale up and down horizontally as much as needed. You can run the links server as a [standalone executable](#standalone-executable) or in a lightweight [Docker container](#docker-container), load-balancing between different redirector servers however necessary (all requests are stateless, so each HTTP/gRPC request can be sent to any redirector).
 
@@ -73,6 +73,18 @@ For instructions on more `links-cli` subcommands, run `links-cli help`.
 
 TODO - not implemented yet
 
+## Statistics
+
+The links redirector server can collect some statistics about each request. These statistics are designed to preserve user privacy, while still offering useful information about redirects. For more information about the specific types of statistics that are collected, see the documentation for [`StatisticType` in `/src/stats/internals.rs`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
+
+If supported, statistics are stored in the same store as redirects, as a mapping of statistic information (link, type, data, time) to that statistic's value (an integer counter). That counter is simply incremented every time that specific statistic is collected. The time in a statistic represents a period of 15 minutes during which that statistic was collected. By storing the time this way, multiple statistics can not (as easily) be associated with each other to potentially [fingerprint](https://en.wikipedia.org/wiki/Device_fingerprint) a user, while still allowing some time-based analysis of redirects.
+
+Data for statistics is collected on the redirector server from various parts of the request (e.g. HTTP headers, TLS protocol info, etc.), without the use of Cookies or any client-side code. This may however still involve processing, sharing, and potentially storing private information (e.g. the user's IP address), so compliance with privacy (and other) laws must be ensured before deploying links. For details on what data is used for each type of statistic, see the documentation for [`StatisticType`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
+
+### Configuration
+
+TODO - not implemented yet
+
 ## How it works
 
 Links has 3 main parts:
@@ -85,9 +97,11 @@ All redirects have an ID - a 40 bit / 5 byte number, represented as an 8 charact
 
 When the redirector server receives a request, it first checks if the path of the request is a links ID (starts with a digit, e.g. `07Qdzc9W`) or a vanity path (freeform text, doesn't start with a digit). If the path is not an ID, the server gets the ID of that redirect from the store. Then, the server gets the destination URL of the redirect corresponding to the ID. It then redirects the request to that URL, or responds with a 404 status if the ID or destination URL could not be found.
 
+Just before the redirect, the links server collects some information about the request and uses that information to gather the appropriate [statistics](#statistics), which are queued for collection some time after the client is redirected.
+
 The redirector server is also responsible for allowing the user to edit redirects via a low-level gRPC API. You can interact with that API via a [command-line utility](#cli) or (soon) via an HTTP-based API and website. Definitions for the gRPC interface are located in `/proto/links.proto`. This API exists so that you can easily interact with the redirect store in a generic way, no matter what the actual storage backend is, or how much links has been scaled (though you _can_ (soon) optionally disable that API).
 
-The backend store is accessed by the redirector server, and can also be used via the gRPC API. No external access is needed to set up or edit redirects. The storage backend implementation is generic, so that you can choose where redirects are stored. Redirects are stored in a backend-specific way, but generally as a map of `vanity path -> ID` and `ID -> destination URL`.
+The backend store is accessed by the redirector server, and can also be used via the gRPC API. No external access is needed to set up or edit redirects. The storage backend implementation is generic, so that you can choose where redirects are stored. Redirects are stored in a backend-specific way, but generally as a map of `vanity path -> ID` and `ID -> destination URL`, with statistics being stored as a mapping of `statistic (link, type, data, time) -> statistic value`.
 
 ## How to build it
 
@@ -110,6 +124,7 @@ The minimum supported rust version is currently Rust 1.62, but this may change i
 | `/src/`       | rust source for all non-website links stuff            |
 | `/src/bin/`   | executable binary sources                              |
 | `/src/store/` | implementation of storage backends                     |
+| `/src/stats/` | statistics collection for the redirector               |
 | `/tests/`     | integration/end-to-end testing of links                |
 | `/.github/`   | github-specific configuration/resources                |
 | `/target/`    | rust build output <sup>_(do not commit)_</sup>         |

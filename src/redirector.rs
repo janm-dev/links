@@ -11,6 +11,7 @@ use crate::{
 	config::{Hsts, Redirector as Config},
 	id::Id,
 	normalized::Normalized,
+	stats::{ExtraStatisticInfo, Statistic},
 	store::Store,
 	util::{csp_hashes, include_html, SERVER_NAME},
 };
@@ -18,12 +19,15 @@ use crate::{
 /// Redirects the `req`uest to the appropriate target URL (if one is found in
 /// the `store`) or returns a `404 Not Found` response. When redirecting, the
 /// status code is `302 Found` when the method is GET, and `307 Temporary
-/// Redirect` otherwise.
+/// Redirect` otherwise. Additionally, `stat_info` can be used to pass extra
+/// [`Statistic`]s to be collected in addition to the ones inside of this
+/// function.
 #[instrument(level = "debug", name = "redirect-external", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name(), time_ns = Empty, link = Empty, id = Empty, vanity = Empty, status_code = Empty))]
 pub async fn redirector(
 	req: Request<Body>,
 	store: Store,
 	config: Config,
+	stat_info: ExtraStatisticInfo,
 ) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();
 	trace!(?req);
@@ -119,6 +123,20 @@ pub async fn redirector(
 
 		res.body(include_html!("not-found").to_string())?
 	};
+
+	let id = id.map(Into::into);
+	let vanity = vanity.map(Into::into);
+
+	let stats = Statistic::get_misc(id.as_ref(), stat_info.clone(), res.status())
+		.chain(Statistic::from_req(id.as_ref(), &req))
+		.chain(Statistic::get_misc(
+			vanity.as_ref(),
+			stat_info,
+			res.status(),
+		))
+		.chain(Statistic::from_req(vanity.as_ref(), &req));
+
+	store.incr_statistics(stats);
 
 	let redirect_time = redirect_start.elapsed();
 

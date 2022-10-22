@@ -15,6 +15,7 @@ use async_trait::async_trait;
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
+	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::BackendType,
 };
 
@@ -102,4 +103,57 @@ pub trait StoreBackend: Debug + Send + Sync {
 	/// If an `Err` is returned, the value must not have been removed /
 	/// modified, insofar as that is possible to determine from the backend.
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>>;
+
+	/// Get statistics' values by their description. Returns all matching
+	/// [`Statistic`]s and their values for the provided
+	/// [`StatisticDescription`]. Statistics not having been collected is not an
+	/// error, if no matching statistics are found, an empty [`Vec`] is
+	/// returned.
+	///
+	/// By default this function returns an empty [`Vec`]
+	///
+	/// # Error
+	/// An error is only returned if something fails when it should have worked.
+	/// A statistic not existing or the store not supporting statistics is not
+	/// considered an error.
+	async fn get_statistics(
+		&self,
+		_description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		Ok(Vec::new())
+	}
+
+	/// Increment a statistic's count. The provided [`Statistic`]'s value is
+	/// incremented by 1. Returns the new value of the statistic after the
+	/// increment, or `None` if the statistic wasn't recorded or its new value
+	/// is not known.
+	///
+	/// By default this function does nothing and returns `Ok(None)`
+	///
+	/// # Error
+	/// An error is only returned if something fails when it should have worked.
+	/// A statistic not being recorded (immediately or ever) is not considered
+	/// and error.
+	async fn incr_statistic(&self, _statistic: Statistic) -> Result<Option<StatisticValue>> {
+		Ok(None)
+	}
+
+	/// Remove statistics by their description. Deletes all [`Statistic`]s that
+	/// match the provided [`StatisticDescription`] and returns their values
+	/// before they were deleted, if they're available. A statistic not having
+	/// been collected is not an error, if no matching statistics are found, an
+	/// empty [`Vec`] is returned.
+	///
+	/// By default this function does nothing and returns an empty [`Vec`]
+	///
+	/// # Error
+	/// An error is only returned if something fails when it should have worked.
+	/// A statistic not existing or the store not supporting statistics is not
+	/// considered an error.
+	async fn rem_statistics(
+		&self,
+		_description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		Ok(Vec::new())
+	}
 }

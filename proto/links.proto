@@ -17,6 +17,11 @@ service Links {
 	rpc SetVanity (SetVanityRequest) returns (SetVanityResponse);
 	// Remove a vanity path by its text content. Returns the old id, if any.
 	rpc RemVanity (RemVanityRequest) returns (RemVanityResponse);
+
+	// Get statistics' counts.
+	rpc GetStatistics (GetStatisticsRequest) returns (GetStatisticsResponse);
+	// Remove statistics. Returns the old counts, if available.
+	rpc RemStatistics (RemStatisticsRequest) returns (RemStatisticsResponse);
 }
 
 message GetRedirectRequest {
@@ -67,4 +72,51 @@ message RemVanityRequest {
 
 message RemVanityResponse {
 	optional string id = 1;
+}
+
+message StatisticWithValue {
+	// The link (id or vanity path) of the statistic
+	string link = 1;
+	// The type of the statistic
+	string type = 2;
+	// The data inside the statistic
+	string data = 3;
+	// The timestamp of the statistic
+	string time = 4;
+	// The statistic's value as a non-zero unsigned 64-bit integer, or 0 if the
+	// statistic wasn't recorded
+	uint64 value = 5;
+}
+
+message GetStatisticsRequest {
+	// The link (id or vanity path) of the statistic (if any)
+	optional string link = 1;
+	// The type of statistic to get (if any)
+	optional string type = 2;
+	// The data inside the statistic (if any)
+	optional string data = 3;
+	// The timestamp of the statistic (if any)
+	optional string time = 4;
+}
+
+message GetStatisticsResponse {
+	// All matching statistics that were found along with their values
+	repeated StatisticWithValue statistics = 1;
+}
+
+message RemStatisticsRequest {
+	// The link (id or vanity path) of the statistic (if any)
+	optional string link = 1;
+	// The type of statistic to remove (if any)
+	optional string type = 2;
+	// The data inside the statistic (if any)
+	optional string data = 3;
+	// The timestamp of the statistic (if any)
+	optional string time = 4;
+}
+
+message RemStatisticsResponse {
+	// All matching statistics that were found along with their values (if they
+	// are known, which may depend on the store backend used by the server)
+	repeated StatisticWithValue statistics = 1;
 }

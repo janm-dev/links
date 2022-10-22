@@ -59,18 +59,22 @@ use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
 	redirector::{https_redirector, redirector},
+	stats::ExtraStatisticInfo,
 	store::{Current, Store},
 };
 
 /// A handler that does external HTTP redirects using information from the
-/// provided store.
+/// provided store. Extra information for statistics can be passed via
+/// `stat_info`.
 pub async fn http_handler(
 	stream: impl AsyncRead + AsyncWrite + Send + Unpin + 'static,
 	store: Store,
 	config: &'static Config,
+	stat_info: ExtraStatisticInfo,
 ) {
-	let redirector_service =
-		service_fn(move |req: Request<Body>| redirector(req, store.clone(), config.redirector()));
+	let redirector_service = service_fn(move |req: Request<Body>| {
+		redirector(req, store.clone(), config.redirector(), stat_info.clone())
+	});
 
 	if let Err(err) = Http::new()
 		.serve_connection(stream, redirector_service)
@@ -179,7 +183,13 @@ impl Acceptor<TcpStream> for PlainHttpAcceptor {
 			if config.https_redirect() {
 				http_to_https_handler(stream, config).await;
 			} else {
-				http_handler(stream, current_store.get(), config).await;
+				http_handler(
+					stream,
+					current_store.get(),
+					config,
+					ExtraStatisticInfo::default(),
+				)
+				.await;
 			}
 		});
 	}
@@ -238,7 +248,16 @@ impl Acceptor<TcpStream> for TlsHttpAcceptor {
 			trace!("New TLS connection from {remote_addr} on {local_addr}");
 
 			match tls_acceptor.accept(stream).await {
-				Ok(stream) => http_handler(stream, current_store.get(), config).await,
+				Ok(stream) => {
+					let tls_conn = stream.get_ref().1;
+					let extra_info = ExtraStatisticInfo {
+						tls_sni: tls_conn.sni_hostname().map(Arc::from),
+						tls_version: tls_conn.protocol_version(),
+						tls_cipher_suite: tls_conn.negotiated_cipher_suite(),
+					};
+
+					http_handler(stream, current_store.get(), config, extra_info).await;
+				}
 				Err(err) => warn!("Error accepting incoming TLS connection: {err:?}"),
 			}
 		});
