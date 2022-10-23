@@ -83,7 +83,33 @@ Data for statistics is collected on the redirector server from various parts of 
 
 ### Configuration
 
-TODO - not implemented yet
+Statistic collection can be configured by specifying a list of statistic categories to collect. Statistics with types not in any of these categories will not be collected. The following categories of statistics are currently supported:
+
+- `redirect` - A request was redirected:
+  - [`Request`] - A request was processed (no data)
+- `basic` - Basic redirect information:
+  - [`HostRequest`] - The host that processed the request (from the HTTP `Host` header)
+  - [`SniRequest`] - The host that processed the request (from TLS SNI)
+  - [`StatusCode`] - The HTTP status code number
+- `protocol` - Information about the protocols used for the request:
+  - [`HttpVersion`] - The HTTP version used for the redirect
+  - [`TlsVersion`] - The TLS version used for the redirect
+  - [`TlsCipherSuite`] - The TLS cipher suite used to secure the request
+- `user-agent` - Information about the user agent (browser):
+  - [`UserAgent`] - A description of the user agent (from the `Sec-CH-UA` or `User-Agent` HTTP header)
+  - [`UserAgentMobile`] - Whether the browser prefers a mobile experience
+  - [`UserAgentPlatform`] - The platform/operating system that the user agent is running on
+
+[`Request`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.Request
+[`HostRequest`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.HostRequest
+[`SniRequest`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.SniRequest
+[`StatusCode`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.StatusCode
+[`HttpVersion`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.HttpVersion
+[`TlsVersion`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.TlsVersion
+[`TlsCipherSuite`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.TlsCipherSuite
+[`UserAgent`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.UserAgent
+[`UserAgentMobile`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.UserAgentMobile
+[`UserAgentPlatform`]: https://docs.links.janm.dev/links/stats/enum.StatisticType.html#variant.UserAgentPlatform
 
 ## How it works
 

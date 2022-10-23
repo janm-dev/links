@@ -25,6 +25,7 @@ use crate::{
 		global::{Config, Hsts, Tls},
 		ListenAddress, LogLevel,
 	},
+	stats::StatisticCategories,
 	store::BackendType,
 };
 
@@ -70,6 +71,8 @@ pub struct Partial {
 	pub token: Option<String>,
 	/// Listener addresses, see [`ListenAddress`] for details
 	pub listeners: Option<Vec<ListenAddress>>,
+	/// What types of statistics should be collected
+	pub statistics: Option<StatisticCategories>,
 	/// Enable TLS for HTTPS and encrypted gRPC, requires `tls_key` and
 	/// `tls_cert` to be set
 	pub tls_enable: Option<bool>,
@@ -162,6 +165,11 @@ impl Partial {
 			.ok()
 			.flatten();
 
+		let statistics = args
+			.opt_value_from_fn("--statistics", |s| serde_json::from_str(s))
+			.ok()
+			.flatten();
+
 		let store_config = args
 			.opt_value_from_fn("--store-config", |s| serde_json::from_str(s))
 			.ok()
@@ -171,6 +179,7 @@ impl Partial {
 			log_level: args.opt_value_from_str("--log-level").unwrap_or(None),
 			token: args.opt_value_from_str("--token").unwrap_or(None),
 			listeners,
+			statistics,
 			tls_enable: args.opt_value_from_str("--tls-enable").unwrap_or(None),
 			tls_key: args.opt_value_from_str("--tls-key").unwrap_or(None),
 			tls_cert: args.opt_value_from_str("--tls-cert").unwrap_or(None),
@@ -194,6 +203,10 @@ impl Partial {
 			.map_or(None, |s| serde_json::from_str(&s).ok())
 			.flatten();
 
+		let statistics = env::var("LINKS_STATISTICS")
+			.map_or(None, |s| serde_json::from_str(&s).ok())
+			.flatten();
+
 		let store_config = env::var("LINKS_STORE_CONFIG")
 			.map_or(None, |s| serde_json::from_str(&s).ok())
 			.flatten();
@@ -202,6 +215,7 @@ impl Partial {
 			log_level: parse_env_var("LINKS_LOG_LEVEL"),
 			token: parse_env_var("LINKS_TOKEN"),
 			listeners,
+			statistics,
 			tls_enable: parse_env_var("LINKS_TLS_ENABLE"),
 			tls_key: parse_env_var("LINKS_TLS_KEY"),
 			tls_cert: parse_env_var("LINKS_TLS_CERT"),
@@ -249,6 +263,7 @@ impl From<&Config> for Partial {
 			log_level: Some(config.log_level()),
 			token: Some(config.token().to_string()),
 			listeners: Some(config.listeners()),
+			statistics: Some(config.statistics()),
 			tls_enable: Some(tls_enable),
 			tls_key: key_file,
 			tls_cert: cert_file,

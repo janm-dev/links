@@ -127,14 +127,24 @@ pub async fn redirector(
 	let id = id.map(Into::into);
 	let vanity = vanity.map(Into::into);
 
-	let stats = Statistic::get_misc(id.as_ref(), stat_info.clone(), res.status())
-		.chain(Statistic::from_req(id.as_ref(), &req))
-		.chain(Statistic::get_misc(
-			vanity.as_ref(),
-			stat_info,
-			res.status(),
-		))
-		.chain(Statistic::from_req(vanity.as_ref(), &req));
+	let stats = Statistic::get_misc(
+		id.as_ref(),
+		stat_info.clone(),
+		res.status(),
+		config.statistics,
+	)
+	.chain(Statistic::from_req(id.as_ref(), &req, config.statistics))
+	.chain(Statistic::get_misc(
+		vanity.as_ref(),
+		stat_info,
+		res.status(),
+		config.statistics,
+	))
+	.chain(Statistic::from_req(
+		vanity.as_ref(),
+		&req,
+		config.statistics,
+	));
 
 	store.incr_statistics(stats);
 

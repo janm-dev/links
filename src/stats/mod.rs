@@ -71,7 +71,8 @@ impl Statistic {
 	}
 
 	/// Get all statistics from the provided [`ExtraStatisticInfo`] and other
-	/// miscellaneous data
+	/// miscellaneous data. Only statistics specified by `categories` are
+	/// returned.
 	///
 	/// The returned value is an iterator over statistics with some or all of
 	/// the following types:
@@ -84,34 +85,47 @@ impl Statistic {
 		link: Option<&IdOrVanity>,
 		stat_info: ExtraStatisticInfo,
 		status_code: StatusCode,
+		categories: StatisticCategories,
 	) -> impl Iterator<Item = Statistic> {
 		link.map_or_else(
 			|| Vec::new().into_iter(),
 			|link| {
 				let mut stats = Vec::with_capacity(5);
 
-				stats.push(Self::new(
-					link,
-					StatisticType::Request,
-					StatisticData::default(),
-				));
-
-				stats.push(Self::new(
-					link,
-					StatisticType::StatusCode,
-					status_code.as_str(),
-				));
-
-				if let Some(sni) = stat_info.tls_sni {
-					stats.push(Self::new(link, StatisticType::SniRequest, sni.to_string()));
+				if categories.specifies(StatisticType::Request) {
+					stats.push(Self::new(
+						link,
+						StatisticType::Request,
+						StatisticData::default(),
+					));
 				}
 
-				if let Some(Some(version)) = stat_info.tls_version.map(|v| v.as_str()) {
-					stats.push(Self::new(link, StatisticType::TlsVersion, version));
+				if categories.specifies(StatisticType::StatusCode) {
+					stats.push(Self::new(
+						link,
+						StatisticType::StatusCode,
+						status_code.as_str(),
+					));
 				}
 
-				if let Some(Some(suite)) = stat_info.tls_cipher_suite.map(|s| s.suite().as_str()) {
-					stats.push(Self::new(link, StatisticType::TlsCipherSuite, suite));
+				if categories.specifies(StatisticType::SniRequest) {
+					if let Some(sni) = stat_info.tls_sni {
+						stats.push(Self::new(link, StatisticType::SniRequest, sni.to_string()));
+					}
+				}
+
+				if categories.specifies(StatisticType::TlsVersion) {
+					if let Some(Some(version)) = stat_info.tls_version.map(|v| v.as_str()) {
+						stats.push(Self::new(link, StatisticType::TlsVersion, version));
+					}
+				}
+
+				if categories.specifies(StatisticType::TlsCipherSuite) {
+					if let Some(Some(suite)) =
+						stat_info.tls_cipher_suite.map(|s| s.suite().as_str())
+					{
+						stats.push(Self::new(link, StatisticType::TlsCipherSuite, suite));
+					}
 				}
 
 				stats.into_iter()
@@ -119,7 +133,8 @@ impl Statistic {
 		)
 	}
 
-	/// Get all possible statistics from the provided HTTP request info
+	/// Get all possible statistics from the provided HTTP request info. Only
+	/// statistics specified by `categories` are returned.
 	///
 	/// The returned value is an iterator over statistics with some or all of
 	/// the following types:
@@ -131,41 +146,56 @@ impl Statistic {
 	pub fn from_req<T>(
 		link: Option<&IdOrVanity>,
 		req: &Request<T>,
+		categories: StatisticCategories,
 	) -> impl Iterator<Item = Statistic> {
 		link.map_or_else(
 			|| Vec::new().into_iter(),
 			|link| {
 				let mut stats = Vec::with_capacity(5);
 
-				stats.push(Self::new(
-					link,
-					StatisticType::HttpVersion,
-					HttpVersion::from(req.version()).as_str(),
-				));
+				if categories.specifies(StatisticType::HttpVersion) {
+					stats.push(Self::new(
+						link,
+						StatisticType::HttpVersion,
+						HttpVersion::from(req.version()).as_str(),
+					));
+				}
 
 				let headers = req.headers();
 
-				if let Some(Ok(host)) = req
-					.uri()
-					.host()
-					.map(Ok)
-					.or_else(|| headers.get("host").map(HeaderValue::to_str))
-				{
-					stats.push(Self::new(link, StatisticType::HostRequest, host));
+				if categories.specifies(StatisticType::HostRequest) {
+					if let Some(Ok(host)) = req
+						.uri()
+						.host()
+						.map(Ok)
+						.or_else(|| headers.get("host").map(HeaderValue::to_str))
+					{
+						stats.push(Self::new(link, StatisticType::HostRequest, host));
+					}
 				}
 
-				if let Some(Ok(val)) = headers.get("sec-ch-ua").map(HeaderValue::to_str) {
-					stats.push(Self::new(link, StatisticType::UserAgent, val));
-				} else if let Some(Ok(val)) = headers.get("user-agent").map(HeaderValue::to_str) {
-					stats.push(Self::new(link, StatisticType::UserAgent, val));
+				if categories.user_agent {
+					if let Some(Ok(val)) = headers.get("sec-ch-ua").map(HeaderValue::to_str) {
+						stats.push(Self::new(link, StatisticType::UserAgent, val));
+					} else if let Some(Ok(val)) = headers.get("user-agent").map(HeaderValue::to_str)
+					{
+						stats.push(Self::new(link, StatisticType::UserAgent, val));
+					}
 				}
 
-				if let Some(Ok(val)) = headers.get("sec-ch-ua-mobile").map(HeaderValue::to_str) {
-					stats.push(Self::new(link, StatisticType::UserAgentMobile, val));
+				if categories.specifies(StatisticType::UserAgentMobile) {
+					if let Some(Ok(val)) = headers.get("sec-ch-ua-mobile").map(HeaderValue::to_str)
+					{
+						stats.push(Self::new(link, StatisticType::UserAgentMobile, val));
+					}
 				}
 
-				if let Some(Ok(val)) = headers.get("sec-ch-ua-platform").map(HeaderValue::to_str) {
-					stats.push(Self::new(link, StatisticType::UserAgentPlatform, val));
+				if categories.specifies(StatisticType::UserAgentPlatform) {
+					if let Some(Ok(val)) =
+						headers.get("sec-ch-ua-platform").map(HeaderValue::to_str)
+					{
+						stats.push(Self::new(link, StatisticType::UserAgentPlatform, val));
+					}
 				}
 
 				stats.into_iter()
@@ -314,6 +344,7 @@ mod tests {
 				tls_cipher_suite: Some(ALL_CIPHER_SUITES[0]),
 			},
 			StatusCode::TEMPORARY_REDIRECT,
+			StatisticCategories::ALL,
 		)
 		.map(|s| s.stat_type)
 		.collect::<Vec<_>>();
@@ -336,6 +367,7 @@ mod tests {
 				.header("Sec-CH-UA-Platform", "Windows")
 				.body(Vec::<u8>::new())
 				.unwrap(),
+			StatisticCategories::ALL,
 		)
 		.map(|s| s.stat_type)
 		.collect::<Vec<_>>();
@@ -345,6 +377,47 @@ mod tests {
 		assert!(stats.contains(&StatisticType::UserAgent));
 		assert!(stats.contains(&StatisticType::UserAgentMobile));
 		assert!(stats.contains(&StatisticType::UserAgentPlatform));
+
+		let mut stats = Statistic::from_req(
+			Some(&Normalized::new("test").into()),
+			&Request::builder()
+				.header("Host", "example.com")
+				.header(
+					"Sec-CH-UA",
+					r#"" Not A;Brand";v="99", "Chromium";v="96", "Google Chrome";v="96""#,
+				)
+				.header("Sec-CH-UA-Mobile", "?0")
+				.header("Sec-CH-UA-Platform", "Windows")
+				.body(Vec::<u8>::new())
+				.unwrap(),
+			StatisticCategories::NONE,
+		);
+
+		// Nothing collected
+		assert!(stats.next().is_none());
+
+		let stats = Statistic::from_req(
+			Some(&Normalized::new("test").into()),
+			&Request::builder()
+				.header("Host", "example.com")
+				.header(
+					"Sec-CH-UA",
+					r#"" Not A;Brand";v="99", "Chromium";v="96", "Google Chrome";v="96""#,
+				)
+				.header("Sec-CH-UA-Mobile", "?0")
+				.header("Sec-CH-UA-Platform", "Windows")
+				.body(Vec::<u8>::new())
+				.unwrap(),
+			StatisticCategories::default(),
+		)
+		.map(|s| s.stat_type)
+		.collect::<Vec<_>>();
+
+		assert!(stats.contains(&StatisticType::HostRequest));
+		assert!(stats.contains(&StatisticType::HttpVersion));
+		assert!(!stats.contains(&StatisticType::UserAgent));
+		assert!(!stats.contains(&StatisticType::UserAgentMobile));
+		assert!(!stats.contains(&StatisticType::UserAgentPlatform));
 	}
 
 	#[test]

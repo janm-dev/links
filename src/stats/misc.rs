@@ -12,6 +12,7 @@ use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use tokio_rustls::rustls::{ProtocolVersion, SupportedCipherSuite};
 
+use super::StatisticType;
 use crate::{id::Id, normalized::Normalized};
 
 /// Extra statistics-related information passed to the links HTTP redirector for
@@ -72,6 +73,154 @@ impl From<Normalized> for IdOrVanity {
 impl From<&IdOrVanity> for IdOrVanity {
 	fn from(iov: &Self) -> Self {
 		iov.clone()
+	}
+}
+
+/// Which categories of statistics are to be collected
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "Vec<&str>", into = "Vec<&'static str>")]
+#[non_exhaustive]
+#[allow(clippy::struct_excessive_bools)]
+pub struct StatisticCategories {
+	/// Collect [`StatisticType::Request`]
+	pub redirect: bool,
+	/// Collect [`StatisticType::HostRequest`], [`StatisticType::SniRequest`],
+	/// and [`StatisticType::StatusCode`]
+	pub basic: bool,
+	/// Collect [`StatisticType::HttpVersion`], [`StatisticType::TlsVersion`],
+	/// and [`StatisticType::TlsCipherSuite`]
+	pub protocol: bool,
+	/// Collect [`StatisticType::UserAgent`],
+	/// [`StatisticType::UserAgentMobile`],
+	/// and [`StatisticType::UserAgentPlatform`]
+	pub user_agent: bool,
+}
+
+impl StatisticCategories {
+	/// All categories enabled
+	pub const ALL: Self = Self {
+		redirect: true,
+		basic: true,
+		protocol: true,
+		user_agent: true,
+	};
+	/// No categories enabled
+	pub const NONE: Self = Self {
+		redirect: false,
+		basic: false,
+		protocol: false,
+		user_agent: false,
+	};
+
+	/// Whether this [`StatisticCategories`] struct specifies that a statistic
+	/// with the provided [`StatisticType`] should be collected
+	#[must_use]
+	pub const fn specifies(self, stat_type: StatisticType) -> bool {
+		#[allow(clippy::enum_glob_use)]
+		use StatisticType::*;
+
+		match stat_type {
+			Request => self.redirect,
+			HostRequest | SniRequest | StatusCode => self.basic,
+			HttpVersion | TlsVersion | TlsCipherSuite => self.protocol,
+			UserAgent | UserAgentMobile | UserAgentPlatform => self.user_agent,
+		}
+	}
+
+	/// Convert this [`StatisticCategories`] into a `Vec` of the names of its
+	/// enabled categories
+	///
+	/// # Example
+	/// ```rust
+	/// # use links::stats::StatisticCategories;
+	/// let mut categories = StatisticCategories::NONE;
+	///
+	/// categories.redirect = true;
+	/// categories.basic = false;
+	/// categories.protocol = true;
+	/// categories.user_agent = false;
+	///
+	/// assert_eq!(categories.to_names(), vec!["redirect", "protocol"]);
+	/// ```
+	#[must_use]
+	pub fn to_names(self) -> Vec<&'static str> {
+		let mut names = Vec::with_capacity(4);
+
+		if self.redirect {
+			names.push("redirect");
+		}
+
+		if self.basic {
+			names.push("basic");
+		}
+
+		if self.protocol {
+			names.push("protocol");
+		}
+
+		if self.user_agent {
+			names.push("user-agent");
+		}
+
+		names
+	}
+
+	/// Convert a list of category names into a [`StatisticCategories`].
+	/// Unrecognized category names are ignored.
+	///
+	/// # Example
+	/// ```rust
+	/// # use links::stats::StatisticCategories;
+	/// let list = ["redirect", "protocol", "invalid"];
+	/// let mut categories = StatisticCategories::from_names(list);
+	///
+	/// assert!(categories.redirect);
+	/// assert!(!categories.basic);
+	/// assert!(categories.protocol);
+	/// assert!(!categories.user_agent);
+	/// ```
+	#[must_use]
+	pub fn from_names<L, T>(categories: L) -> Self
+	where
+		L: AsRef<[T]>,
+		T: AsRef<str>,
+	{
+		let mut cats = Self::NONE;
+
+		for cat in categories.as_ref() {
+			match cat.as_ref() {
+				"redirect" => cats.redirect = true,
+				"basic" => cats.basic = true,
+				"protocol" => cats.protocol = true,
+				"user-agent" => cats.user_agent = true,
+				_ => (),
+			}
+		}
+
+		cats
+	}
+}
+
+impl Default for StatisticCategories {
+	fn default() -> Self {
+		Self {
+			redirect: true,
+			basic: true,
+			protocol: true,
+			user_agent: false,
+		}
+	}
+}
+
+impl From<Vec<&str>> for StatisticCategories {
+	fn from(names: Vec<&str>) -> Self {
+		Self::from_names(names)
+	}
+}
+
+impl From<StatisticCategories> for Vec<&'static str> {
+	fn from(cats: StatisticCategories) -> Self {
+		cats.to_names()
 	}
 }
 
@@ -187,6 +336,52 @@ mod tests {
 		assert_eq!(
 			IdOrVanity::Vanity("example-test".into()),
 			IdOrVanity::try_from("example-test").unwrap()
+		);
+	}
+
+	#[test]
+	fn statistic_categories() {
+		assert_eq!(Vec::<&str>::new(), StatisticCategories::NONE.to_names());
+
+		assert_eq!(
+			StatisticCategories::from_names(Vec::<&str>::new()),
+			StatisticCategories::NONE
+		);
+
+		assert_eq!(
+			vec!["redirect", "basic", "protocol"],
+			StatisticCategories::default().to_names()
+		);
+
+		let names = vec!["protocol", "user-agent"];
+		assert_eq!(names, StatisticCategories::from_names(&names).to_names());
+
+		let names = vec!["protocol", "user-agent"];
+		assert_eq!(
+			names,
+			Vec::<&str>::from(StatisticCategories::from(names.clone()))
+		);
+
+		let categories = StatisticCategories::default();
+		assert!(categories.specifies(StatisticType::Request));
+		assert!(categories.specifies(StatisticType::HostRequest));
+		assert!(categories.specifies(StatisticType::SniRequest));
+		assert!(categories.specifies(StatisticType::HttpVersion));
+		assert!(!categories.specifies(StatisticType::UserAgent));
+		assert!(!categories.specifies(StatisticType::UserAgentPlatform));
+
+		assert_eq!(
+			serde_json::from_str::<StatisticCategories>(r#"["redirect", "basic", "protocol"]"#)
+				.unwrap(),
+			StatisticCategories::default()
+		);
+
+		assert_eq!(
+			serde_json::from_str::<StatisticCategories>(
+				&serde_json::to_string(&StatisticCategories::ALL).unwrap()
+			)
+			.unwrap(),
+			StatisticCategories::ALL
 		);
 	}
 
