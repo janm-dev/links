@@ -1,6 +1,9 @@
 //! Types that make up a links [`Statistic`]
 
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::{
+	fmt::{Display, Formatter, Result as FmtResult},
+	str::FromStr,
+};
 
 use serde_derive::{Deserialize, Serialize};
 use time::{
@@ -107,6 +110,14 @@ impl TryFrom<&str> for StatisticTime {
 		let dt = OffsetDateTime::parse(s, &Iso8601::<TIME_FORMAT_CONFIG>)?;
 
 		Ok(dt.into())
+	}
+}
+
+impl FromStr for StatisticTime {
+	type Err = time::Error;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Self::try_from(s)
 	}
 }
 
@@ -240,6 +251,14 @@ impl TryFrom<&str> for StatisticType {
 			"user_agent_platform" => Ok(Self::UserAgentPlatform),
 			_ => Err(ParseStatisticTypeError),
 		}
+	}
+}
+
+impl FromStr for StatisticType {
+	type Err = ParseStatisticTypeError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Self::try_from(s)
 	}
 }
 

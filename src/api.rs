@@ -4,9 +4,9 @@
 use rpc::links_server::Links;
 pub use rpc::{
 	links_client::LinksClient, links_server::LinksServer, GetRedirectRequest, GetRedirectResponse,
-	GetVanityRequest, GetVanityResponse, RemRedirectRequest, RemRedirectResponse, RemVanityRequest,
-	RemVanityResponse, SetRedirectRequest, SetRedirectResponse, SetVanityRequest,
-	SetVanityResponse,
+	GetStatisticsRequest, GetVanityRequest, GetVanityResponse, RemRedirectRequest,
+	RemRedirectResponse, RemStatisticsRequest, RemVanityRequest, RemVanityResponse,
+	SetRedirectRequest, SetRedirectResponse, SetVanityRequest, SetVanityResponse,
 };
 use rpc_wrapper::rpc;
 use tokio::time::Instant;
