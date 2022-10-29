@@ -102,9 +102,11 @@ fn main() -> Result<(), anyhow::Error> {
 	});
 
 	// Create the permanent global tracing subscriber to collect and show logs
+	let (non_blocking, _tracing_appender_guard) = tracing_appender::non_blocking(std::io::stdout());
 	let tracing_subscriber = FmtSubscriber::builder()
 		.with_level(true)
 		.with_max_level(Level::TRACE)
+		.with_writer(non_blocking)
 		.finish()
 		.with(tracing_filter);
 
