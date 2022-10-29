@@ -36,7 +36,7 @@ jobs:
         if: (success() || failure()) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
         with:
           fail-on-severity: low
-      - run: cargo outdated --exit-code 1
+      - run: cargo outdated --root-deps-only --exit-code 1
         if: success() || failure()
       - run: cargo audit -D warnings
         if: success() || failure()
