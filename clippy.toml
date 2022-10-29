@@ -1,3 +1,4 @@
 disallowed-methods = [
 	{ path = "std::process::exit", reason = "messes with test coverage (see https://github.com/rust-lang/rust/issues/77553)" },
+	{ path = "fred::interfaces::TransactionInterface::multi", reason = "unexpected failures when used concurrently on a pool" },
 ]

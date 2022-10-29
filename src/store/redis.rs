@@ -35,6 +35,7 @@ use fred::{
 	prelude::*,
 	types::{RespVersion, TlsConfig},
 };
+use tokio::try_join;
 use tracing::instrument;
 
 use super::BackendType;
@@ -251,7 +252,7 @@ impl StoreBackend for Store {
 			)
 			.collect::<Vec<String>>();
 
-		let values: Vec<u64> = if stat_keys.is_empty() {
+		let values: Vec<Option<u64>> = if stat_keys.is_empty() {
 			Vec::new()
 		} else {
 			self.pool.mget(stat_keys).await?
@@ -260,7 +261,7 @@ impl StoreBackend for Store {
 		let res = stats
 			.into_iter()
 			.zip(values.into_iter())
-			.filter_map(|(s, v)| Some((s, StatisticValue::new(v)?)))
+			.filter_map(|(s, v)| Some((s, StatisticValue::new(v?)?)))
 			.collect();
 
 		Ok(res)
@@ -277,26 +278,23 @@ impl StoreBackend for Store {
 			time,
 		} = statistic;
 
-		let multi = self.pool.multi(true).await?;
-
-		multi
+		let values: Vec<RedisValue> = self
+			.pool
 			.incr(format!("links:stat:{link}:{stat_type}:{time}:{data}"))
 			.await?;
-		multi.sadd("links:stat-all".to_string(), &stat_json).await?;
-		multi
-			.sadd(format!("links:stat-link:{link}"), &stat_json)
-			.await?;
-		multi
-			.sadd(format!("links:stat-type:{stat_type}"), &stat_json)
-			.await?;
-		multi
-			.sadd(format!("links:stat-data:{data}"), &stat_json)
-			.await?;
-		multi
-			.sadd(format!("links:stat-time:{time}"), &stat_json)
-			.await?;
 
-		let values: Vec<RedisValue> = multi.exec().await?;
+		try_join!(
+			self.pool
+				.sadd::<(), _, _>("links:stat-all".to_string(), &stat_json),
+			self.pool
+				.sadd::<(), _, _>(format!("links:stat-link:{link}"), &stat_json),
+			self.pool
+				.sadd::<(), _, _>(format!("links:stat-type:{stat_type}"), &stat_json),
+			self.pool
+				.sadd::<(), _, _>(format!("links:stat-data:{data}"), &stat_json),
+			self.pool
+				.sadd::<(), _, _>(format!("links:stat-time:{time}"), &stat_json),
+		)?;
 
 		Ok(values
 			.get(0)
@@ -347,24 +345,21 @@ impl StoreBackend for Store {
 			)
 			.collect::<Vec<String>>();
 
-		let values: Vec<u64> = if stat_keys.is_empty() {
+		let values: Vec<Option<u64>> = if stat_keys.is_empty() {
 			Vec::new()
 		} else {
-			let multi = self.pool.multi(true).await?;
-			multi.mget(stat_keys.clone()).await?;
-			multi.del(stat_keys).await?;
+			let values = self.pool.mget(stat_keys.clone()).await?;
+			self.pool.del(stat_keys).await?;
 			for key in keys {
-				multi.srem(key, stats_json.clone()).await?;
+				self.pool.srem(key, stats_json.clone()).await?;
 			}
-			// This includes the integer replies to `DEL` and `SREM`, but these
-			// will be skipped by the `zip` call below
-			multi.exec().await?
+			values
 		};
 
 		let res = stats
 			.into_iter()
 			.zip(values.into_iter())
-			.filter_map(|(s, v)| Some((s, StatisticValue::new(v)?)))
+			.filter_map(|(s, v)| Some((s, StatisticValue::new(v?)?)))
 			.collect();
 
 		Ok(res)
