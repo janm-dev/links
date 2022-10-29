@@ -187,4 +187,19 @@ mod tests {
 	async fn rem_vanity() {
 		tests::rem_vanity(&get_store().await).await;
 	}
+
+	#[tokio::test]
+	async fn get_statistics() {
+		tests::get_statistics(&get_store().await).await;
+	}
+
+	#[tokio::test]
+	async fn incr_statistic() {
+		tests::incr_statistic(&get_store().await).await;
+	}
+
+	#[tokio::test]
+	async fn rem_statistics() {
+		tests::rem_statistics(&get_store().await).await;
+	}
 }
