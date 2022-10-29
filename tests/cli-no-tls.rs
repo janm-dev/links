@@ -159,3 +159,102 @@ async fn rem_vanity() {
 
 	assert_re!(r#"^"example" -X-> "9dDbKpJP"$"#, res);
 }
+
+/// Test `cli stats-get` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_get() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-get"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^\[\]$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(r#"^\[.+"link": ?"test".+\]$"#, res);
+}
+
+/// Test `cli stats-get <VANITY>` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_get_vanity() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-get", "test"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^\[\]$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(r#"^\[\[.+\]\]$"#, res);
+}
+
+/// Test `cli stats-get <VANITY> <TYPE>` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_get_vanity_type() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-get", "test", "request"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^\[\]$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(
+		r#"^\[\[\{"link":"test","type":"request","data":"","time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00Z"\},1\]\]$"#,
+		res
+	);
+}
+
+/// Test `cli stats-rem` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_rem() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-rem"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^Removed 0 statistics$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(r#"^Removed [1-9][0-9]* statistics$"#, res);
+}
+
+/// Test `cli stats-rem <VANITY>` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_rem_vanity() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-rem", "test"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^Removed 0 statistics$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(r#"^Removed [1-9][0-9]* statistics$"#, res);
+}
+
+/// Test `cli stats-rem <VANITY> <TYPE>` without TLS
+#[tokio::test]
+#[serial_test::serial]
+async fn stats_rem_vanity_type() {
+	let _terminator = util::start_server(false);
+	let args = vec!["--token", "abc123", "stats-rem", "test", "request"];
+
+	let res = util::run_cli(args.clone());
+	assert_re!(r#"^Removed 0 statistics$"#, res);
+
+	reqwest::get("http://localhost/test").await.unwrap();
+
+	let res = util::run_cli(args);
+	assert_re!(r#"^Removed 1 statistics$"#, res);
+}
