@@ -14,7 +14,14 @@
 //! with keys in the following format:
 //! - `links:redirect:[ID]` for redirects (with string values of URLs)
 //! - `links:vanity:[vanity]` for vanity paths (with string values of IDs)
-//! - `links:stat:*` reserved for statistics
+//! - `links:stat:[link]:[type]:[time]:[data]` for statistics (with int values)
+//!
+//! Some extra metadata is also needed for certain operations:
+//! - `links:stat-all` set of all statistics (json)
+//! - `links:stat-link:[link]` set of all statistics with that link (json)
+//! - `links:stat-type:[type]` set of all statistics with that type (json)
+//! - `links:stat-time:[time]` set of all statistics with that time (json)
+//! - `links:stat-data:[data]` set of all statistics with that data (json)
 
 use std::{
 	collections::HashMap,
@@ -34,6 +41,7 @@ use super::BackendType;
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
+	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::StoreBackend,
 };
 
@@ -196,6 +204,170 @@ impl StoreBackend for Store {
 	#[instrument(level = "trace", ret, err)]
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		Ok(self.pool.getdel(format!("links:vanity:{from}")).await?)
+	}
+
+	#[instrument(level = "trace", ret, err)]
+	async fn get_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		let mut keys = Vec::with_capacity(5);
+
+		keys.push("links:stat-all".to_string());
+
+		if let Some(link) = description.link {
+			keys.push(format!("links:stat-link:{link}"));
+		}
+
+		if let Some(stat_type) = description.stat_type {
+			keys.push(format!("links:stat-type:{stat_type}"));
+		}
+
+		if let Some(data) = description.data {
+			keys.push(format!("links:stat-data:{data}"));
+		}
+
+		if let Some(time) = description.time {
+			keys.push(format!("links:stat-time:{time}"));
+		}
+
+		let stats: Vec<Statistic> = self
+			.pool
+			.sinter::<Vec<String>, _>(keys)
+			.await?
+			.into_iter()
+			.filter_map(|s| serde_json::from_str(&s).ok())
+			.collect();
+
+		let stat_keys = stats
+			.iter()
+			.map(
+				|Statistic {
+				     link,
+				     stat_type,
+				     time,
+				     data,
+				 }| format!("links:stat:{link}:{stat_type}:{time}:{data}"),
+			)
+			.collect::<Vec<String>>();
+
+		let values: Vec<u64> = if stat_keys.is_empty() {
+			Vec::new()
+		} else {
+			self.pool.mget(stat_keys).await?
+		};
+
+		let res = stats
+			.into_iter()
+			.zip(values.into_iter())
+			.filter_map(|(s, v)| Some((s, StatisticValue::new(v)?)))
+			.collect();
+
+		Ok(res)
+	}
+
+	#[instrument(level = "trace", ret, err)]
+	async fn incr_statistic(&self, statistic: Statistic) -> Result<Option<StatisticValue>> {
+		let stat_json = serde_json::to_string(&statistic)?;
+
+		let Statistic {
+			link,
+			stat_type,
+			data,
+			time,
+		} = statistic;
+
+		let multi = self.pool.multi(true).await?;
+
+		multi
+			.incr(format!("links:stat:{link}:{stat_type}:{time}:{data}"))
+			.await?;
+		multi.sadd("links:stat-all".to_string(), &stat_json).await?;
+		multi
+			.sadd(format!("links:stat-link:{link}"), &stat_json)
+			.await?;
+		multi
+			.sadd(format!("links:stat-type:{stat_type}"), &stat_json)
+			.await?;
+		multi
+			.sadd(format!("links:stat-data:{data}"), &stat_json)
+			.await?;
+		multi
+			.sadd(format!("links:stat-time:{time}"), &stat_json)
+			.await?;
+
+		let values: Vec<RedisValue> = multi.exec().await?;
+
+		Ok(values
+			.get(0)
+			.and_then(RedisValue::as_u64)
+			.and_then(StatisticValue::new))
+	}
+
+	#[instrument(level = "trace", ret, err)]
+	async fn rem_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		let mut keys = Vec::with_capacity(5);
+
+		keys.push("links:stat-all".to_string());
+
+		if let Some(link) = description.link {
+			keys.push(format!("links:stat-link:{link}"));
+		}
+
+		if let Some(stat_type) = description.stat_type {
+			keys.push(format!("links:stat-type:{stat_type}"));
+		}
+
+		if let Some(data) = description.data {
+			keys.push(format!("links:stat-data:{data}"));
+		}
+
+		if let Some(time) = description.time {
+			keys.push(format!("links:stat-time:{time}"));
+		}
+
+		let stats_json: Vec<String> = self.pool.sinter(keys.clone()).await?;
+		let stats: Vec<Statistic> = stats_json
+			.iter()
+			.filter_map(|s| serde_json::from_str(s).ok())
+			.collect();
+
+		let stat_keys = stats
+			.iter()
+			.map(
+				|Statistic {
+				     link,
+				     stat_type,
+				     time,
+				     data,
+				 }| format!("links:stat:{link}:{stat_type}:{time}:{data}"),
+			)
+			.collect::<Vec<String>>();
+
+		let values: Vec<u64> = if stat_keys.is_empty() {
+			Vec::new()
+		} else {
+			let multi = self.pool.multi(true).await?;
+			multi.mget(stat_keys.clone()).await?;
+			multi.del(stat_keys).await?;
+			for key in keys {
+				multi.srem(key, stats_json.clone()).await?;
+			}
+			// This includes the integer replies to `DEL` and `SREM`, but these
+			// will be skipped by the `zip` call below
+			multi.exec().await?
+		};
+
+		let res = stats
+			.into_iter()
+			.zip(values.into_iter())
+			.filter_map(|(s, v)| Some((s, StatisticValue::new(v)?)))
+			.collect();
+
+		Ok(res)
 	}
 }
 
