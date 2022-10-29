@@ -10,9 +10,7 @@ vulnerability = "deny"
 unmaintained = "deny"
 yanked = "deny"
 notice = "warn"
-ignore = [
-	"RUSTSEC-2021-0139", # Caused by a dependency of tracing-subscriber, awaiting a new release of that crate
-]
+ignore = []
 
 [licenses]
 unlicensed = "deny"

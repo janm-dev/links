@@ -46,6 +46,17 @@
 		"grpc:[::1]:",
 		"grpcs::530"
 	],
+	// Specify which types of statistics should be collected
+	//  
+	//  Currently, the following statistics categories are supported:
+	//  - `redirect` enables statistic type `Request`
+	//  - `basic` enables statistic types `HostRequest`, `SniRequest`, and `StatusCode`
+	//  - `protocol` enables statistic types `HttpVersion`, `TlsVersion`, and `TlsCipherSuite`
+	//  - `user-agent` enables statistic types `UserAgent`, `UserAgentMobile`, and `UserAgentPlatform`
+	"statistics": [
+		"redirect",
+		"basic"
+	],
 	// Enable/disable TLS for HTTPS and encrypted gRPC
 	// Can be true to enable TLS, or false to disable
 	"tls_enable": true,

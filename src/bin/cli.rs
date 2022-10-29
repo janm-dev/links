@@ -1,9 +1,9 @@
 //! A simple command-line interface for configuring links redirects via the RPC
 //! API built into every redirector server.
 //!
-//! Supports all basic links store operations using the redirectors' RPC API.
+//! Supports most basic links store operations using the redirectors' RPC API.
 
-use std::{convert::Infallible, env, ffi::OsString, fmt::Debug, str::FromStr};
+use std::{env, ffi::OsString, fmt::Debug};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -11,12 +11,14 @@ use colored::Colorize;
 use hyper::http::uri::InvalidUri;
 use links::{
 	api::{
-		GetRedirectRequest, GetVanityRequest, LinksClient, RemRedirectRequest, RemVanityRequest,
-		SetRedirectRequest, SetVanityRequest,
+		GetRedirectRequest, GetStatisticsRequest, GetVanityRequest, LinksClient,
+		RemRedirectRequest, RemStatisticsRequest, RemVanityRequest, SetRedirectRequest,
+		SetVanityRequest,
 	},
 	id::{ConversionError, Id},
 	normalized::{Link, Normalized},
 	server::Protocol,
+	stats::{IdOrVanity, Statistic, StatisticDescription, StatisticType},
 };
 use tonic::{
 	codec::CompressionEncoding,
@@ -80,20 +82,22 @@ enum Commands {
 
 	/// Remove a vanity path from a redirect, or a redirect by its ID
 	Rem { redirect: IdOrVanity },
-}
 
-#[derive(Debug, Clone)]
-enum IdOrVanity {
-	Id(Id),
-	Vanity(Normalized),
-}
+	/// Get statistics for the specified link, optionally with a specific type.
+	/// If the type of statistic is given, the link is required. If neither are
+	/// specified, all statistics are returned.
+	StatsGet {
+		link: Option<IdOrVanity>,
+		r#type: Option<StatisticType>,
+	},
 
-impl FromStr for IdOrVanity {
-	type Err = Infallible;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		Ok(Id::try_from(s).map_or_else(|_| Self::Vanity(Normalized::from(s)), Self::Id))
-	}
+	/// Remove statistics for the specified link, optionally with a specific
+	/// type. If the type of statistic is given, the link is required. If
+	/// neither are specified, all statistics are removed.
+	StatsRem {
+		link: Option<IdOrVanity>,
+		r#type: Option<StatisticType>,
+	},
 }
 
 trait FormatError<T> {
@@ -140,6 +144,12 @@ impl<T> FormatError<T> for Result<T, ConversionError> {
 }
 
 impl<T> FormatError<T> for Result<T, InvalidUri> {
+	fn format_err(self, message: &'static str) -> Result<T, String> {
+		format_result(self, message)
+	}
+}
+
+impl<T> FormatError<T> for Result<T, serde_json::Error> {
 	fn format_err(self, message: &'static str) -> Result<T, String> {
 		format_result(self, message)
 	}
@@ -205,6 +215,14 @@ where
 		Commands::Set { id, link } => set(id, link, client, cli.token).await,
 		Commands::Add { id, vanity } => add(id, vanity, client, cli.token).await,
 		Commands::Rem { redirect } => rem(redirect, client, cli.token).await,
+		Commands::StatsGet {
+			link,
+			r#type: stat_type,
+		} => stats_get(link, stat_type, client, cli.token).await,
+		Commands::StatsRem {
+			link,
+			r#type: stat_type,
+		} => stats_rem(link, stat_type, client, cli.token).await,
 	}?;
 
 	Ok(if cli.verbose { res.1 } else { res.0 })
@@ -494,4 +512,134 @@ async fn rem(
 			))
 		}
 	}
+}
+
+/// Get statistics for the given link and statistic type
+async fn stats_get(
+	link: Option<IdOrVanity>,
+	stat_type: Option<StatisticType>,
+	mut client: LinksClient<Channel>,
+	token: AsciiMetadataValue,
+) -> Result<(String, String), String> {
+	if stat_type.is_some() && link.is_none() {
+		format_result(
+			Err("statistic type provided but link missing"),
+			"If the statistic type is provided the link is required",
+		)?;
+	}
+
+	let description = StatisticDescription {
+		link,
+		stat_type,
+		..Default::default()
+	};
+
+	let mut req = Request::new(GetStatisticsRequest {
+		data: description.data.map(|v| v.to_string()),
+		link: description.link.map(|v| v.to_string()),
+		time: description.time.map(|v| v.to_string()),
+		r#type: description.stat_type.map(|v| v.to_string()),
+	});
+	req.metadata_mut().append("auth", token.clone());
+
+	let stats = client
+		.get_statistics(req)
+		.await
+		.format_err("API call failed")?
+		.into_inner()
+		.statistics
+		.into_iter()
+		.map(|sv| {
+			(
+				Statistic {
+					link: sv.link.into(),
+					stat_type: sv.r#type.parse().expect("API returned invalid data"),
+					data: sv.data.into(),
+					time: sv.time.parse().expect("API returned invalid data"),
+				},
+				sv.value,
+			)
+		})
+		.collect::<Vec<_>>();
+
+	let long_res = stats
+		.iter()
+		.map(|(stat, val)| {
+			format!(
+				"{} - {val}",
+				serde_json::to_string(stat)
+					.unwrap_or_else(|_| "API returned invalid data".to_string())
+			)
+		})
+		.collect::<Vec<_>>();
+
+	Ok((
+		serde_json::to_string(&stats).format_err("API returned invalid data")?,
+		"Relevant Statistics:\n".to_string() + &long_res.join("\n"),
+	))
+}
+
+/// Remove statistics for the given link and statistic type
+async fn stats_rem(
+	link: Option<IdOrVanity>,
+	stat_type: Option<StatisticType>,
+	mut client: LinksClient<Channel>,
+	token: AsciiMetadataValue,
+) -> Result<(String, String), String> {
+	if stat_type.is_some() && link.is_none() {
+		format_result(
+			Err("statistic type provided but link missing"),
+			"If the statistic type is provided the link is required",
+		)?;
+	}
+
+	let description = StatisticDescription {
+		link,
+		stat_type,
+		..Default::default()
+	};
+
+	let mut req = Request::new(RemStatisticsRequest {
+		data: description.data.map(|v| v.to_string()),
+		link: description.link.map(|v| v.to_string()),
+		time: description.time.map(|v| v.to_string()),
+		r#type: description.stat_type.map(|v| v.to_string()),
+	});
+	req.metadata_mut().append("auth", token.clone());
+
+	let stats = client
+		.rem_statistics(req)
+		.await
+		.format_err("API call failed")?
+		.into_inner()
+		.statistics
+		.into_iter()
+		.map(|sv| {
+			(
+				Statistic {
+					link: sv.link.into(),
+					stat_type: sv.r#type.parse().expect("API returned invalid data"),
+					data: sv.data.into(),
+					time: sv.time.parse().expect("API returned invalid data"),
+				},
+				sv.value,
+			)
+		})
+		.collect::<Vec<_>>();
+
+	let long_res = stats
+		.iter()
+		.map(|(stat, val)| {
+			format!(
+				"{} - {val}",
+				serde_json::to_string(stat)
+					.unwrap_or_else(|_| "API returned invalid data".to_string())
+			)
+		})
+		.collect::<Vec<_>>();
+
+	Ok((
+		format!("Removed {} statistics", stats.len()),
+		"Successfully Removed Statistics:\n".to_string() + &long_res.join("\n"),
+	))
 }

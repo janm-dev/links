@@ -2,9 +2,9 @@
 //!
 //! The links server is what actually redirects requests to their proper
 //! destinations, interacts with (and sometimes is) the backend store for
-//! redirections, and (soon) collects statistics about redirects. It
-//! accomplishes this with two (or three) external interfaces: an HTTP server,
-//! a RPC server, and (usually) a connection to a backend store.
+//! redirections, and collects statistics about redirects. It accomplishes this
+//! with two (or three) external interfaces: an HTTP server, a RPC server, and
+//! (usually) a connection to a backend store.
 //!
 //! ## The HTTP server
 //! Links uses [hyper](https://hyper.rs/) for HTTP/1.0, HTTP/1.1, and HTTP/2.

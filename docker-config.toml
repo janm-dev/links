@@ -32,6 +32,15 @@ log_level = "info"
 # valid certificate and key.
 listeners = ["http::", "https::", "grpcs::"]
 
+# Specify which types of statistics should be collected
+# 
+# Currently, the following statistics categories are supported:
+# - `redirect` enables statistic type `Request`
+# - `basic` enables statistic types `HostRequest`, `SniRequest`, and `StatusCode`
+# - `protocol` enables statistic types `HttpVersion`, `TlsVersion`, and `TlsCipherSuite`
+# - `user-agent` enables statistic types `UserAgent`, `UserAgentMobile`, and `UserAgentPlatform`
+statistics = ["redirect", "basic", "protocol", "user-agent"]
+
 # Enable/disable TLS for HTTPS and encrypted gRPC
 tls_enable = true
 

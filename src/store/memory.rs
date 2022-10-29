@@ -13,6 +13,7 @@ use tracing::instrument;
 use crate::{
 	id::Id,
 	normalized::{Link, Normalized},
+	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::{BackendType, StoreBackend},
 };
 
@@ -30,6 +31,7 @@ use crate::{
 pub struct Store {
 	redirects: RwLock<HashMap<Id, Link>>,
 	vanity: RwLock<HashMap<Normalized, Id>>,
+	stats: RwLock<HashMap<Statistic, StatisticValue>>,
 }
 
 #[async_trait]
@@ -50,6 +52,7 @@ impl StoreBackend for Store {
 		Ok(Self {
 			redirects: RwLock::new(HashMap::new()),
 			vanity: RwLock::new(HashMap::new()),
+			stats: RwLock::new(HashMap::new()),
 		})
 	}
 
@@ -87,6 +90,50 @@ impl StoreBackend for Store {
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		let mut vanity = self.vanity.write();
 		Ok(vanity.remove(&from))
+	}
+
+	#[instrument(level = "trace", ret, err)]
+	async fn get_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		let stats = self.stats.read();
+		Ok(stats
+			.iter()
+			.filter_map(|(k, v)| description.matches(k).then(|| (k.clone(), *v)))
+			.collect())
+	}
+
+	#[instrument(level = "trace", ret, err)]
+	async fn incr_statistic(&self, statistic: Statistic) -> Result<Option<StatisticValue>> {
+		let mut stats = self.stats.write();
+
+		#[allow(clippy::option_if_let_else)]
+		if let Some(value) = stats.get_mut(&statistic) {
+			let new_value = value.increment();
+			*value = new_value;
+			Ok(Some(new_value))
+		} else {
+			let new_value = StatisticValue::default();
+			stats.insert(statistic, new_value);
+			Ok(Some(new_value))
+		}
+	}
+
+	async fn rem_statistics(
+		&self,
+		description: StatisticDescription,
+	) -> Result<Vec<(Statistic, StatisticValue)>> {
+		let mut stats = self.stats.write();
+		let matches = stats
+			.keys()
+			.filter_map(|k| description.matches(k).then(|| k.clone()))
+			.collect::<Vec<_>>();
+
+		Ok(matches
+			.iter()
+			.filter_map(|k| stats.remove_entry(k))
+			.collect())
 	}
 }
 
@@ -139,5 +186,20 @@ mod tests {
 	#[tokio::test]
 	async fn rem_vanity() {
 		tests::rem_vanity(&get_store().await).await;
+	}
+
+	#[tokio::test]
+	async fn get_statistics() {
+		tests::get_statistics(&get_store().await).await;
+	}
+
+	#[tokio::test]
+	async fn incr_statistic() {
+		tests::incr_statistic(&get_store().await).await;
+	}
+
+	#[tokio::test]
+	async fn rem_statistics() {
+		tests::rem_statistics(&get_store().await).await;
 	}
 }

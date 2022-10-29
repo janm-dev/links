@@ -4,9 +4,9 @@
 use rpc::links_server::Links;
 pub use rpc::{
 	links_client::LinksClient, links_server::LinksServer, GetRedirectRequest, GetRedirectResponse,
-	GetVanityRequest, GetVanityResponse, RemRedirectRequest, RemRedirectResponse, RemVanityRequest,
-	RemVanityResponse, SetRedirectRequest, SetRedirectResponse, SetVanityRequest,
-	SetVanityResponse,
+	GetStatisticsRequest, GetVanityRequest, GetVanityResponse, RemRedirectRequest,
+	RemRedirectResponse, RemStatisticsRequest, RemVanityRequest, RemVanityResponse,
+	SetRedirectRequest, SetRedirectResponse, SetVanityRequest, SetVanityResponse,
 };
 use rpc_wrapper::rpc;
 use tokio::time::Instant;
@@ -17,6 +17,7 @@ use crate::{
 	config::Config,
 	id::Id,
 	normalized::{Link, Normalized},
+	stats::StatisticDescription,
 	store::{Current, Store},
 };
 /// A wrapper around the generated tonic code. Contains the `rpc` module with
@@ -276,6 +277,132 @@ impl Links for Api {
 		let res = Ok(Response::new(rpc::RemVanityResponse {
 			id: id.map(|id| id.to_string()),
 		}));
+
+		let time = time.elapsed();
+		info!(
+			time_ns = %time.as_nanos(),
+			success = %res.is_ok(),
+			"rpc processed in {:.6} seconds",
+			time.as_secs_f64()
+		);
+
+		res
+	}
+
+	#[instrument(level = "info", name = "rpc_get_statistics", skip_all, fields(store = %self.store.backend_name()))]
+	async fn get_statistics(
+		&self,
+		req: Request<rpc::GetStatisticsRequest>,
+	) -> Result<Response<rpc::GetStatisticsResponse>, Status> {
+		let time = Instant::now();
+		let store = self.store();
+
+		let rpc::GetStatisticsRequest {
+			link,
+			r#type: stat_type,
+			data,
+			time: stat_time,
+		} = req.into_inner();
+
+		let stat_desc = match (
+			link.map(TryInto::try_into).transpose(),
+			stat_type.map(|s| s.as_str().try_into()).transpose(),
+			data.map(TryInto::try_into).transpose(),
+			stat_time.map(|t| t.as_str().try_into()).transpose(),
+		) {
+			(Ok(link), Ok(stat_type), Ok(data), Ok(time)) => StatisticDescription {
+				link,
+				stat_type,
+				data,
+				time,
+			},
+			_ => {
+				return Err(Status::new(
+					Code::InvalidArgument,
+					"one of the supplied arguments is invalid",
+				))
+			}
+		};
+
+		let stats = match store.get_statistics(stat_desc).await {
+			Ok(val) => val,
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		};
+
+		let statistics = stats
+			.map(|(s, v)| rpc::StatisticWithValue {
+				link: s.link.to_string(),
+				r#type: s.stat_type.to_string(),
+				data: s.data.to_string(),
+				time: s.time.to_string(),
+				value: v.get(),
+			})
+			.collect();
+
+		let res = Ok(Response::new(rpc::GetStatisticsResponse { statistics }));
+
+		let time = time.elapsed();
+		info!(
+			time_ns = %time.as_nanos(),
+			success = %res.is_ok(),
+			"rpc processed in {:.6} seconds",
+			time.as_secs_f64()
+		);
+
+		res
+	}
+
+	#[instrument(level = "info", name = "rpc_rem_statistics", skip_all, fields(store = %self.store.backend_name()))]
+	async fn rem_statistics(
+		&self,
+		req: Request<rpc::RemStatisticsRequest>,
+	) -> Result<Response<rpc::RemStatisticsResponse>, Status> {
+		let time = Instant::now();
+		let store = self.store();
+
+		let rpc::RemStatisticsRequest {
+			link,
+			r#type: stat_type,
+			data,
+			time: stat_time,
+		} = req.into_inner();
+
+		let stat_desc = match (
+			link.map(TryInto::try_into).transpose(),
+			stat_type.map(|s| s.as_str().try_into()).transpose(),
+			data.map(TryInto::try_into).transpose(),
+			stat_time.map(|t| t.as_str().try_into()).transpose(),
+		) {
+			(Ok(link), Ok(stat_type), Ok(data), Ok(time)) => StatisticDescription {
+				link,
+				stat_type,
+				data,
+				time,
+			},
+			_ => {
+				return Err(Status::new(
+					Code::InvalidArgument,
+					"one of the supplied arguments is invalid",
+				))
+			}
+		};
+
+		let stats = match store.rem_statistics(stat_desc).await {
+			Ok(val) => val,
+			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		};
+
+		let statistics = stats
+			.map(|(s, v)| rpc::StatisticWithValue {
+				link: s.link.to_string(),
+				r#type: s.stat_type.to_string(),
+				data: s.data.to_string(),
+				time: s.time.to_string(),
+				value: v.get(),
+			})
+			.collect();
+
+		let res = Ok(Response::new(rpc::RemStatisticsResponse { statistics }));
 
 		let time = time.elapsed();
 		info!(

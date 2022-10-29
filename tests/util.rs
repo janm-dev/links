@@ -8,6 +8,12 @@ use std::{
 	time::Duration,
 };
 
+use links::api::LinksClient;
+use tonic::{
+	codegen::CompressionEncoding,
+	transport::{Channel, ClientTlsConfig},
+};
+
 /// Run a function automatically on drop.
 #[must_use]
 pub struct Terminator<F: FnMut()>(F);
@@ -103,6 +109,37 @@ pub fn run_cli(args: Vec<impl AsRef<OsStr>>) -> String {
 
 	let out = cmd.output().unwrap();
 	String::from_utf8(out.stdout).unwrap()
+}
+
+/// Get a links RPC client for the given host and port, with or without TLS
+/// enabled
+#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+pub async fn get_rpc_client(
+	host: impl AsRef<str>,
+	port: u16,
+	enable_tls: bool,
+) -> LinksClient<Channel> {
+	if enable_tls {
+		let tls_config = ClientTlsConfig::new();
+
+		let channel = Channel::from_shared(format!("grpc://{}:{}", host.as_ref(), port))
+			.unwrap()
+			.tls_config(tls_config)
+			.unwrap()
+			.connect()
+			.await
+			.unwrap();
+
+		LinksClient::new(channel)
+			.send_compressed(CompressionEncoding::Gzip)
+			.accept_compressed(CompressionEncoding::Gzip)
+	} else {
+		LinksClient::connect(format!("grpc://{}:{}", host.as_ref(), port))
+			.await
+			.unwrap()
+			.send_compressed(CompressionEncoding::Gzip)
+			.accept_compressed(CompressionEncoding::Gzip)
+	}
 }
 
 #[macro_export]

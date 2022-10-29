@@ -12,6 +12,7 @@
 	rustdoc::all
 )]
 #![allow(clippy::multiple_crate_versions)]
+#![allow(clippy::tabs_in_doc_comments)]
 #![allow(clippy::use_self)] // False-positives in #[derive(Serialize)] generated code
 
 pub mod api;
@@ -21,5 +22,6 @@ pub mod id;
 pub mod normalized;
 pub mod redirector;
 pub mod server;
+pub mod stats;
 pub mod store;
 pub mod util;

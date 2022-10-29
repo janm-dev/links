@@ -22,11 +22,7 @@ vendored-openssl = ["fred/vendored-tls"]
 anyhow = "1.0.66"
 arc-swap = "1.5.1"
 async-trait = "0.1.58"
-clap = { version = "3.2.22", features = [
-	"derive",
-	"env",
-	"unstable-v4",
-] }
+clap = { version = "4.0.18", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
 	"enable-tls",
@@ -45,12 +41,17 @@ prost = "0.11.0"
 rand = "0.8.5"
 regex = "1.6.0"
 rustls-pemfile = "1.0.1"
-serde = "1.0.146"
-serde_derive = "1.0.146"
+serde = "1.0.147"
+serde_derive = "1.0.147"
 serde_json = "1.0.87"
-serde_yaml = "0.9.13"
+serde_yaml = "0.9.14"
 socket2 = "0.4.7"
 thiserror = "1.0.37"
+time = { version = "0.3.16", features = [
+	"macros",
+	"parsing",
+	"formatting",
+] }
 tokio = { version = "1.21.2", features = [
 	"rt-multi-thread",
 ] }
@@ -70,9 +71,9 @@ unicode-normalization = "0.1.22"
 uriparse = "0.6.4"
 
 [build-dependencies]
-base64 = "0.13.0"
+base64 = "0.13.1"
 lol_html = "0.3.1"
-minify-html = "0.10.2"
+minify-html = "0.10.3"
 sha2 = "0.10.6"
 tonic-build = "0.8.2"
 

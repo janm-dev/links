@@ -10,6 +10,9 @@
 //! - `listeners` - A list of listener addresses (strings) in the format of
 //!   `protocol:ip-address:port` (see [`ListenAddress`] for details). **Default
 //!   `http::`, `https::`, `grpc:[::1]:`, and `grpcs::`**.
+//! - `statistics` - A list of statistics categories to be collected (see
+//!   [statistics][`crate::stats`] for details). **Default `redirect`, `basic`,
+//!   and `protocol`**.
 //! - `tls_enable` - Whether to enable TLS for HTTPS and RPC. **Default
 //!   `false`**.
 //! - `tls_key` - TLS private key file path. Required if TLS is enabled. **No

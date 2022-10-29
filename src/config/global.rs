@@ -13,7 +13,10 @@ use rand::{distributions::Alphanumeric, Rng};
 use tracing::{debug, instrument, warn};
 
 use super::{ListenAddress, LogLevel};
-use crate::{config::partial::Partial, server::Protocol, store::BackendType, util::A_YEAR};
+use crate::{
+	config::partial::Partial, server::Protocol, stats::StatisticCategories, store::BackendType,
+	util::A_YEAR,
+};
 
 /// Global configuration for the links redirector server. This is the more
 /// idiomatic, easier to use (in rust code), and shareable-across-threads
@@ -118,6 +121,7 @@ impl Config {
 			send_alt_svc: self.send_alt_svc(),
 			send_server: self.send_server(),
 			send_csp: self.send_csp(),
+			statistics: self.statistics(),
 		}
 	}
 
@@ -137,6 +141,12 @@ impl Config {
 	#[must_use]
 	pub fn listeners(&self) -> Vec<ListenAddress> {
 		self.inner.read().listeners.clone()
+	}
+
+	/// Get the types of statistics to collect
+	#[must_use]
+	pub fn statistics(&self) -> StatisticCategories {
+		self.inner.read().statistics
 	}
 
 	/// Get the TLS configuration
@@ -232,6 +242,8 @@ struct ConfigInner {
 	pub token: Arc<str>,
 	/// Addresses on which the links redirector server will listen on
 	pub listeners: Vec<ListenAddress>,
+	/// Which types of statistics should be collected
+	pub statistics: StatisticCategories,
 	/// TLS configuration (HTTPS and gRPC)
 	pub tls: Tls,
 	/// HTTP Strict Transport Security setting on redirect
@@ -267,6 +279,10 @@ impl ConfigInner {
 
 		if let Some(ref listeners) = partial.listeners {
 			self.listeners = listeners.clone();
+		}
+
+		if let Some(statistics) = partial.statistics {
+			self.statistics = statistics;
 		}
 
 		match (
@@ -365,6 +381,7 @@ impl Default for ConfigInner {
 					port: None,
 				},
 			],
+			statistics: StatisticCategories::default(),
 			https_redirect: false,
 			tls: Tls::default(),
 			hsts: Hsts::default(),
@@ -391,6 +408,8 @@ pub struct Redirector {
 	pub send_server: bool,
 	/// Send the `Content-Security-Policy` header
 	pub send_csp: bool,
+	/// The categories of statistics to collect
+	pub statistics: StatisticCategories,
 }
 
 /// HTTP Strict Transport Security configuration settings and `max-age` in
@@ -522,6 +541,7 @@ impl Tls {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::stats::StatisticType;
 
 	#[test]
 	fn config_inner_update_from_partial_tls() {
@@ -637,5 +657,26 @@ mod tests {
 		inner.update_from_partial(&second);
 
 		assert!(inner.listeners.is_empty());
+	}
+
+	#[test]
+	fn config_inner_update_from_partial_overwrite_statistics() {
+		let mut inner = ConfigInner::default();
+		let first = Partial {
+			statistics: Some(StatisticCategories::ALL),
+			..Default::default()
+		};
+		let second = Partial {
+			statistics: Some(StatisticCategories::NONE),
+			..Default::default()
+		};
+
+		inner.update_from_partial(&first);
+
+		assert!(inner.statistics.specifies(StatisticType::Request));
+
+		inner.update_from_partial(&second);
+
+		assert!(!inner.statistics.specifies(StatisticType::Request));
 	}
 }
