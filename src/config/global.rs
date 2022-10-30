@@ -217,6 +217,7 @@ impl Display for Config {
 					.collect::<String>(),
 			)
 			.field("listeners", &serde_json::to_string(&self.listeners()))
+			.field("statistics", &serde_json::to_string(&self.statistics()))
 			.field("tls", &self.tls())
 			.field("hsts", &self.hsts())
 			.field("https_redirect", &self.https_redirect())
