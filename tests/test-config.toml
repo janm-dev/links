@@ -4,8 +4,7 @@ listeners = [
 	"http::80",
 	"https:[::]:",
 	"https:0.0.0.0:",
-	"grpc:127.0.0.1:",
-	"grpc:[::1]:",
+	"grpc::",
 	"grpcs::530",
 ]
 tls_enable = false

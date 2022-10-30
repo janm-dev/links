@@ -43,11 +43,12 @@ async fn config_reload() {
 		.unwrap()
 		.join("links_test_file_reload-config_reload")
 		.with_extension("toml");
+	let config_path_str = util::convert_path(config_path.to_str().unwrap());
 	fs::write(&config_path, TEST_CONFIG).await.unwrap();
 
 	let _terminator = util::start_server_with_args(vec![
 		"-c",
-		config_path.to_str().unwrap(),
+		config_path_str.as_str(),
 		"--watcher-timeout",
 		"50",
 		"--watcher-debounce",
@@ -86,12 +87,14 @@ async fn tls_reload() {
 		.unwrap()
 		.join("links_test_file_reload-tls_reload-cert")
 		.with_extension("pem");
+	let cert_path_str = util::convert_path(cert_path.to_str().unwrap());
 	fs::write(&cert_path, TEST_CERT).await.unwrap();
 
 	let key_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
 		.unwrap()
 		.join("links_test_file_reload-tls_reload-key")
 		.with_extension("pem");
+	let key_path_str = util::convert_path(key_path.to_str().unwrap());
 	fs::write(&key_path, TEST_KEY).await.unwrap();
 
 	let _terminator = util::start_server_with_args(vec![
@@ -100,9 +103,9 @@ async fn tls_reload() {
 		"--tls-enable",
 		"true",
 		"--tls-key",
-		key_path.to_str().unwrap(),
+		key_path_str.as_str(),
 		"--tls-cert",
-		cert_path.to_str().unwrap(),
+		cert_path_str.as_str(),
 		"--watcher-timeout",
 		"50",
 		"--watcher-debounce",
@@ -148,11 +151,12 @@ async fn listeners_reload() {
 		.unwrap()
 		.join("links_test_file_reload-listeners_reload")
 		.with_extension("toml");
+	let config_path_str = util::convert_path(config_path.to_str().unwrap());
 	fs::write(&config_path, TEST_CONFIG).await.unwrap();
 
 	let _terminator = util::start_server_with_args(vec![
 		"-c",
-		config_path.to_str().unwrap(),
+		config_path_str.as_str(),
 		"--watcher-timeout",
 		"50",
 		"--watcher-debounce",
@@ -192,8 +196,8 @@ async fn listeners_reload() {
 	let res_after_c = get_client().get("http://localhost:81/example").send().await;
 
 	assert!(dbg!(res_before_a.headers()).get("Server").is_some());
-	assert!(dbg!(res_before_b.unwrap_err()).is_connect());
-	assert!(dbg!(res_after_a.unwrap_err()).is_connect());
+	assert!(dbg!(res_before_b).is_err());
+	assert!(dbg!(res_after_a).is_err());
 	assert!(dbg!(res_after_b.headers()).get("Server").is_some());
-	assert!(dbg!(res_after_c.unwrap_err()).is_connect());
+	assert!(dbg!(res_after_c).is_err());
 }

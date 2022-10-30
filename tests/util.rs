@@ -1,6 +1,7 @@
 //! Utilities for end-to-end tests of the links redirector server and CLI
 
 use std::{
+	env,
 	ffi::OsStr,
 	io::Write,
 	process::{Command, Stdio},
@@ -14,23 +15,41 @@ use tonic::{
 	transport::{Channel, ClientTlsConfig},
 };
 
-/// Run a function automatically on drop.
+/// Run a function automatically on drop. The provided function can only be
+/// called once (either with `call()` or automatically on drop).
 #[must_use]
-pub struct Terminator<F: FnMut()>(F);
+pub struct Terminator<F: FnOnce()>(Option<F>);
 
-impl<F: FnMut()> Terminator<F> {
+impl<F: FnOnce()> Terminator<F> {
 	pub fn new(f: F) -> Self {
-		Self(f)
+		Self(Some(f))
 	}
 
 	pub fn call(&mut self) {
-		self.0();
+		if let Some(f) = self.0.take() {
+			f()
+		}
 	}
 }
 
-impl<F: FnMut()> Drop for Terminator<F> {
+impl<F: FnOnce()> Drop for Terminator<F> {
 	fn drop(&mut self) {
 		self.call();
+	}
+}
+
+/// Convert an absolute file path to a format that the server can understand.
+/// This does nothing with the normal links server, but is required e.g. for the
+/// Docker container on Windows.
+#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+pub fn convert_path(path: impl AsRef<str>) -> String {
+	let mode = env::var("LINKS_TEST_EXTERNAL").ok();
+	let server_mode = mode.as_deref();
+
+	if server_mode == Some("docker") && cfg!(target_os = "windows") {
+		"/".to_string() + path.as_ref().replace(':', "").replace('\\', "/").as_str()
+	} else {
+		path.as_ref().to_string()
 	}
 }
 
@@ -41,7 +60,7 @@ impl<F: FnMut()> Drop for Terminator<F> {
 /// and TLS controlled by the `tls` argument of this function. Panics on any
 /// error.
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
-pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
+pub fn start_server(tls: bool) -> Terminator<impl FnOnce()> {
 	let mut args = vec![
 		"--example-redirect",
 		"--token",
@@ -57,9 +76,9 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 			"--tls-enable",
 			"true",
 			"--tls-cert",
-			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cert.pem"),
+			"tests/cert.pem",
 			"--tls-key",
-			concat!(env!("CARGO_MANIFEST_DIR"), "/tests/key.pem"),
+			"tests/key.pem",
 		])
 	}
 
@@ -68,35 +87,110 @@ pub fn start_server(tls: bool) -> Terminator<impl FnMut()> {
 
 /// Start the links redirector server in the background with the specified
 /// command-line arguments. To kill the server process call or drop the returned
-/// function. The server will listen on all addresses with default ports (80,
-/// 443, 50051, and 530). Panics on any error.
+/// function. Panics on any error. The value of the `LINKS_TEST_EXTERNAL`
+/// environment variable controls the way that the server is started:
+/// - `docker` will use Docker to start (but not build) a container named
+///   `links:test` and use that container for testing
+/// - any other value (or an unset variable) will start the server that was
+///   built as part of `cargo test`
 #[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
-pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl FnMut()> {
-	let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
-	cmd.args(args);
-	cmd.stdin(Stdio::piped());
+pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl FnOnce()> {
+	let var = env::var("LINKS_TEST_EXTERNAL").ok();
+	let kill_server: Box<dyn FnOnce()> = match var.as_deref() {
+		Some("docker") => {
+			let path = convert_path(env!("CARGO_MANIFEST_DIR"))
+				+ ":" + &convert_path(env!("CARGO_MANIFEST_DIR"));
 
-	let mut server = cmd.spawn().unwrap();
+			let temp_path = convert_path(env!("CARGO_TARGET_TMPDIR"))
+				+ ":" + &convert_path(env!("CARGO_TARGET_TMPDIR"));
 
-	thread::sleep(Duration::from_millis(250));
+			let mut cmd = Command::new("docker");
+			cmd.args([
+				"run",
+				"-d",
+				"--pull",
+				"never",
+				"-p",
+				"80:80",
+				"-p",
+				"443:443",
+				"-p",
+				"530:530",
+				"-p",
+				"50051:50051",
+				// Used in `server-misc::listener_args`
+				"-p",
+				"8080:8080",
+				// Used in `server-misc::listener_args`
+				"-p",
+				"8443:8443",
+				// Used in `server-files::listeners_reload`
+				"-p",
+				"81:81",
+				// By default grpc only listens on localhost (but setting this
+				// via command line arguments messes with tests)
+				"-e",
+				"LINKS_LISTENERS=[\"http::80\",\"https::443\",\"grpc::50051\",\"grpcs::530\"]",
+				"-v",
+				path.as_str(),
+				"-v",
+				temp_path.as_str(),
+				"-w",
+				convert_path(env!("CARGO_MANIFEST_DIR")).as_str(),
+				"links:test",
+				"--log-level",
+				"info",
+			]);
+			cmd.args(args);
 
-	Terminator::new(move || {
-		// When collecting test coverage, the server listens for "x" on stdin
-		// as a stop signal, which (unlike just killing the server process)
-		// allows for the coverage data to be collected and saved
-		if cfg!(coverage) {
-			server
-				.stdin
-				.take()
-				.unwrap()
-				.write_all(b"x")
-				.expect("could not stop server process");
-		} else {
-			server.kill().expect("could not kill server process");
+			let server_id = String::from_utf8(
+				dbg!(cmd.output())
+					.expect("Couldn't start server using Docker")
+					.stdout,
+			)
+			.expect("Docker printed invalid output");
+			let server_id = dbg!(server_id);
+
+			thread::sleep(Duration::from_millis(250));
+
+			Box::new(move || {
+				// This uses SIGKILL to kill the server, and therefore doesn't allow coverage
+				// collection, regardless of `cfg!(coverage)`
+				let mut cmd = Command::new("docker");
+				cmd.args(["rm", "-f", "-v", server_id.trim()]);
+				dbg!(cmd.output()).expect("could not stop on server process");
+				thread::sleep(Duration::from_millis(250));
+			})
 		}
+		_ => {
+			let mut cmd = Command::new(env!("CARGO_BIN_EXE_server"));
+			cmd.args(args);
+			cmd.stdin(Stdio::piped());
 
-		server.wait().expect("could not wait on server process");
-	})
+			let mut server = cmd.spawn().unwrap();
+			thread::sleep(Duration::from_millis(250));
+
+			Box::new(move || {
+				// When collecting test coverage, the server listens for "x" on stdin
+				// as a stop signal, which (unlike just killing the server process)
+				// allows for the coverage data to be collected and saved
+				if cfg!(coverage) {
+					server
+						.stdin
+						.take()
+						.unwrap()
+						.write_all(b"x")
+						.expect("could not stop server process");
+				} else {
+					server.kill().expect("could not kill server process");
+				}
+
+				server.wait().expect("could not wait on server process");
+			})
+		}
+	};
+
+	Terminator::new(kill_server)
 }
 
 /// Run the links CLI with the provided arguments, returning the output (from
