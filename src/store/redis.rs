@@ -368,12 +368,12 @@ impl StoreBackend for Store {
 
 /// Note:
 /// These tests require a running Redis 7.0 server. Because of this, they only
-/// run if the `redis-tests` feature is enabled. To run all tests including
-/// these, use `cargo test --features redis-tests` You can run a Redis server
+/// run if the `test-redis` feature is enabled. To run all tests including
+/// these, use `cargo test --features test-redis` You can run a Redis server
 /// with Docker using `docker run -p 6379:6379 --rm redis:7.0-alpine` (replace
 /// `7.0` with another version if necessary). It is highly recommended **not**
 /// to run these tests on a production Redis server.
-#[cfg(all(test, feature = "redis-tests"))]
+#[cfg(all(test, feature = "test-redis"))]
 mod tests {
 	use std::collections::HashMap;
 
