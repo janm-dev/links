@@ -42,7 +42,7 @@ use links::{
 	store::Current,
 	util::{stringify_map, SERVER_HELP, SERVER_NAME},
 };
-use notify::{RecursiveMode, Watcher};
+use notify::{PollWatcher, RecursiveMode, Watcher};
 use pico_args::Arguments;
 use tokio::runtime::Builder;
 use tracing::{debug, error, info, Level};
@@ -174,7 +174,21 @@ fn main() -> Result<(), anyhow::Error> {
 		})
 	}
 
+	// Set up file watcher
+	let watcher_timeout = Duration::from_millis(
+		args.opt_value_from_str("--watcher-timeout")
+			.unwrap_or_default()
+			.unwrap_or(100000u64),
+	);
+
+	let watcher_debounce = Duration::from_millis(
+		args.opt_value_from_str("--watcher-debounce")
+			.unwrap_or_default()
+			.unwrap_or(1000u64),
+	);
+
 	let (watcher_tx, watcher_rx) = mpsc::channel();
+	let poller_tx = watcher_tx.clone();
 	let mut file_watcher = notify::recommended_watcher(move |res| match res {
 		Ok(event) => {
 			if let Err(err) = watcher_tx.send(event) {
@@ -186,8 +200,25 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	})?;
 
+	let mut file_poller = PollWatcher::new(
+		move |res| match res {
+			Ok(event) => {
+				if let Err(err) = poller_tx.send(event) {
+					error!(?err, "File polling error");
+				};
+			}
+			Err(err) => {
+				error!(?err, "File polling error");
+			}
+		},
+		notify::Config::default()
+			.with_poll_interval(watcher_timeout)
+			.with_compare_contents(true),
+	)?;
+
 	if let Some(config_file) = config.file() {
 		file_watcher.watch(config_file, RecursiveMode::NonRecursive)?;
+		file_poller.watch(config_file, RecursiveMode::NonRecursive)?;
 	}
 
 	if let Tls::Enable {
@@ -196,21 +227,12 @@ fn main() -> Result<(), anyhow::Error> {
 	} = config.tls()
 	{
 		file_watcher.watch(&key_file, RecursiveMode::NonRecursive)?;
+		file_poller.watch(&key_file, RecursiveMode::NonRecursive)?;
 		file_watcher.watch(&cert_file, RecursiveMode::NonRecursive)?;
+		file_poller.watch(&cert_file, RecursiveMode::NonRecursive)?;
 	}
 
 	let mut last_file_event = None;
-	let watcher_timeout = Duration::from_millis(
-		args.opt_value_from_str("--watcher-timeout")
-			.unwrap_or_default()
-			.unwrap_or(10000u64),
-	);
-
-	let watcher_debounce = Duration::from_millis(
-		args.opt_value_from_str("--watcher-debounce")
-			.unwrap_or_default()
-			.unwrap_or(1000u64),
-	);
 
 	// During coverage-collecting tests, in order to collect correct coverage
 	// data, use stdin to stop the server instead of relying on a kill signal,
@@ -239,7 +261,7 @@ fn main() -> Result<(), anyhow::Error> {
 		match watcher_rx.recv_timeout(if last_file_event.is_none() {
 			watcher_timeout
 		} else {
-			watcher_debounce.min(watcher_timeout) / 4
+			watcher_debounce.min(watcher_timeout) / 64
 		}) {
 			Ok(event) => {
 				debug!(?event, "Received file event from watcher");
@@ -273,9 +295,17 @@ fn main() -> Result<(), anyhow::Error> {
 						Ok(_) => (),
 						Err(err) => error!(?err, "File watching error"),
 					}
+					match file_poller.unwatch(&key_file) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File polling error"),
+					}
 					match file_watcher.unwatch(&cert_file) {
 						Ok(_) => (),
 						Err(err) => error!(?err, "File watching error"),
+					}
+					match file_poller.unwatch(&cert_file) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File polling error"),
 					}
 				}
 
@@ -294,9 +324,17 @@ fn main() -> Result<(), anyhow::Error> {
 						Ok(_) => (),
 						Err(err) => error!(?err, "File watching error"),
 					}
+					match file_poller.watch(&key_file, RecursiveMode::NonRecursive) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File polling error"),
+					}
 					match file_watcher.watch(&cert_file, RecursiveMode::NonRecursive) {
 						Ok(_) => (),
 						Err(err) => error!(?err, "File watching error"),
+					}
+					match file_poller.watch(&cert_file, RecursiveMode::NonRecursive) {
+						Ok(_) => (),
+						Err(err) => error!(?err, "File polling error"),
 					}
 				}
 			}
