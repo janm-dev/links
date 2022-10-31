@@ -30,7 +30,7 @@ fred = { version = "5.2.0", features = [
 	"pool-prefer-active",
 	"partial-tracing",
 ], default-features = false }
-hyper = "0.14.20"
+hyper = "0.14.21"
 lazy_static = "1.4.0"
 notify = "5.0.0"
 parking_lot = "0.12.1"
