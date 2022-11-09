@@ -64,13 +64,15 @@ impl FromStr for Normalized {
 
 impl FromRedis for Normalized {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
-		match value.into_string() {
-			Some(s) => Ok(Self::from(&*s)),
-			None => Err(RedisError::new(
-				RedisErrorKind::Parse,
-				"can't convert this type into a Normalized",
-			)),
-		}
+		value.into_string().map_or_else(
+			|| {
+				Err(RedisError::new(
+					RedisErrorKind::Parse,
+					"can't convert this type into a Normalized",
+				))
+			},
+			|s| Ok(Self::from(&*s)),
+		)
 	}
 }
 

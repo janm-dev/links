@@ -127,11 +127,11 @@ impl Display for ListenAddress {
 		fmt.write_fmt(format_args!(
 			"{}:{}:{}",
 			self.protocol,
-			self.address.map_or("".to_string(), |a| match a {
+			self.address.map_or(String::new(), |a| match a {
 				IpAddr::V4(a) => a.to_string(),
 				IpAddr::V6(a) => format!("[{a}]"),
 			}),
-			self.port.map_or("".to_string(), |n| n.to_string())
+			self.port.map_or(String::new(), |n| n.to_string())
 		))
 	}
 }

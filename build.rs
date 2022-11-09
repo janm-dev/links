@@ -75,7 +75,7 @@ fn minify(name: &str, path: PathBuf) {
 
 	let minified = minify_html::minify(html.as_bytes(), &config);
 
-	fs::write(&out_path, &minified).unwrap();
+	fs::write(out_path, minified).unwrap();
 }
 
 /// Generate the hashes for all `<tag_name>` elements in the provided generated

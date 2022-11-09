@@ -308,7 +308,7 @@ fn main() -> Result<(), anyhow::Error> {
 			} = config.tls()
 			{
 				info!("Updating TLS certificate and key");
-				cert_resolver.update(get_certkey(&cert_file, &key_file).ok().map(Arc::new));
+				cert_resolver.update(get_certkey(cert_file, key_file).ok().map(Arc::new));
 			} else {
 				info!("TLS is disabled, removing any old certificates");
 				cert_resolver.update(None);
