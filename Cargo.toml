@@ -22,7 +22,7 @@ test-redis = []
 anyhow = "1.0.66"
 arc-swap = "1.5.1"
 async-trait = "0.1.58"
-clap = { version = "4.0.23", features = ["derive", "env"] }
+clap = { version = "4.0.26", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
 	"enable-tls",
