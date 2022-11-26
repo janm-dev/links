@@ -10,7 +10,13 @@ vulnerability = "deny"
 unmaintained = "deny"
 yanked = "deny"
 notice = "warn"
-ignore = []
+ignore = [
+	# Unaligned read on Windows (if custom allocator is used) in `atty`, used by
+	# `clap`, `colored`, and `fred`. `atty` is unmaintained, and being replaced
+	# in `clap` (#4249) and `colored` (#122). `fred` seems to only use `atty` in
+	# examples, tests, benchmarks, etc.
+	"RUSTSEC-2021-0145",
+]
 
 [licenses]
 unlicensed = "deny"
