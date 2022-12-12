@@ -74,7 +74,7 @@ unicode-normalization = "0.1.22"
 uriparse = "0.6.4"
 
 [build-dependencies]
-base64 = "0.13.1"
+base64 = "0.20.0"
 lol_html = "0.3.2"
 minify-html = "0.10.3"
 sha2 = "0.10.6"
