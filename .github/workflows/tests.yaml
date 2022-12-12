@@ -73,7 +73,7 @@ jobs:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: sudo apt-get install -y ca-certificates && sudo cp ${{ github.workspace }}/links/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates && sudo /sbin/iptables -F && printf 'net.ipv4.ip_unprivileged_port_start = 50\nnet.ipv6.ip_unprivileged_port_start = 50\n' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf && sudo sysctl --system
-      - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ github.workspace }}/tests/cert.pem:/cert.pem:ro -v ${{ github.workspace }}/tests/key.pem:/key.pem:ro redis:${{ matrix.version }} --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
+      - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ github.workspace }}/links/tests/cert.pem:/cert.pem:ro -v ${{ github.workspace }}/links/tests/key.pem:/key.pem:ro redis:${{ matrix.version }} --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
       - uses: Swatinem/rust-cache@v1
       - uses: actions-rs/cargo@v1
         with:
