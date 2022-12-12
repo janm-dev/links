@@ -1,0 +1,89 @@
+[package]
+name = "links"
+version = "0.2.0"
+edition = "2021"
+publish = false
+authors = ["janm-dev"]
+description = "An easy to set up selfhostable link shortener."
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/janm-dev/links"
+rust-version = "1.62"
+default-run = "server"
+
+[features]
+# Compile own OpenSSL as part of the build process of `openssl-sys` for use
+# with the Redis backend. Enables the `vendored-tls` feature of `fred`.
+vendored-openssl = ["fred/vendored-tls"]
+# Run tests involving a Redis server. Needs a running links-compatible Redis
+# server on localhost:6379 (TCP) and localhost:6380 (TLS) when running tests.
+test-redis = []
+
+[dependencies]
+anyhow = "1.0.66"
+async-trait = "0.1.59"
+clap = { version = "4.0.29", features = ["derive", "env"] }
+colored = "2.0.0"
+fred = { version = "5.2.0", features = [
+	"enable-tls",
+	"ignore-auth-error",
+	"pool-prefer-active",
+	"partial-tracing",
+], default-features = false }
+hyper = "0.14.23"
+lazy_static = "1.4.0"
+notify = "5.0.0"
+parking_lot = "0.12.1"
+pico-args = { version = "0.5.0", features = [
+	"combined-flags",
+], default-features = false }
+prost = "0.11.3"
+rand = "0.8.5"
+regex = "1.7.0"
+rustls-pemfile = "1.0.1"
+serde = "1.0.150"
+serde_derive = "1.0.150"
+serde_json = "1.0.89"
+serde_yaml = "0.9.14"
+socket2 = "0.4.7"
+thiserror = "1.0.37"
+time = { version = "0.3.17", features = [
+	"macros",
+	"parsing",
+	"formatting",
+] }
+tokio = { version = "1.23.0", features = [
+	"rt-multi-thread",
+] }
+tokio-rustls = "0.23.4"
+toml = "0.5.9"
+tonic = { version = "0.8.3", default-features = false, features = [
+	"gzip",
+	"tls",
+	"tls-roots",
+	"channel",
+	"codegen",
+	"prost",
+] }
+tracing = "0.1.37"
+tracing-appender = { version = "0.2.2", features = [
+	"parking_lot",
+] }
+tracing-subscriber = "0.3.16"
+unicode-normalization = "0.1.22"
+uriparse = "0.6.4"
+
+[build-dependencies]
+base64 = "0.20.0"
+lol_html = "0.3.2"
+minify-html = "0.10.3"
+sha2 = "0.10.6"
+tonic-build = "0.8.4"
+
+[dev-dependencies]
+regex = "1.7.0"
+reqwest = { version = "0.11.13", default-features = false, features = [
+	"rustls-tls-native-roots",
+	"gzip",
+] }
+serial_test = "0.9.0"
+tokio = { version = "1.23.0", features = ["full"] }

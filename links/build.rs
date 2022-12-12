@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.build_client(true)
 		.build_server(true)
 		.compile_well_known_types(true)
-		.compile(&["./proto/links.proto"], &["./proto"])?;
+		.compile(&["../proto/links.proto"], &["../proto"])?;
 
 	// Disable pedantic clippy lints in the generated file (if anyone has a
 	// more elegant solution to this, please open an issue)
@@ -31,10 +31,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	)?;
 
 	// Include and minify html pages
-	minify("not-found", PathBuf::from("misc/not-found.html"));
-	minify("redirect", PathBuf::from("misc/redirect.html"));
-	minify("bad-request", PathBuf::from("misc/bad-request.html"));
-	minify("https-redirect", PathBuf::from("misc/https-redirect.html"));
+	minify("not-found", PathBuf::from("../misc/not-found.html"));
+	minify("redirect", PathBuf::from("../misc/redirect.html"));
+	minify("bad-request", PathBuf::from("../misc/bad-request.html"));
+	minify(
+		"https-redirect",
+		PathBuf::from("../misc/https-redirect.html"),
+	);
 
 	// Generate hashes for the CSP header
 	hash_tags("style", [
@@ -44,8 +47,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		"https-redirect",
 	]);
 
-	println!("cargo:rerun-if-changed=./proto/links.proto");
-	println!("cargo:rerun-if-changed=./proto/*");
+	println!("cargo:rerun-if-changed=../proto/links.proto");
+	println!("cargo:rerun-if-changed=../proto/*");
 
 	Ok(())
 }
