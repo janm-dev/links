@@ -9,7 +9,7 @@
 	clippy::cargo,
 	clippy::nursery,
 	missing_docs,
-	rustdoc::all
+	rustdoc::missing_crate_level_docs
 )]
 #![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::tabs_in_doc_comments)]
