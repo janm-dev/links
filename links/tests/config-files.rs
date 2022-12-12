@@ -103,7 +103,7 @@ fn examples_are_equivalent() {
 fn docker_config_is_valid() {
 	let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))
 		.unwrap()
-		.join("example-config");
+		.join("../docker-config");
 
 	let config = Partial::from_file(&path.with_extension("toml"));
 
