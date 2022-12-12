@@ -1090,7 +1090,6 @@ name = "links"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "arc-swap",
  "async-trait",
  "base64 0.20.0",
  "clap",

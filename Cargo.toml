@@ -20,7 +20,6 @@ test-redis = []
 
 [dependencies]
 anyhow = "1.0.66"
-arc-swap = "1.5.1"
 async-trait = "0.1.59"
 clap = { version = "4.0.29", features = ["derive", "env"] }
 colored = "2.0.0"
