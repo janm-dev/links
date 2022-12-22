@@ -21,7 +21,7 @@ test-redis = []
 [dependencies]
 anyhow = "1.0.68"
 async-trait = "0.1.60"
-clap = { version = "4.0.29", features = ["derive", "env"] }
+clap = { version = "4.0.30", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
 	"enable-tls",
