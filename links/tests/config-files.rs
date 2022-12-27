@@ -11,7 +11,7 @@ fn config_files_are_valid() {
 		.join("example-config");
 
 	// JSON must first have comments removed to be checked.
-	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
+	let json = fs::read_to_string(path.with_extension("json")).unwrap();
 	let json_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
 		.unwrap()
 		.join("links_test_json-valid_config_files")
@@ -79,7 +79,7 @@ fn examples_are_equivalent() {
 		.join("example-config");
 
 	// JSON must first have comments removed to be checked.
-	let json = fs::read_to_string(&path.with_extension("json")).unwrap();
+	let json = fs::read_to_string(path.with_extension("json")).unwrap();
 	let json_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
 		.unwrap()
 		.join("links_test_json-examples_are_equivalent")
