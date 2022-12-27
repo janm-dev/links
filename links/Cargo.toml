@@ -19,9 +19,9 @@ vendored-openssl = ["fred/vendored-tls"]
 test-redis = []
 
 [dependencies]
-anyhow = "1.0.66"
-async-trait = "0.1.59"
-clap = { version = "4.0.29", features = ["derive", "env"] }
+anyhow = "1.0.68"
+async-trait = "0.1.60"
+clap = { version = "4.0.32", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
 	"enable-tls",
@@ -36,16 +36,16 @@ parking_lot = "0.12.1"
 pico-args = { version = "0.5.0", features = [
 	"combined-flags",
 ], default-features = false }
-prost = "0.11.3"
+prost = "0.11.5"
 rand = "0.8.5"
 regex = "1.7.0"
 rustls-pemfile = "1.0.1"
-serde = "1.0.150"
-serde_derive = "1.0.150"
-serde_json = "1.0.89"
-serde_yaml = "0.9.14"
+serde = "1.0.152"
+serde_derive = "1.0.152"
+serde_json = "1.0.91"
+serde_yaml = "0.9.16"
 socket2 = "0.4.7"
-thiserror = "1.0.37"
+thiserror = "1.0.38"
 time = { version = "0.3.17", features = [
 	"macros",
 	"parsing",
@@ -55,7 +55,7 @@ tokio = { version = "1.23.0", features = [
 	"rt-multi-thread",
 ] }
 tokio-rustls = "0.23.4"
-toml = "0.5.9"
+toml = "0.5.10"
 tonic = { version = "0.8.3", default-features = false, features = [
 	"gzip",
 	"tls",
@@ -85,5 +85,5 @@ reqwest = { version = "0.11.13", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
 ] }
-serial_test = "0.9.0"
+serial_test = "0.10.0"
 tokio = { version = "1.23.0", features = ["full"] }
