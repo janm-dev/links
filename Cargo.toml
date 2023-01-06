@@ -75,7 +75,7 @@ uriparse = "0.6.4"
 [build-dependencies]
 base64 = "0.20.0"
 lol_html = "0.3.2"
-minify-html = "0.10.3"
+minify-html = "0.10.7"
 sha2 = "0.10.6"
 tonic-build = "0.8.4"
 
