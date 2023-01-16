@@ -12,9 +12,9 @@ use std::collections::HashMap;
 use anyhow::Result;
 use async_trait::async_trait;
 use links_id::Id;
+use links_normalized::{Link, Normalized};
 
 use crate::{
-	normalized::{Link, Normalized},
 	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::BackendType,
 };

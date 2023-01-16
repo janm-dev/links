@@ -296,10 +296,10 @@ impl Default for StatisticValue {
 #[cfg(test)]
 mod tests {
 	use links_id::Id;
+	use links_normalized::Normalized;
 	use tokio_rustls::rustls::{ProtocolVersion, ALL_CIPHER_SUITES};
 
 	use super::*;
-	use crate::normalized::Normalized;
 
 	#[test]
 	fn statistic() {

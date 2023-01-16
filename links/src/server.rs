@@ -38,6 +38,7 @@ use std::{
 
 use hyper::{server::conn::Http, service::service_fn, Body, Request};
 use links_id::Id;
+use links_normalized::{Link, Normalized};
 use parking_lot::Mutex;
 use socket2::{Domain, Protocol as SocketProtocol, Socket, Type};
 use tokio::{
@@ -57,7 +58,6 @@ use crate::{
 	api::{self, Api, LinksServer},
 	certs::CertificateResolver,
 	config::{Config, ListenAddress},
-	normalized::{Link, Normalized},
 	redirector::{https_redirector, redirector},
 	stats::ExtraStatisticInfo,
 	store::{Current, Store},

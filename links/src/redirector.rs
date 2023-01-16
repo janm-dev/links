@@ -5,12 +5,12 @@ use hyper::{
 	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
 };
 use links_id::Id;
+use links_normalized::Normalized;
 use tokio::time::Instant;
 use tracing::{debug, field::Empty, instrument, trace};
 
 use crate::{
 	config::{Hsts, Redirector as Config},
-	normalized::Normalized,
 	stats::{ExtraStatisticInfo, Statistic},
 	store::Store,
 	util::{csp_hashes, include_html, SERVER_NAME},

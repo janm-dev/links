@@ -1,8 +1,15 @@
-//! This module contains data structures representing normalized data.
-//!
-//! In particular, it contains:
-//! - [`Normalized`], which represents unicode normalized vanity paths
+//! This crate contains two normalized string datastructures:
+//! - [`Normalized`], which represents unicode normalized strings
 //! - [`Link`], which represents valid normalized redirection target URLs
+//!
+//! [`Normalized`] strings are case-insensitive and ignore whitespace and
+//! control characters. They also perform [NFKC] normalization on the input.
+//! They are used as vanity paths by links.
+//!
+//! [`Link`]s are normalized (in the URI sense) `http`/`https` URLs used as
+//! redirect destinations by links.
+//!
+//! [NFKC]: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 use std::{
 	convert::Infallible,
@@ -10,6 +17,7 @@ use std::{
 	str::FromStr,
 };
 
+#[cfg(feature = "fred")]
 use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
@@ -62,6 +70,7 @@ impl FromStr for Normalized {
 	}
 }
 
+#[cfg(feature = "fred")]
 impl FromRedis for Normalized {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
 		value.into_string().map_or_else(
@@ -191,6 +200,7 @@ impl FromStr for Link {
 	}
 }
 
+#[cfg(feature = "fred")]
 impl FromRedis for Link {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
 		match value {
@@ -258,6 +268,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "fred")]
 	fn normalized_from_redis() {
 		assert_eq!(
 			Normalized::from_value(RedisValue::from_static_str("BiG bIrD"))
@@ -348,6 +359,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "fred")]
 	fn link_from_redis() {
 		assert_eq!(
 			Link::from_value(RedisValue::from_static_str("HTtPS://eXaMpLe.com?"))

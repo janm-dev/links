@@ -9,12 +9,12 @@ use std::{
 
 use hyper::Version;
 use links_id::Id;
+use links_normalized::Normalized;
 use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 use tokio_rustls::rustls::{ProtocolVersion, SupportedCipherSuite};
 
 use super::StatisticType;
-use crate::normalized::Normalized;
 
 /// Extra statistics-related information passed to the links HTTP redirector for
 /// collection

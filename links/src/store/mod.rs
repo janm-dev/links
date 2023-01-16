@@ -20,16 +20,14 @@ use std::{
 use anyhow::Result;
 use backend::StoreBackend;
 use links_id::Id;
+use links_normalized::{Link, Normalized};
 use parking_lot::RwLock;
 use serde_derive::{Deserialize, Serialize};
 use tokio::spawn;
 use tracing::{debug, instrument, trace};
 
 pub use self::{memory::Store as Memory, redis::Store as Redis};
-use crate::{
-	normalized::{Link, Normalized},
-	stats::{Statistic, StatisticDescription, StatisticValue},
-};
+use crate::stats::{Statistic, StatisticDescription, StatisticValue};
 
 /// The type of store backend used by the links redirector server. All variants
 /// must have a canonical human-readable string representation using only

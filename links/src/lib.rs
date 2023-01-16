@@ -18,7 +18,6 @@
 pub mod api;
 pub mod certs;
 pub mod config;
-pub mod normalized;
 pub mod redirector;
 pub mod server;
 pub mod stats;

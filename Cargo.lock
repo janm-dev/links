@@ -1061,6 +1061,7 @@ dependencies = [
  "hyper",
  "lazy_static",
  "links-id",
+ "links-normalized",
  "lol_html",
  "minify-html",
  "notify",
@@ -1088,8 +1089,6 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
- "unicode-normalization",
- "uriparse",
 ]
 
 [[package]]
@@ -1104,6 +1103,18 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "links-normalized"
+version = "0.2.0"
+dependencies = [
+ "fred",
+ "serde",
+ "serde_derive",
+ "thiserror",
+ "unicode-normalization",
+ "uriparse",
 ]
 
 [[package]]

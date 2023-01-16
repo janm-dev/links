@@ -22,6 +22,9 @@ test-redis = []
 links-id = { path = "../links-id", version = "*", features = [
 	"fred",
 ] }
+links-normalized = { path = "../links-normalized", version = "*", features = [
+	"fred",
+] }
 anyhow = "1.0.68"
 async-trait = "0.1.61"
 clap = { version = "4.1.1", features = ["derive", "env"] }
@@ -72,8 +75,6 @@ tracing-appender = { version = "0.2.2", features = [
 	"parking_lot",
 ] }
 tracing-subscriber = "0.3.16"
-unicode-normalization = "0.1.22"
-uriparse = "0.6.4"
 
 [build-dependencies]
 base64 = "0.21.0"
