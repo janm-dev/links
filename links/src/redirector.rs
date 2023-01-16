@@ -4,12 +4,12 @@
 use hyper::{
 	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
 };
+use links_id::Id;
 use tokio::time::Instant;
 use tracing::{debug, field::Empty, instrument, trace};
 
 use crate::{
 	config::{Hsts, Redirector as Config},
-	id::Id,
 	normalized::Normalized,
 	stats::{ExtraStatisticInfo, Statistic},
 	store::Store,

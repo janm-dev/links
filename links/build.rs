@@ -5,6 +5,7 @@ use std::{
 	rc::Rc,
 };
 
+use base64::engine::{general_purpose::STANDARD, Engine};
 use lol_html::{element, text, RewriteStrSettings};
 use minify_html::Cfg;
 use sha2::{Digest, Sha256};
@@ -128,7 +129,7 @@ fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static st
 				let mut hasher = Sha256::new();
 				hasher.update(v);
 				let res = hasher.finalize();
-				"'sha256-".to_string() + &base64::encode(res) + "'"
+				"'sha256-".to_string() + &STANDARD.encode(res) + "'"
 			})
 			.collect::<Vec<String>>()[..]
 			.join(" ");

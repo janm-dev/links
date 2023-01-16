@@ -3,7 +3,7 @@
 
 mod util;
 
-use links::id::Id;
+use links_id::Id;
 
 /// Test `cli id` without TLS
 #[tokio::test]

@@ -7,11 +7,11 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use links_id::Id;
 use parking_lot::RwLock;
 use tracing::instrument;
 
 use crate::{
-	id::Id,
 	normalized::{Link, Normalized},
 	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::{BackendType, StoreBackend},

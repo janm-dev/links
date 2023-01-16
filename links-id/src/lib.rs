@@ -1,5 +1,5 @@
-//! This module contains everything pertaining to links IDs, the unique
-//! identifiers used in this project to identify individual links.
+//! Links IDs are unique identifiers used in the links project to identify
+//! individual links.
 //!
 //! A links ID is a randomly generated 40 bit / 5 byte integer. It is usually
 //! encoded as an 8 character string, starting with a digit (`0-9`) followed by
@@ -13,6 +13,7 @@ use std::{
 	str::FromStr,
 };
 
+#[cfg(feature = "fred")]
 use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
@@ -159,6 +160,7 @@ impl FromStr for Id {
 	}
 }
 
+#[cfg(feature = "fred")]
 impl FromRedis for Id {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
 		match value {
@@ -329,6 +331,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "fred")]
 	fn from_redis() {
 		assert_eq!(
 			Id([0x11, 0x33, 0x55, 0x77, 0x99]),

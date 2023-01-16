@@ -1,9 +1,10 @@
 //! Generic tests for the each [`StoreBackend`] implementation. These test
 //! functions have the same name as the function that they are testing.
 
+use links_id::Id;
+
 use super::*;
 use crate::{
-	id::Id,
 	normalized::{Link, Normalized},
 	stats::{StatisticData, StatisticTime, StatisticType},
 };

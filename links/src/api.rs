@@ -1,6 +1,7 @@
 //! This module contains the gRPC-based low-level links API, responsible for
 //! allowing outside services access to the links store.
 
+use links_id::Id;
 use rpc::links_server::Links;
 pub use rpc::{
 	links_client::LinksClient, links_server::LinksServer, GetRedirectRequest, GetRedirectResponse,
@@ -15,7 +16,6 @@ use tracing::{info, instrument, trace};
 
 use crate::{
 	config::Config,
-	id::Id,
 	normalized::{Link, Normalized},
 	stats::StatisticDescription,
 	store::{Current, Store},
