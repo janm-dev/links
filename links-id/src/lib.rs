@@ -23,7 +23,7 @@ use regex::{Regex, RegexBuilder};
 use serde_derive::{Deserialize, Serialize};
 
 /// The error returned by fallible conversions into IDs.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum ConversionError {
 	/// The provided value is too large to be represented in an `Id`.
 	#[error("value is too large")]
@@ -283,6 +283,8 @@ impl From<Id> for [u8; 5] {
 
 #[cfg(test)]
 mod tests {
+	use std::collections::HashMap;
+
 	use super::*;
 
 	#[test]
@@ -396,6 +398,50 @@ mod tests {
 			Id([0x11, 0x33, 0x55, 0x77, 0x99]),
 			Id::try_from("0fXMgWQz").unwrap()
 		);
+
+		assert_eq!(
+			Id([0x31, 0x32, 0x33, 0x34, 0x35]),
+			"1qDhG8Tr".parse().unwrap()
+		);
+		assert_eq!(
+			Id([0x11, 0x33, 0x55, 0x77, 0x99]),
+			"0fXMgWQz".parse().unwrap()
+		);
+	}
+
+	#[test]
+	fn invalid_try_from_string() {
+		assert_eq!(
+			ConversionError::TooSmall,
+			dbg!(Id::try_from("1qDhG8T")).unwrap_err()
+		);
+		assert_eq!(
+			ConversionError::TooLarge,
+			dbg!(Id::try_from("0fXMgWQzz")).unwrap_err()
+		);
+		assert_eq!(
+			ConversionError::InvalidFormat,
+			dbg!(Id::try_from("abcdefgh")).unwrap_err()
+		);
+		assert!(dbg!(Id::try_from("I'm an ID!")).is_err());
+		assert!(dbg!(Id::try_from("1496758598688559105")).is_err());
+		assert!(dbg!(Id::try_from("5a9b1460-53be-418a-9115-996c354c46df")).is_err());
+
+		assert_eq!(
+			ConversionError::TooSmall,
+			dbg!("1qDhG8T".parse::<Id>()).unwrap_err()
+		);
+		assert_eq!(
+			ConversionError::TooLarge,
+			dbg!("0fXMgWQzz".parse::<Id>()).unwrap_err()
+		);
+		assert_eq!(
+			ConversionError::InvalidFormat,
+			dbg!("abcdefgh".parse::<Id>()).unwrap_err()
+		);
+		assert!(dbg!("I'm an ID!".parse::<Id>()).is_err());
+		assert!(dbg!("1496758598688559105".parse::<Id>()).is_err());
+		assert!(dbg!("5a9b1460-53be-418a-9115-996c354c46df".parse::<Id>()).is_err());
 	}
 
 	#[test]
@@ -403,6 +449,8 @@ mod tests {
 		for _ in 0..10000 {
 			let id = Id::new();
 			assert_eq!(id, Id::try_from(id.to_string()).unwrap());
+			assert_eq!(id, Id::try_from(&id.to_string()).unwrap());
+			assert_eq!(id, id.to_string().parse().unwrap());
 		}
 	}
 
@@ -415,5 +463,48 @@ mod tests {
 
 		let id = Id::new();
 		assert_eq!(Id::try_from(id.to_u64()).unwrap(), id);
+
+		assert!(Id::try_from(u64::MAX).is_err());
+		assert!(Id::try_from(2u64.pow(41)).is_err());
+	}
+
+	#[test]
+	fn id_into() {
+		for _ in 0..10000 {
+			let arr = rand::random();
+			let id = Id(arr);
+
+			let mut n_arr = [0u8; 8];
+			n_arr[3..].copy_from_slice(&arr[..]);
+			let n = u64::from_be_bytes(n_arr);
+
+			assert_eq!(u64::from(id), n);
+			assert_eq!(<[u8; 5]>::from(id), arr);
+		}
+	}
+
+	#[test]
+	fn id_ord() {
+		for _ in 0..10000 {
+			let a: [u8; 5] = rand::random();
+			let b: [u8; 5] = rand::random();
+
+			assert_eq!(a.cmp(&b), Id(a).cmp(&Id(b)));
+			assert_eq!(a.partial_cmp(&b), Id(a).partial_cmp(&Id(b)));
+		}
+	}
+
+	#[test]
+	fn id_hash() {
+		let mut map = HashMap::new();
+
+		for _ in 0..10000 {
+			let id = Id(rand::random());
+			map.insert(id, id);
+		}
+
+		for k in map.keys() {
+			assert_eq!(map.get(k), Some(k));
+		}
 	}
 }
