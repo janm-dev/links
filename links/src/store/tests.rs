@@ -1,12 +1,11 @@
 //! Generic tests for the each [`StoreBackend`] implementation. These test
 //! functions have the same name as the function that they are testing.
 
+use links_id::Id;
+use links_normalized::{Link, Normalized};
+
 use super::*;
-use crate::{
-	id::Id,
-	normalized::{Link, Normalized},
-	stats::{StatisticData, StatisticTime, StatisticType},
-};
+use crate::stats::{StatisticData, StatisticTime, StatisticType};
 
 pub fn store_type<S: StoreBackend>() {
 	let name = S::store_type().to_str();

@@ -1,8 +1,15 @@
-//! This module contains data structures representing normalized data.
-//!
-//! In particular, it contains:
-//! - [`Normalized`], which represents unicode normalized vanity paths
+//! This crate contains two normalized string datastructures:
+//! - [`Normalized`], which represents unicode normalized strings
 //! - [`Link`], which represents valid normalized redirection target URLs
+//!
+//! [`Normalized`] strings are case-insensitive and ignore whitespace and
+//! control characters. They also perform [NFKC] normalization on the input.
+//! They are used as vanity paths by links.
+//!
+//! [`Link`]s are normalized (in the URI sense) `http`/`https` URLs used as
+//! redirect destinations by links.
+//!
+//! [NFKC]: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 use std::{
 	convert::Infallible,
@@ -10,6 +17,7 @@ use std::{
 	str::FromStr,
 };
 
+#[cfg(feature = "fred")]
 use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
@@ -22,6 +30,7 @@ use uriparse::{Scheme, URIReference};
 /// vanity paths in a normalized, case-insensitive way. Also filters out
 /// whitespace and control characters.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "&str", into = "String")]
 pub struct Normalized(String);
 
 impl Normalized {
@@ -62,6 +71,7 @@ impl FromStr for Normalized {
 	}
 }
 
+#[cfg(feature = "fred")]
 impl FromRedis for Normalized {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
 		value.into_string().map_or_else(
@@ -94,6 +104,12 @@ impl From<&str> for Normalized {
 	}
 }
 
+impl From<Normalized> for String {
+	fn from(normalized: Normalized) -> Self {
+		normalized.into_string()
+	}
+}
+
 /// The error returned by fallible conversions into `Link`s.
 #[derive(Debug, thiserror::Error)]
 pub enum LinkError {
@@ -122,6 +138,7 @@ pub enum LinkError {
 /// it doesn't provide much useful feedback or help with encoding an almost
 /// valid URL, nor does it do much useful guesswork.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "&str", into = "String")]
 pub struct Link(String);
 
 impl Link {
@@ -191,6 +208,7 @@ impl FromStr for Link {
 	}
 }
 
+#[cfg(feature = "fred")]
 impl FromRedis for Link {
 	fn from_value(value: RedisValue) -> Result<Self, RedisError> {
 		match value {
@@ -228,9 +246,17 @@ impl TryFrom<&str> for Link {
 	}
 }
 
+impl From<Link> for String {
+	fn from(link: Link) -> Self {
+		link.into_string()
+	}
+}
+
 #[cfg(test)]
 #[allow(clippy::unicode_not_nfc)]
 mod tests {
+	use std::cmp::Ordering;
+
 	use super::*;
 
 	#[test]
@@ -250,14 +276,84 @@ mod tests {
 	}
 
 	#[test]
+	fn normalized_from_string() {
+		let ohm = "Ω";
+		let omega = "Ω";
+		let letters = "ffi";
+		let ligature = "ﬃ";
+
+		assert_ne!(ohm, omega);
+		assert_ne!(letters, ligature);
+
+		assert_eq!(
+			Normalized::from("BiGbIrD".to_string()),
+			Normalized::from("bigbird".to_string())
+		);
+		assert_eq!(
+			Normalized::from("Big Bird	".to_string()),
+			Normalized::from(" ᴮᴵᴳᴮᴵᴿᴰ".to_string())
+		);
+		assert_eq!(
+			Normalized::from(ohm.to_string()),
+			Normalized::from(omega.to_string())
+		);
+		assert_eq!(
+			Normalized::from(letters.to_string()),
+			Normalized::from(ligature.to_string())
+		);
+
+		assert_eq!(
+			Normalized::from(&"BiGbIrD".to_string()),
+			Normalized::from(&"bigbird".to_string())
+		);
+		assert_eq!(
+			Normalized::from(&"Big Bird	".to_string()),
+			Normalized::from(&" ᴮᴵᴳᴮᴵᴿᴰ".to_string())
+		);
+		assert_eq!(
+			Normalized::from(&ohm.to_string()),
+			Normalized::from(&omega.to_string())
+		);
+		assert_eq!(
+			Normalized::from(&letters.to_string()),
+			Normalized::from(&ligature.to_string())
+		);
+
+		assert_eq!(Normalized::new("BiGbIrD"), Normalized::new("bigbird"));
+		assert_eq!(Normalized::new("Big Bird	"), Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ"));
+		assert_eq!(Normalized::new(ohm), Normalized::new(omega));
+		assert_eq!(Normalized::new(letters), Normalized::new(ligature));
+
+		assert_eq!(
+			"BiGbIrD".parse::<Normalized>().unwrap(),
+			Normalized::new("bigbird")
+		);
+		assert_eq!(
+			"Big Bird	".parse::<Normalized>().unwrap(),
+			Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")
+		);
+		assert_eq!(ohm.parse::<Normalized>().unwrap(), Normalized::new(omega));
+		assert_eq!(
+			letters.parse::<Normalized>().unwrap(),
+			Normalized::new(ligature)
+		);
+	}
+
+	#[test]
 	fn normalized_into_string() {
 		assert_eq!(
 			Normalized::new("BiGbIrD").into_string(),
 			Normalized::new("bigbird").into_string()
 		);
+
+		assert_eq!(
+			Normalized::new("BiGbIrD").to_string(),
+			Normalized::new("bigbird").to_string()
+		);
 	}
 
 	#[test]
+	#[cfg(feature = "fred")]
 	fn normalized_from_redis() {
 		assert_eq!(
 			Normalized::from_value(RedisValue::from_static_str("BiG bIrD"))
@@ -273,7 +369,81 @@ mod tests {
 			"42".to_string()
 		);
 
-		assert!(Link::from_value(RedisValue::Null).is_err());
+		assert_eq!(
+			Normalized::from_value(RedisValue::Null).unwrap_err().kind(),
+			&RedisErrorKind::Parse
+		);
+	}
+
+	#[test]
+	fn normalized_serde() {
+		assert_eq!(
+			Normalized::new("BiGbIrD"),
+			serde_json::from_str::<Normalized>(r#"" ᴮᴵᴳᴮᴵᴿᴰ""#).unwrap()
+		);
+
+		assert_eq!(
+			Normalized::new("BiGbIrD"),
+			serde_json::from_str::<Normalized>(
+				&serde_json::to_string(&Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")).unwrap()
+			)
+			.unwrap()
+		);
+	}
+
+	#[test]
+	fn normalized_cmp() {
+		assert_eq!(
+			Normalized::new("Big Bird	").cmp(&Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")),
+			Ordering::Equal
+		);
+		assert_eq!(
+			Normalized::new("SmaLlbIrD").cmp(&Normalized::new("smolbird")),
+			Ordering::Less
+		);
+		assert_eq!(
+			Normalized::new(" ˢᴹᵒᶫᴮᴵᴿᴰ").cmp(&Normalized::new("Small Bird	")),
+			Ordering::Greater
+		);
+
+		assert_eq!(
+			Normalized::new("Big Bird	").partial_cmp(&Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")),
+			Some(Ordering::Equal)
+		);
+		assert_eq!(
+			Normalized::new("SmaLlbIrD").partial_cmp(&Normalized::new("smolbird")),
+			Some(Ordering::Less)
+		);
+		assert_eq!(
+			Normalized::new(" ˢᴹᵒᶫᴮᴵᴿᴰ").partial_cmp(&Normalized::new("Small Bird	")),
+			Some(Ordering::Greater)
+		);
+
+		let ohm = "Ω";
+		let omega = "Ω";
+		assert_ne!(
+			ohm.cmp(omega),
+			Normalized::new(ohm).cmp(&Normalized::new(omega))
+		);
+		assert_ne!(
+			ohm.partial_cmp(omega),
+			Normalized::new(ohm).partial_cmp(&Normalized::new(omega))
+		);
+		assert!(Normalized::new(ohm) == Normalized::new(omega).clone());
+		assert!(Normalized::new(ohm).clone() == Normalized::new(omega));
+
+		let letters = "ffi";
+		let ligature = "ﬃ";
+		assert_ne!(
+			letters.cmp(ligature),
+			Normalized::new(letters).cmp(&Normalized::new(ligature))
+		);
+		assert_ne!(
+			letters.partial_cmp(ligature),
+			Normalized::new(letters).partial_cmp(&Normalized::new(ligature))
+		);
+		assert!(Normalized::new(letters) == Normalized::new(ligature).clone());
+		assert!(Normalized::new(letters).clone() == Normalized::new(ligature));
 	}
 
 	#[test]
@@ -284,10 +454,20 @@ mod tests {
 		);
 
 		assert_eq!(
+			Link::new("http://example.com").unwrap(),
+			Link::new_unchecked("http://example.com/".to_string())
+		);
+
+		assert_eq!(
 			Link::new("https://example.com/test?test=test#test")
 				.unwrap()
 				.into_string(),
 			"https://example.com/test?test=test#test".to_string()
+		);
+
+		assert_eq!(
+			Link::new("https://example.com/test?test=test#test").unwrap(),
+			Link::new_unchecked("https://example.com/test?test=test#test".to_string())
 		);
 
 		assert_eq!(
@@ -348,12 +528,14 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "fred")]
 	fn link_from_redis() {
 		assert_eq!(
-			Link::from_value(RedisValue::from_static_str("HTtPS://eXaMpLe.com?"))
-				.unwrap()
-				.into_string(),
-			"https://example.com/?".to_string()
+			Link::from_value(RedisValue::from_static_str(
+				"https://EXAMPLE.com/test?test=test#test"
+			))
+			.unwrap(),
+			Link::new("https://example.COM/test?test=test#test").unwrap()
 		);
 
 		assert!(Link::from_value(RedisValue::from_static_str(
@@ -361,6 +543,121 @@ mod tests {
 		))
 		.is_err());
 
-		assert!(Link::from_value(RedisValue::Null).is_err());
+		assert_eq!(
+			Link::from_value(RedisValue::Null).unwrap_err().kind(),
+			&RedisErrorKind::Parse
+		);
+	}
+
+	#[test]
+	fn link_serde() {
+		assert_eq!(
+			serde_json::from_str::<Link>(r#""https://EXAMPLE.com/test?test=test#test""#).unwrap(),
+			Link::new("https://example.COM/test?test=test#test").unwrap()
+		);
+
+		assert_eq!(
+			serde_json::from_str::<Link>(
+				&serde_json::to_string(
+					&Link::new("https://EXAMPLE.com/test?test=test#test").unwrap()
+				)
+				.unwrap()
+			)
+			.unwrap(),
+			Link::new("https://example.COM/test?test=test#test").unwrap()
+		);
+
+		assert!(serde_json::from_str::<Link>(
+			r#""https_colon_slash_slash_example_dot_com_slash_test""#
+		)
+		.is_err());
+	}
+
+	#[test]
+	fn link_cmp() {
+		assert_eq!(
+			Link::new("https://example.com/test?test=test#test")
+				.unwrap()
+				.cmp(&Link::new("https://example.com/test?test=test#test").unwrap()),
+			Ordering::Equal
+		);
+
+		assert_eq!(
+			Link::new("https://example.com/test?test=test#test")
+				.unwrap()
+				.partial_cmp(&Link::new("https://example.com/test?test=test#test").unwrap()),
+			Some(Ordering::Equal)
+		);
+
+		assert_eq!(
+			Link::new("https://example.com/test?test=test#test")
+				.unwrap()
+				.into_string()
+				.cmp(
+					&Link::new("https://xn--xmp-qla7xe00a.xn--m-uga3d/")
+						.unwrap()
+						.into_string()
+				),
+			Ordering::Less
+		);
+
+		assert_eq!(
+			Link::new("https://xn--xmp-qla7xe00a.xn--m-uga3d/")
+				.unwrap()
+				.into_string()
+				.partial_cmp(
+					&Link::new("https://example.com/test?test=test#test")
+						.unwrap()
+						.into_string()
+				),
+			Some(Ordering::Greater)
+		);
+	}
+
+	#[test]
+	fn link_to_from_string() {
+		assert_eq!(
+			Link::new("http://example.com").unwrap().to_string(),
+			"http://example.com/".to_string()
+		);
+
+		assert_eq!(
+			Link::try_from("http://example.com").unwrap().to_string(),
+			"http://example.com/".to_string()
+		);
+
+		assert_eq!(
+			Link::try_from("http://example.com".to_string())
+				.unwrap()
+				.to_string(),
+			"http://example.com/".to_string()
+		);
+
+		assert_eq!(
+			Link::try_from(&"http://example.com".to_string())
+				.unwrap()
+				.to_string(),
+			"http://example.com/".to_string()
+		);
+
+		assert_eq!(
+			"http://example.com".parse::<Link>().unwrap().into_string(),
+			"http://example.com/".to_string()
+		);
+
+		assert_eq!(
+			Link::new("https://example.com/test?test=test#test")
+				.unwrap()
+				.to_string(),
+			"https://example.com/test?test=test#test".to_string()
+		);
+
+		assert_eq!(
+			"https://example.com/test?test=test#test"
+				.parse::<Link>()
+				.unwrap()
+				.into_string(),
+			"https://example.com/test?test=test#test".to_string()
+		);
 	}
 }

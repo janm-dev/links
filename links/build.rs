@@ -5,6 +5,7 @@ use std::{
 	rc::Rc,
 };
 
+use base64::engine::{general_purpose::STANDARD, Engine};
 use lol_html::{element, text, RewriteStrSettings};
 use minify_html::Cfg;
 use sha2::{Digest, Sha256};
@@ -15,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.build_client(true)
 		.build_server(true)
 		.compile_well_known_types(true)
-		.compile(&["./proto/links.proto"], &["./proto"])?;
+		.compile(&["../proto/links.proto"], &["../proto"])?;
 
 	// Disable pedantic clippy lints in the generated file (if anyone has a
 	// more elegant solution to this, please open an issue)
@@ -24,17 +25,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let proto = fs::read_to_string(&proto_path)?;
 	fs::write(
 		&proto_path,
-		"#[allow(clippy::pedantic, clippy::cargo, clippy::nursery, missing_docs, rustdoc::all, \
+		"#[allow(clippy::pedantic, clippy::cargo, clippy::nursery, missing_docs, \
 		 clippy::derive_partial_eq_without_eq)]\npub mod rpc {\n"
 			.to_string() + &proto
 			+ "}\n",
 	)?;
 
 	// Include and minify html pages
-	minify("not-found", PathBuf::from("misc/not-found.html"));
-	minify("redirect", PathBuf::from("misc/redirect.html"));
-	minify("bad-request", PathBuf::from("misc/bad-request.html"));
-	minify("https-redirect", PathBuf::from("misc/https-redirect.html"));
+	minify("not-found", PathBuf::from("../misc/not-found.html"));
+	minify("redirect", PathBuf::from("../misc/redirect.html"));
+	minify("bad-request", PathBuf::from("../misc/bad-request.html"));
+	minify(
+		"https-redirect",
+		PathBuf::from("../misc/https-redirect.html"),
+	);
 
 	// Generate hashes for the CSP header
 	hash_tags("style", [
@@ -44,8 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		"https-redirect",
 	]);
 
-	println!("cargo:rerun-if-changed=./proto/links.proto");
-	println!("cargo:rerun-if-changed=./proto/*");
+	println!("cargo:rerun-if-changed=../proto/links.proto");
+	println!("cargo:rerun-if-changed=../proto/*");
 
 	Ok(())
 }
@@ -125,7 +129,7 @@ fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static st
 				let mut hasher = Sha256::new();
 				hasher.update(v);
 				let res = hasher.finalize();
-				"'sha256-".to_string() + &base64::encode(res) + "'"
+				"'sha256-".to_string() + &STANDARD.encode(res) + "'"
 			})
 			.collect::<Vec<String>>()[..]
 			.join(" ");

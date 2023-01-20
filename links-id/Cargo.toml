@@ -1,0 +1,26 @@
+[package]
+name = "links-id"
+version = "0.2.0"
+edition = "2021"
+publish = false
+authors = ["janm-dev"]
+description = "Simple, readable, and compact identifiers intended for web-based applications."
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/janm-dev/links"
+rust-version = "1.64"
+
+[features]
+# Support for conversion to/from Redis types using `fred`
+fred = ["dep:fred"]
+
+[dependencies]
+fred = { version = "5.2.0", optional = true, default-features = false }
+lazy_static = "1.4.0"
+rand = "0.8.5"
+regex = "1.7.1"
+serde = "1.0.152"
+serde_derive = "1.0.152"
+thiserror = "1.0.38"
+
+[dev-dependencies]
+serde_json = "1.0.91"

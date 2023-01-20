@@ -15,11 +15,11 @@ use links::{
 		RemRedirectRequest, RemStatisticsRequest, RemVanityRequest, SetRedirectRequest,
 		SetVanityRequest,
 	},
-	id::{ConversionError, Id},
-	normalized::{Link, Normalized},
 	server::Protocol,
 	stats::{IdOrVanity, Statistic, StatisticDescription, StatisticType},
 };
+use links_id::{ConversionError, Id};
+use links_normalized::{Link, Normalized};
 use tonic::{
 	codec::CompressionEncoding,
 	metadata::AsciiMetadataValue,

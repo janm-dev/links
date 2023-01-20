@@ -34,6 +34,12 @@ exceptions = [
 	{ name = "links", version = "*", allow = [
 		"AGPL-3.0", # https://spdx.org/licenses/AGPL-3.0-or-later
 	] },
+	{ name = "links-id", version = "*", allow = [
+		"AGPL-3.0", # https://spdx.org/licenses/AGPL-3.0-or-later
+	] },
+	{ name = "links-normalized", version = "*", allow = [
+		"AGPL-3.0", # https://spdx.org/licenses/AGPL-3.0-or-later
+	] },
 	{ name = "unicode-ident", version = "*", allow = [
 		"Unicode-DFS-2016", # https://spdx.org/licenses/Unicode-DFS-2016
 	] },
@@ -59,7 +65,7 @@ ignore = false
 
 [bans]
 multiple-versions = "allow"
-wildcards = "deny"
+wildcards = "warn"
 
 [sources]
 unknown-registry = "deny"

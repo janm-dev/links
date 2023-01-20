@@ -139,23 +139,20 @@ To build a links redirector Docker container, run `docker build .`. The server b
 
 ### MSRV
 
-The minimum supported rust version is currently Rust 1.62, but this may change in the future with a minor version update.
+The minimum supported rust version is currently Rust 1.64, but this may change in the future with a minor version update.
 
 ## Directory structure
 
-| path          | contents                                               |
-| ------------- | ------------------------------------------------------ |
-| `/misc/`      | miscellaneous static assets                            |
-| `/proto/`     | links protobuf/gRPC files for the low-level API        |
-| `/src/`       | rust source for all non-website links stuff            |
-| `/src/bin/`   | executable binary sources                              |
-| `/src/store/` | implementation of storage backends                     |
-| `/src/stats/` | statistics collection for the redirector               |
-| `/tests/`     | integration/end-to-end testing of links                |
-| `/.github/`   | github-specific configuration/resources                |
-| `/target/`    | rust build output <sup>_(do not commit)_</sup>         |
-| `/build.rs`   | rust build script, compiles protobuf and minifies html |
-| `/Dockerfile` | links redirector server docker container               |
+| path                 | contents                                          |
+| -------------------- | ------------------------------------------------- |
+| `/misc/`             | miscellaneous static assets                       |
+| `/proto/`            | links protobuf/gRPC files for the low-level API   |
+| `/.github/`          | github-specific configuration/resources           |
+| `/target/`           | rust build output <sup>_(do not commit)_</sup>    |
+| `/links/`            | the main links library, redirector server and CLI |
+| `/links-id/`         | the links ID library                              |
+| `/links-normalized/` | links normalized string data structures           |
+| `/Dockerfile`        | links redirector server docker container          |
 
 ## Attribution
 

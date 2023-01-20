@@ -35,13 +35,13 @@ use fred::{
 	prelude::*,
 	types::{RespVersion, TlsConfig},
 };
+use links_id::Id;
+use links_normalized::{Link, Normalized};
 use tokio::try_join;
 use tracing::instrument;
 
 use super::BackendType;
 use crate::{
-	id::Id,
-	normalized::{Link, Normalized},
 	stats::{Statistic, StatisticDescription, StatisticValue},
 	store::StoreBackend,
 };

@@ -22,6 +22,12 @@ no-clearly-defined = true
 [links]
 accepted = ["AGPL-3.0"]
 
+[links-id]
+accepted = ["AGPL-3.0"]
+
+[links-normalized]
+accepted = ["AGPL-3.0"]
+
 [unicode-ident]
 accepted = ["Unicode-DFS-2016"]
 

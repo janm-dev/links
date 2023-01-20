@@ -75,7 +75,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut args = Arguments::from_env();
 
 	if args.contains(["-h", "--help"]) {
-		println!("{}", SERVER_HELP);
+		println!("{SERVER_HELP}");
 		Err(anyhow!(""))?;
 	}
 
