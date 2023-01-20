@@ -13,22 +13,15 @@ jobs:
       LINKS_TEST_EXTERNAL: docker
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: docker build . -t links:test
       - run: sudo apt-get install -y ca-certificates && sudo cp ${{ github.workspace }}/links/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates && sudo /sbin/iptables -F && printf 'net.ipv4.ip_unprivileged_port_start = 50\nnet.ipv6.ip_unprivileged_port_start = 50\n' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf && sudo sysctl --system
-      - uses: Swatinem/rust-cache@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: "--test '*'"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo --test '*'
 
   test-rust:
     strategy:
@@ -39,20 +32,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.version }}
-          override: true
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: sudo apt-get install -y ca-certificates && sudo cp ${{ github.workspace }}/links/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates && sudo /sbin/iptables -F && printf 'net.ipv4.ip_unprivileged_port_start = 50\nnet.ipv6.ip_unprivileged_port_start = 50\n' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf && sudo sysctl --system
-      - uses: Swatinem/rust-cache@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test
 
   test-redis:
     strategy:
@@ -63,19 +52,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: sudo apt-get install -y ca-certificates && sudo cp ${{ github.workspace }}/links/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates && sudo /sbin/iptables -F && printf 'net.ipv4.ip_unprivileged_port_start = 50\nnet.ipv6.ip_unprivileged_port_start = 50\n' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf && sudo sysctl --system
       - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ github.workspace }}/links/tests/cert.pem:/cert.pem:ro -v ${{ github.workspace }}/links/tests/key.pem:/key.pem:ro redis:${{ matrix.version }} --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
-      - uses: Swatinem/rust-cache@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: "--features test-redis"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --features test-redis

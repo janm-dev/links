@@ -15,20 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        id: install-toolchain
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cargo/bin/
-          key: cargo-audit-and-outdated-${{ steps.install-toolchain.outputs.rustc_hash }}
+      - uses: Swatinem/rust-cache@v2
       - run: cargo install cargo-outdated
       - uses: EmbarkStudios/cargo-deny-action@v1
         if: success() || failure()
