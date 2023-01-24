@@ -31,7 +31,7 @@ mod misc;
 use std::num::NonZeroU64;
 
 use hyper::{http::HeaderValue, Request, StatusCode};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 pub use self::{internals::*, misc::*};
 

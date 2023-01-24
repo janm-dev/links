@@ -13,7 +13,7 @@ use std::{
 };
 
 use pico_args::Arguments;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
 use thiserror::Error;

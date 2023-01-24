@@ -22,7 +22,7 @@ use fred::{
 	error::{RedisError, RedisErrorKind},
 	types::{FromRedis, RedisValue},
 };
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 use uriparse::{Scheme, URIReference};
 

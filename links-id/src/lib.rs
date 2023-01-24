@@ -20,7 +20,7 @@ use fred::{
 };
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 /// The error returned by fallible conversions into IDs.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]

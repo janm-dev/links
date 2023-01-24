@@ -5,7 +5,7 @@ use std::{
 	str::FromStr,
 };
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use time::{
 	format_description::well_known::{
 		iso8601::{Config as TimeFormatConfig, EncodedConfig, TimePrecision},

@@ -47,7 +47,7 @@ use std::{
 	str::FromStr,
 };
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use tracing::Level;
 
 pub use self::{

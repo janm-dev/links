@@ -22,7 +22,7 @@ use backend::StoreBackend;
 use links_id::Id;
 use links_normalized::{Link, Normalized};
 use parking_lot::RwLock;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use tokio::spawn;
 use tracing::{debug, instrument, trace};
 
