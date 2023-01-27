@@ -392,6 +392,7 @@ mod tests {
 	}
 
 	#[test]
+	#[allow(clippy::redundant_clone)]
 	fn normalized_cmp() {
 		assert_eq!(
 			Normalized::new("Big Bird	").cmp(&Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")),
