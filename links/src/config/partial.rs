@@ -12,12 +12,12 @@ use std::{
 	str::FromStr,
 };
 
+use basic_toml::Error as TomlError;
 use pico_args::Arguments;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
 use thiserror::Error;
-use toml::de::Error as TomlError;
 use tracing::instrument;
 
 use crate::{
@@ -110,7 +110,7 @@ impl Partial {
 	/// # Errors
 	/// Returns a `FromFileError::Toml` if deserialization fails.
 	pub fn from_toml(toml: &str) -> Result<Self, IntoPartialError> {
-		Ok(toml::from_str(toml)?)
+		Ok(basic_toml::from_str(toml)?)
 	}
 
 	/// Parse a [`Partial`] from a [yaml](https://yaml.org/) string

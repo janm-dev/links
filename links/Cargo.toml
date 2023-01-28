@@ -27,6 +27,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 ] }
 anyhow = "1.0.68"
 async-trait = "0.1.63"
+basic-toml = "0.1.0"
 clap = { version = "4.1.4", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
@@ -60,7 +61,6 @@ tokio = { version = "1.24.2", features = [
 	"rt-multi-thread",
 ] }
 tokio-rustls = "0.23.4"
-toml = "0.5.11"
 tonic = { version = "0.8.3", default-features = false, features = [
 	"gzip",
 	"tls",
