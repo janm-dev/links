@@ -27,11 +27,9 @@
 //! redirector, and one RPC handler.
 
 use std::{
-	error::Error,
-	fmt::{Debug, Display, Formatter, Result as FmtResult},
+	fmt::{Debug, Formatter, Result as FmtResult},
 	net::{IpAddr, Ipv6Addr, SocketAddr},
 	os::raw::c_int,
-	str::FromStr,
 	sync::Arc,
 	thread,
 };
@@ -41,6 +39,7 @@ use links_id::Id;
 use links_normalized::{Link, Normalized};
 use parking_lot::Mutex;
 use socket2::{Domain, Protocol as SocketProtocol, Socket, Type};
+use strum::{Display as EnumDisplay, EnumString};
 use tokio::{
 	io::{AsyncRead, AsyncWrite, Error as IoError},
 	net::{TcpListener, TcpStream},
@@ -406,24 +405,9 @@ impl Debug for TlsRpcAcceptor {
 	}
 }
 
-/// The error returned by fallible conversions into [`Protocol`], containing the
-/// invalid input value
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IntoProtocolError(String);
-
-impl Error for IntoProtocolError {}
-
-impl Display for IntoProtocolError {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_fmt(format_args!(
-			"\"{}\" is not a protocol supported by links",
-			self.0
-		))
-	}
-}
-
 /// The protocols that links redirector servers can listen on
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, EnumDisplay)]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum Protocol {
 	/// HTTP/1.0, HTTP/1.1, and HTTP/2 (h2c) over TCP (unencrypted)
 	Http,
@@ -447,39 +431,12 @@ impl Protocol {
 
 	/// Get the default port for this [`Protocol`]
 	#[must_use]
-	pub const fn default_port(&self) -> u16 {
+	pub const fn default_port(self) -> u16 {
 		match self {
 			Self::Http => Self::HTTP_DEFAULT_PORT,
 			Self::Https => Self::HTTPS_DEFAULT_PORT,
 			Self::Grpc => Self::GRPC_DEFAULT_PORT,
 			Self::Grpcs => Self::GRPCS_DEFAULT_PORT,
-		}
-	}
-}
-
-impl Display for Protocol {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_str(match self {
-			Self::Http => "http",
-			Self::Https => "https",
-			Self::Grpc => "grpc",
-			Self::Grpcs => "grpcs",
-		})
-	}
-}
-
-impl FromStr for Protocol {
-	type Err = IntoProtocolError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let s = s.to_lowercase();
-
-		match s.as_str() {
-			"http" => Ok(Self::Http),
-			"https" => Ok(Self::Https),
-			"grpc" => Ok(Self::Grpc),
-			"grpcs" => Ok(Self::Grpcs),
-			_ => Err(IntoProtocolError(s)),
 		}
 	}
 }

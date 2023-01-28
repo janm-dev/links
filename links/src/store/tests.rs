@@ -8,7 +8,7 @@ use super::*;
 use crate::stats::{StatisticData, StatisticTime, StatisticType};
 
 pub fn store_type<S: StoreBackend>() {
-	let name = S::store_type().to_str();
+	let name = S::store_type().as_str();
 
 	assert!(!name.is_empty());
 	assert!(name.is_ascii());
@@ -20,7 +20,7 @@ pub fn store_type<S: StoreBackend>() {
 }
 
 pub fn get_store_type<S: StoreBackend>(store: &S) {
-	let name = store.get_store_type().to_str();
+	let name = store.get_store_type().as_str();
 
 	assert!(!name.is_empty());
 	assert!(name.is_ascii());
@@ -29,7 +29,7 @@ pub fn get_store_type<S: StoreBackend>(store: &S) {
 		.all(|c| (c.is_ascii_alphabetic() && c.is_ascii_lowercase())
 			|| c.is_ascii_digit()
 			|| c == '_'));
-	assert_eq!(name, S::store_type().to_str());
+	assert_eq!(name, S::store_type().as_str());
 }
 
 pub async fn get_redirect(store: &impl StoreBackend) {

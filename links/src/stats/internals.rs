@@ -6,6 +6,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use strum::{Display as EnumDisplay, EnumString};
 use time::{
 	format_description::well_known::{
 		iso8601::{Config as TimeFormatConfig, EncodedConfig, TimePrecision},
@@ -147,8 +148,11 @@ impl Display for StatisticTime {
 ///
 /// Each of the variants of this enum is one type of statistic, that along with
 /// the statistic's data and link comprises one full [`Statistic`]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+	Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumString, EnumDisplay,
+)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 #[non_exhaustive]
 pub enum StatisticType {
 	/// Total number of requests
@@ -233,62 +237,6 @@ pub enum StatisticType {
 	/// [header]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-CH-UA-Platform
 	UserAgentPlatform,
 }
-
-impl TryFrom<&str> for StatisticType {
-	type Error = ParseStatisticTypeError;
-
-	fn try_from(s: &str) -> Result<Self, Self::Error> {
-		match s {
-			"request" => Ok(Self::Request),
-			"host_request" => Ok(Self::HostRequest),
-			"sni_request" => Ok(Self::SniRequest),
-			"status_code" => Ok(Self::StatusCode),
-			"http_version" => Ok(Self::HttpVersion),
-			"tls_version" => Ok(Self::TlsVersion),
-			"tls_cipher_suite" => Ok(Self::TlsCipherSuite),
-			"user_agent" => Ok(Self::UserAgent),
-			"user_agent_mobile" => Ok(Self::UserAgentMobile),
-			"user_agent_platform" => Ok(Self::UserAgentPlatform),
-			_ => Err(ParseStatisticTypeError),
-		}
-	}
-}
-
-impl FromStr for StatisticType {
-	type Err = ParseStatisticTypeError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		Self::try_from(s)
-	}
-}
-
-impl From<StatisticType> for &str {
-	fn from(stat_type: StatisticType) -> &'static str {
-		match stat_type {
-			StatisticType::Request => "request",
-			StatisticType::HostRequest => "host_request",
-			StatisticType::SniRequest => "sni_request",
-			StatisticType::StatusCode => "status_code",
-			StatisticType::HttpVersion => "http_version",
-			StatisticType::TlsVersion => "tls_version",
-			StatisticType::TlsCipherSuite => "tls_cipher_suite",
-			StatisticType::UserAgent => "user_agent",
-			StatisticType::UserAgentMobile => "user_agent_mobile",
-			StatisticType::UserAgentPlatform => "user_agent_platform",
-		}
-	}
-}
-
-impl Display for StatisticType {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_str((*self).into())
-	}
-}
-
-/// The error returned by fallible conversions into a [`StatisticType`]
-#[derive(Debug, Clone, Copy, thiserror::Error)]
-#[error("the provided value was not a valid statistic type")]
-pub struct ParseStatisticTypeError;
 
 #[cfg(test)]
 mod tests {

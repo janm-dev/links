@@ -9,13 +9,7 @@ mod redis;
 #[cfg(test)]
 mod tests;
 
-use std::{
-	collections::HashMap,
-	error::Error,
-	fmt::{Display, Formatter, Result as FmtResult},
-	str::FromStr,
-	sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use backend::StoreBackend;
@@ -23,6 +17,7 @@ use links_id::Id;
 use links_normalized::{Link, Normalized};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
+use strum::{Display as EnumDisplay, EnumString, IntoStaticStr};
 use tokio::spawn;
 use tracing::{debug, instrument, trace};
 
@@ -32,9 +27,22 @@ use crate::stats::{Statistic, StatisticDescription, StatisticValue};
 /// The type of store backend used by the links redirector server. All variants
 /// must have a canonical human-readable string representation using only
 /// 'a'-'z', '0'-'9', and '_'.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+	Copy,
+	Clone,
+	Debug,
+	Default,
+	PartialEq,
+	Eq,
+	Serialize,
+	Deserialize,
+	EnumString,
+	EnumDisplay,
+	IntoStaticStr,
+)]
 #[non_exhaustive]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum BackendType {
 	/// A fully in-memory store backend, storing all data in RAM
 	/// with no other backups, but without any external dependencies. Not
@@ -46,44 +54,12 @@ pub enum BackendType {
 }
 
 impl BackendType {
-	const fn to_str(self) -> &'static str {
-		match self {
-			Self::Memory => "memory",
-			Self::Redis => "redis",
-		}
+	/// Get the backend type's name as a string
+	#[must_use]
+	pub fn as_str(self) -> &'static str {
+		self.into()
 	}
 }
-
-impl FromStr for BackendType {
-	type Err = IntoBackendTypeError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"memory" => Ok(Self::Memory),
-			"redis" => Ok(Self::Redis),
-			s => Err(IntoBackendTypeError(s.to_string())),
-		}
-	}
-}
-
-impl Display for BackendType {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_str(self.to_str())
-	}
-}
-
-/// The error returned by fallible conversions into a [`BackendType`]. Contains
-/// the original input string.
-#[derive(Debug, Clone)]
-pub struct IntoBackendTypeError(String);
-
-impl Display for IntoBackendTypeError {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_fmt(format_args!("unrecognized store backend type {}", self.0))
-	}
-}
-
-impl Error for IntoBackendTypeError {}
 
 /// A holder for a [`Store`], which allows the store to be updated on the fly.
 #[derive(Debug)]
@@ -167,7 +143,7 @@ impl Store {
 	/// human-readable name using only 'a'-'z', '0'-'9', and '_'.
 	#[must_use]
 	pub fn backend_name(&self) -> &'static str {
-		self.store.get_store_type().to_str()
+		self.store.get_store_type().as_str()
 	}
 
 	/// Get a redirect. Returns the full `to` link corresponding to the `from`
@@ -316,6 +292,8 @@ impl Store {
 
 #[cfg(test)]
 mod store_tests {
+	use std::str::FromStr;
+
 	use super::*;
 
 	#[tokio::test]
@@ -353,12 +331,12 @@ mod store_tests {
 	fn type_to_from() {
 		assert_eq!(
 			BackendType::Memory,
-			BackendType::Memory.to_str().parse().unwrap()
+			BackendType::Memory.as_str().parse().unwrap()
 		);
 
 		assert_eq!(
 			BackendType::Redis,
-			BackendType::Redis.to_str().parse().unwrap()
+			BackendType::Redis.as_str().parse().unwrap()
 		);
 	}
 

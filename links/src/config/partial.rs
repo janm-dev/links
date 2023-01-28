@@ -3,9 +3,7 @@
 use std::{
 	collections::HashMap,
 	env,
-	error::Error,
 	ffi::OsStr,
-	fmt::{Display, Formatter, Result as FmtResult},
 	fs,
 	io::Error as IoError,
 	path::{Path, PathBuf},
@@ -17,6 +15,7 @@ use pico_args::Arguments;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
+use strum::{Display as EnumDisplay, EnumString};
 use thiserror::Error;
 use tracing::instrument;
 
@@ -297,15 +296,20 @@ impl From<&Config> for Partial {
 /// - <https://hstspreload.org/>
 /// - <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security>
 /// - <https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security>
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+	Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, EnumString, EnumDisplay,
+)]
 #[allow(clippy::module_name_repetitions)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum PartialHsts {
 	/// Don't send the HTTP Strict Transport Security header
+	#[strum(serialize = "disable", serialize = "off")]
 	Disable,
 	/// Send the HSTS header without the `preload` or `includeSubDomains`
 	/// attributes.
 	#[default]
+	#[strum(serialize = "enable", serialize = "on")]
 	Enable,
 	/// Send the HSTS header with the `includeSubDomains` attribute, but without
 	/// `preload`
@@ -317,6 +321,11 @@ pub enum PartialHsts {
 	/// More info on <https://hstspreload.org/>,
 	/// <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security>,
 	/// and <https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security>.
+	#[strum(
+		serialize = "includeSubDomains",
+		serialize = "include",
+		to_string = "include"
+	)]
 	IncludeSubDomains,
 	/// Send the HSTS header with the `preload` and `includeSubDomains`
 	/// attributes
@@ -331,43 +340,4 @@ pub enum PartialHsts {
 	/// and <https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security> first,
 	/// and make sure that this won't cause any problems before enabling it.
 	Preload,
-}
-
-/// The error returned by fallible conversions from a string to [`PartialHsts`].
-/// Includes the original input string.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-#[allow(clippy::module_name_repetitions)]
-pub struct PartialHstsParseError(String);
-
-impl Error for PartialHstsParseError {}
-
-impl Display for PartialHstsParseError {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_fmt(format_args!("unknown HSTS option: {}", self.0))
-	}
-}
-
-impl FromStr for PartialHsts {
-	type Err = PartialHstsParseError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"disable" | "off" => Ok(Self::Disable),
-			"enable" | "on" => Ok(Self::Enable),
-			"include" | "includeSubDomains" => Ok(Self::IncludeSubDomains),
-			"preload" => Ok(Self::Preload),
-			_ => Err(PartialHstsParseError(s.to_string())),
-		}
-	}
-}
-
-impl Display for PartialHsts {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_str(match self {
-			Self::Disable => "disable",
-			Self::Enable => "enable",
-			Self::IncludeSubDomains => "include",
-			Self::Preload => "preload",
-		})
-	}
 }

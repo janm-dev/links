@@ -40,7 +40,6 @@ mod global;
 mod partial;
 
 use std::{
-	error::Error,
 	fmt::{Debug, Display, Formatter, Result as FmtResult},
 	net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
 	num::ParseIntError,
@@ -48,13 +47,14 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use strum::{Display as EnumDisplay, EnumString, ParseError};
 use tracing::Level;
 
 pub use self::{
 	global::{Config, Hsts, Redirector, Tls},
 	partial::{IntoPartialError, Partial, PartialHsts},
 };
-use crate::server::{IntoProtocolError, Protocol};
+use crate::server::Protocol;
 
 /// The error returned by fallible conversions into [`ListenAddress`],
 /// containing the invalid input value
@@ -65,7 +65,7 @@ pub enum IntoListenAddressError {
 	General(String),
 	/// Parse error from the protocol
 	#[error("{0}")]
-	Protocol(#[from] IntoProtocolError),
+	Protocol(#[from] ParseError),
 	/// Parse error from the IP address
 	#[error("invalid IP address for listener: {0}")]
 	Address(#[from] AddrParseError),
@@ -191,8 +191,11 @@ impl From<ListenAddress> for String {
 
 /// Log level, corresponding roughly to `tracing`'s, but with the addition of
 /// [`Verbose`][`LogLevel::Verbose`] between debug and info.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+	Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, EnumString, EnumDisplay,
+)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum LogLevel {
 	/// Lowest log level. Log everything, including very verbose debug/trace
 	/// info. May expose private/secret information in logs.
@@ -213,48 +216,6 @@ pub enum LogLevel {
 	/// Log only critical errors. Generally not recommended, as this hides a lot
 	/// of useful information from logs.
 	Error,
-}
-
-/// The error returned by fallible conversions from a string to [`LogLevel`].
-/// Includes the original input string.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct LogLevelParseError(String);
-
-impl Error for LogLevelParseError {}
-
-impl Display for LogLevelParseError {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_fmt(format_args!("unknown log level: {}", self.0))
-	}
-}
-
-impl FromStr for LogLevel {
-	type Err = LogLevelParseError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"trace" => Ok(Self::Trace),
-			"debug" => Ok(Self::Debug),
-			"verbose" => Ok(Self::Verbose),
-			"info" => Ok(Self::Info),
-			"warn" | "warning" => Ok(Self::Warn),
-			"error" => Ok(Self::Error),
-			_ => Err(LogLevelParseError(s.to_string())),
-		}
-	}
-}
-
-impl Display for LogLevel {
-	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
-		fmt.write_str(match self {
-			Self::Trace => "trace",
-			Self::Debug => "debug",
-			Self::Verbose => "verbose",
-			Self::Info => "info",
-			Self::Warn => "warn",
-			Self::Error => "error",
-		})
-	}
 }
 
 impl From<LogLevel> for Level {
@@ -520,7 +481,6 @@ mod tests {
 		assert_eq!("verbose".parse(), Ok(LogLevel::Verbose));
 		assert_eq!("info".parse(), Ok(LogLevel::Info));
 		assert_eq!("warn".parse(), Ok(LogLevel::Warn));
-		assert_eq!("warning".parse(), Ok(LogLevel::Warn));
 
 		assert_eq!("info".parse::<LogLevel>().map(Into::into), Ok(Level::INFO));
 		assert_eq!(
