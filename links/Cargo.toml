@@ -79,7 +79,7 @@ strum = { version = "0.24.1", features = ["derive"] }
 [build-dependencies]
 base64 = "0.21.0"
 lol_html = "0.3.2"
-minify-html = "0.10.7"
+minify-html = "0.10.8"
 sha2 = "0.10.6"
 tonic-build = "0.8.4"
 
