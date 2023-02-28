@@ -515,6 +515,8 @@ mod tests {
 
 		assert!(Link::new("/test").is_err());
 
+		assert!(Link::new("http:/test").is_err());
+
 		assert!(Link::new("example.com/test").is_err());
 
 		assert!(Link::new("//example.com/test").is_err());
