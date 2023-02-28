@@ -3,7 +3,7 @@
 	html_logo_url = "https://raw.githubusercontent.com/janm-dev/links/main/misc/icon.svg",
 	html_favicon_url = "https://raw.githubusercontent.com/janm-dev/links/main/misc/icon.svg"
 )]
-#![deny(unsafe_code)]
+#![forbid(unsafe_code)]
 #![warn(
 	clippy::pedantic,
 	clippy::cargo,
