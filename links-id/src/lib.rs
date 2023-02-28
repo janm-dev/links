@@ -325,6 +325,37 @@ mod tests {
 	fn to_string() {
 		assert_eq!(Id([0x21, 0x22, 0x23, 0x24, 0x25]).to_string(), "1HJ6CH79");
 		assert_eq!(Id([0x00, 0x22, 0x44, 0x66, 0x88]).to_string(), "06FHjHkx");
+
+		assert_eq!(
+			format!("{}", Id([0x21, 0x22, 0x23, 0x24, 0x25])),
+			"1HJ6CH79"
+		);
+		assert_eq!(
+			format!("{}", Id([0x00, 0x22, 0x44, 0x66, 0x88])),
+			"06FHjHkx"
+		);
+
+		assert_eq!(
+			format!("{:?}", Id([0x21, 0x22, 0x23, 0x24, 0x25])),
+			r#"Id("1HJ6CH79")"#
+		);
+		assert_eq!(
+			format!("{:?}", Id([0x00, 0x22, 0x44, 0x66, 0x88])),
+			r#"Id("06FHjHkx")"#
+		);
+
+		assert_eq!(
+			format!("{:#?}", Id([0x21, 0x22, 0x23, 0x24, 0x25]))
+				.split_ascii_whitespace()
+				.collect::<String>(),
+			"Id([33,34,35,36,37,],)"
+		);
+		assert_eq!(
+			format!("{:#?}", Id([0x00, 0x22, 0x44, 0x66, 0x88]))
+				.split_ascii_whitespace()
+				.collect::<String>(),
+			"Id([0,34,68,102,136,],)"
+		);
 	}
 
 	#[test]
