@@ -1076,7 +1076,6 @@ dependencies = [
  "colored",
  "fred",
  "hyper",
- "lazy_static",
  "links-id",
  "links-normalized",
  "lol_html",
