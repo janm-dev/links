@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	fs::write(
 		&proto_path,
 		"#[allow(clippy::pedantic, clippy::cargo, clippy::nursery, missing_docs, \
-		 clippy::derive_partial_eq_without_eq)]\npub mod rpc {\n"
+		 clippy::derive_partial_eq_without_eq, clippy::redundant_async_block)]\npub mod rpc {\n"
 			.to_string() + &proto
 			+ "}\n",
 	)?;
