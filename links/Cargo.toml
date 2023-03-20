@@ -11,9 +11,6 @@ rust-version = "1.64"
 default-run = "server"
 
 [features]
-# Compile own OpenSSL as part of the build process of `openssl-sys` for use
-# with the Redis backend. Enables the `vendored-tls` feature of `fred`.
-vendored-openssl = ["fred/vendored-tls"]
 # Run tests involving a Redis server. Needs a running links-compatible Redis
 # server on localhost:6379 (TCP) and localhost:6380 (TLS) when running tests.
 test-redis = []
@@ -30,12 +27,12 @@ async-trait = "0.1.67"
 basic-toml = "0.1.2"
 clap = { version = "4.1.11", features = ["derive", "env"] }
 colored = "2.0.0"
-fred = { version = "5.2.0", features = [
-	"enable-tls",
-	"ignore-auth-error",
-	"pool-prefer-active",
+fred = { version = "6.0.0", features = [
+	"metrics",
+	"enable-rustls",
+	"reconnect-on-auth-error",
 	"partial-tracing",
-], default-features = false }
+] }
 hyper = "0.14.25"
 notify = "5.1.0"
 parking_lot = "0.12.1"

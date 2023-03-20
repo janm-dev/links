@@ -33,7 +33,7 @@ use async_trait::async_trait;
 use fred::{
 	pool::RedisPool,
 	prelude::*,
-	types::{RespVersion, TlsConfig},
+	types::{ArcStr, RespVersion, Server, TlsConnector},
 };
 use links_id::Id;
 use links_normalized::{Link, Normalized};
@@ -109,7 +109,15 @@ impl StoreBackend for Store {
 					.map(|s| {
 						s.trim()
 							.split_once(':')
-							.map(|v| Ok((v.0.to_string(), v.1.parse::<u16>()?)))
+							.map(|v| {
+								let host = v.0.to_string().into();
+
+								Ok(Server {
+									host: ArcStr::clone(&host),
+									port: v.1.parse::<u16>()?,
+									tls_server_name: Some(host),
+								})
+							})
 							.ok_or_else(|| anyhow!("couldn't parse connect value"))?
 					})
 					.collect::<Result<_, anyhow::Error>>()?,
@@ -120,13 +128,19 @@ impl StoreBackend for Store {
 				.map(|s| {
 					s.split_once(':')
 						.map::<Result<_, anyhow::Error>, _>(|v| {
-							Ok((v.0.to_string(), v.1.parse::<u16>()?))
+							Ok((v.0.to_string().into(), v.1.parse::<u16>()?))
 						})
 						.ok_or_else(|| anyhow!("couldn't parse connect value"))?
 				})
 				.ok_or_else(|| anyhow!("missing connect option"))??;
 
-			ServerConfig::Centralized { host, port }
+			ServerConfig::Centralized {
+				server: Server {
+					host: ArcStr::clone(&host),
+					port,
+					tls_server_name: Some(host),
+				},
+			}
 		};
 
 		let pool_config = RedisConfig {
@@ -135,9 +149,12 @@ impl StoreBackend for Store {
 			server: server_config,
 			version: RespVersion::RESP3,
 			database: config.get("database").map(|s| s.parse()).transpose()?,
-			tracing: true,
+			tracing: TracingConfig {
+				enabled: true,
+				..Default::default()
+			},
 			tls: if config.get("tls").map_or(Ok(false), |s| s.parse())? {
-				Some(TlsConfig::default())
+				Some(TlsConnector::default_rustls()?.into())
 			} else {
 				None
 			},
@@ -146,6 +163,8 @@ impl StoreBackend for Store {
 
 		let pool = RedisPool::new(
 			pool_config,
+			None,
+			Some(ReconnectPolicy::new_constant(0, 100)),
 			config
 				.get("pool_size")
 				.map(|s| s.parse())
@@ -153,7 +172,7 @@ impl StoreBackend for Store {
 				.unwrap_or(8),
 		)?;
 
-		pool.connect(Some(ReconnectPolicy::new_constant(0, 100)));
+		pool.connect();
 		pool.wait_for_connect().await?;
 
 		Ok(Self { pool })
