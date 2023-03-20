@@ -28,7 +28,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 anyhow = "1.0.69"
 async-trait = "0.1.66"
 basic-toml = "0.1.2"
-clap = { version = "4.1.9", features = ["derive", "env"] }
+clap = { version = "4.1.11", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "5.2.0", features = [
 	"enable-tls",
