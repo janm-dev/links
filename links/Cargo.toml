@@ -44,7 +44,7 @@ pico-args = { version = "0.5.0", features = [
 ], default-features = false }
 prost = { version = "0.11.8", default-features = false }
 rand = "0.8.5"
-regex = "1.7.1"
+regex = "1.7.2"
 rustls-pemfile = "1.0.2"
 serde = { version = "1.0.158", features = ["derive"] }
 serde_json = "1.0.94"
@@ -83,7 +83,7 @@ sha2 = "0.10.6"
 tonic-build = "0.8.4"
 
 [dev-dependencies]
-regex = "1.7.1"
+regex = "1.7.2"
 reqwest = { version = "0.11.14", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
