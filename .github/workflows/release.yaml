@@ -47,8 +47,8 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           sudo apt update
-          sudo apt install -y musl-tools musl-dev openssl libssl-dev crossbuild-essential-arm64
-          cargo build --release --target ${{ matrix.target }} --features vendored-openssl
+          sudo apt install -y musl-tools musl-dev crossbuild-essential-arm64
+          cargo build --release --target ${{ matrix.target }}
           mv target/${{ matrix.target }}/release/server server
           mv target/${{ matrix.target }}/release/cli cli
           tar cf ${{ matrix.target }}.tar server cli

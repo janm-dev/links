@@ -1,9 +1,9 @@
 # Builder image
 FROM rust:latest AS builder
 
-# Install musl libc for static linking and openssl for Redis store TLS support
+# Install musl libc for static linking and openssl for default cert generation
 RUN rustup target add x86_64-unknown-linux-musl
-RUN apt update && apt upgrade -y && apt install -y musl-tools musl-dev openssl libssl-dev
+RUN apt update && apt upgrade -y && apt install -y musl-tools musl-dev openssl
 RUN update-ca-certificates
 
 # Install protoc to build .proto files for gRPC
@@ -30,7 +30,7 @@ WORKDIR /links
 COPY ./ .
 
 # Build with statically-linked musl libc
-RUN cargo build --target x86_64-unknown-linux-musl --release --features vendored-openssl
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
 # Generate default TLS certificate
 RUN openssl req -x509 -newkey rsa:4096 -sha256 -utf8 -days 3650 -nodes -config ./openssl.conf -keyout /key.pem -out /cert.pem
