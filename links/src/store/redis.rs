@@ -110,10 +110,10 @@ impl StoreBackend for Store {
 						s.trim()
 							.split_once(':')
 							.map(|v| {
-								let host = v.0.to_string().into();
+								let host = ArcStr::from(v.0);
 
 								Ok(Server {
-									host: ArcStr::clone(&host),
+									host: host.clone(),
 									port: v.1.parse::<u16>()?,
 									tls_server_name: Some(host),
 								})
@@ -128,7 +128,7 @@ impl StoreBackend for Store {
 				.map(|s| {
 					s.split_once(':')
 						.map::<Result<_, anyhow::Error>, _>(|v| {
-							Ok((v.0.to_string().into(), v.1.parse::<u16>()?))
+							Ok((ArcStr::from(v.0), v.1.parse::<u16>()?))
 						})
 						.ok_or_else(|| anyhow!("couldn't parse connect value"))?
 				})
@@ -136,7 +136,7 @@ impl StoreBackend for Store {
 
 			ServerConfig::Centralized {
 				server: Server {
-					host: ArcStr::clone(&host),
+					host: host.clone(),
 					port,
 					tls_server_name: Some(host),
 				},
@@ -388,7 +388,7 @@ impl StoreBackend for Store {
 /// Note:
 /// These tests require a running Redis 7.0 server. Because of this, they only
 /// run if the `test-redis` feature is enabled. To run all tests including
-/// these, use `cargo test --features test-redis` You can run a Redis server
+/// these, use `cargo test --features test-redis`. You can run a Redis server
 /// with Docker using `docker run -p 6379:6379 --rm redis:7.0-alpine` (replace
 /// `7.0` with another version if necessary). It is highly recommended **not**
 /// to run these tests on a production Redis server.
