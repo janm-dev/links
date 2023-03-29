@@ -21,4 +21,4 @@ unicode-normalization = "0.1.22"
 uriparse = "0.6.4"
 
 [dev-dependencies]
-serde_json = "1.0.94"
+serde_json = "1.0.95"
