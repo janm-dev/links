@@ -629,9 +629,9 @@ dependencies = [
 
 [[package]]
 name = "fred"
-version = "6.0.0"
+version = "6.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c52d60e6d9b2a715da13ec520d7da6e095121e25da5027cdac56b8f96684654b"
+checksum = "77a246d80c63d314f8dbace1413a8eb1a64bbdf35e76aaa66e4e11b8cdaa4a71"
 dependencies = [
  "arc-swap",
  "arcstr",
@@ -647,12 +647,13 @@ dependencies = [
  "pretty_env_logger",
  "rand 0.8.5",
  "redis-protocol",
- "rustls 0.20.8",
+ "rustls 0.21.0",
  "rustls-native-certs",
+ "rustls-webpki",
  "semver",
  "sha-1",
  "tokio",
- "tokio-rustls 0.23.4",
+ "tokio-rustls 0.24.0",
  "tokio-stream",
  "tokio-util",
  "tracing",
