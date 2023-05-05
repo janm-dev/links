@@ -22,7 +22,7 @@ links-id = { path = "../links-id", version = "*", features = [
 links-normalized = { path = "../links-normalized", version = "*", features = [
 	"fred",
 ] }
-anyhow = "1.0.70"
+anyhow = "1.0.71"
 async-trait = "0.1.68"
 basic-toml = "0.1.2"
 clap = { version = "4.2.7", features = ["derive", "env"] }
