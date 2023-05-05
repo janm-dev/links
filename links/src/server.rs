@@ -250,7 +250,7 @@ impl Acceptor<TcpStream> for TlsHttpAcceptor {
 				Ok(stream) => {
 					let tls_conn = stream.get_ref().1;
 					let extra_info = ExtraStatisticInfo {
-						tls_sni: tls_conn.sni_hostname().map(Arc::from),
+						tls_sni: tls_conn.server_name().map(Arc::from),
 						tls_version: tls_conn.protocol_version(),
 						tls_cipher_suite: tls_conn.negotiated_cipher_suite(),
 					};
