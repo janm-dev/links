@@ -94,14 +94,12 @@ impl Links for Api {
 		let time = Instant::now();
 		let store = self.store();
 
-		let id = match Id::try_from(req.into_inner().id) {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
+		let Ok(id) = Id::try_from(req.into_inner().id) else {
+			return Err(Status::new(Code::InvalidArgument, "id is invalid"))
 		};
 
-		let link = match store.get_redirect(id).await {
-			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(link) = store.get_redirect(id).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"))
 		};
 
 		let res = Ok(Response::new(rpc::GetRedirectResponse {
@@ -129,19 +127,16 @@ impl Links for Api {
 
 		let rpc::SetRedirectRequest { id, link } = req.into_inner();
 
-		let id = match Id::try_from(id) {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
+		let Ok(id) = Id::try_from(id) else {
+			return Err(Status::new(Code::InvalidArgument, "id is invalid"));
 		};
 
-		let link = match Link::new(&link) {
-			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::InvalidArgument, "link is invalid")),
+		let Ok(link) = Link::new(&link) else {
+			return Err(Status::new(Code::InvalidArgument, "link is invalid"));
 		};
 
-		let link = match store.set_redirect(id, link).await {
-			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(link) = store.set_redirect(id, link).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::SetRedirectResponse {
@@ -167,14 +162,12 @@ impl Links for Api {
 		let time = Instant::now();
 		let store = self.store();
 
-		let id = match Id::try_from(req.into_inner().id) {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
+		let Ok(id) = Id::try_from(req.into_inner().id) else {
+			return Err(Status::new(Code::InvalidArgument, "id is invalid"));
 		};
 
-		let link = match store.rem_redirect(id).await {
-			Ok(link) => link,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(link) = store.rem_redirect(id).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::RemRedirectResponse {
@@ -202,9 +195,8 @@ impl Links for Api {
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
-		let id = match store.get_vanity(vanity).await {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(id) = store.get_vanity(vanity).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::GetVanityResponse {
@@ -234,14 +226,12 @@ impl Links for Api {
 
 		let vanity = Normalized::new(&vanity);
 
-		let id = match Id::try_from(id) {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::InvalidArgument, "id is invalid")),
+		let Ok(id) = Id::try_from(id) else {
+			return Err(Status::new(Code::InvalidArgument, "id is invalid"));
 		};
 
-		let id = match store.set_vanity(vanity, id).await {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(id) = store.set_vanity(vanity, id).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::SetVanityResponse {
@@ -269,9 +259,8 @@ impl Links for Api {
 
 		let vanity = Normalized::new(&req.into_inner().vanity);
 
-		let id = match store.rem_vanity(vanity).await {
-			Ok(id) => id,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(id) = store.rem_vanity(vanity).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::RemVanityResponse {
@@ -324,9 +313,8 @@ impl Links for Api {
 			}
 		};
 
-		let stats = match store.get_statistics(stat_desc).await {
-			Ok(val) => val,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(stats) = store.get_statistics(stat_desc).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let statistics = stats
@@ -387,9 +375,8 @@ impl Links for Api {
 			}
 		};
 
-		let stats = match store.rem_statistics(stat_desc).await {
-			Ok(val) => val,
-			Err(_) => return Err(Status::new(Code::Internal, "store operation failed")),
+		let Ok(stats) = store.rem_statistics(stat_desc).await else {
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let statistics = stats
