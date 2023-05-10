@@ -75,6 +75,7 @@ fn minify(name: &str, path: PathBuf) {
 		minify_js: true,
 		remove_bangs: true,
 		remove_processing_instructions: true,
+		..Cfg::default()
 	};
 
 	let minified = minify_html::minify(html.as_bytes(), &config);
