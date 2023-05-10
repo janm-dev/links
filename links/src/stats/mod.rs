@@ -278,7 +278,9 @@ impl StatisticValue {
 	/// Increment this [`StatisticValue`], returning the next value up
 	#[must_use]
 	pub fn increment(self) -> Self {
-		Self { count: self.count.saturating_add(1) }
+		Self {
+			count: self.count.saturating_add(1),
+		}
 	}
 }
 
