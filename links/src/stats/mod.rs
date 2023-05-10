@@ -277,13 +277,10 @@ impl StatisticValue {
 
 	/// Increment this [`StatisticValue`], returning the next value up
 	#[must_use]
-	pub fn increment(self) -> Self {
-		// `NonZeroU64::saturating_add` has an MSRV of 1.64, so we do this instead.
-		// Performance is identical in release builds (use show assembly):
-		// https://play.rust-lang.org/?version=stable&mode=release&edition=2021&gist=eab44903e3eb0921a793167ff3ad2f79.
-		let count = NonZeroU64::new(self.get().saturating_add(1)).expect("n + 1 != 0");
-
-		Self { count }
+	pub const fn increment(self) -> Self {
+		Self {
+			count: self.count.saturating_add(1),
+		}
 	}
 }
 
