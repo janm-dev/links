@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1.64", stable, beta]
+        version: ["1.65", stable, beta]
     name: Test with Rust ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:
