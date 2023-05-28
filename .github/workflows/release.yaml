@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    tags:
-      - release-*.*.*
+    tags: ["release-*.*.*"]
 
 permissions:
   contents: write

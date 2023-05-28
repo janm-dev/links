@@ -1,7 +1,9 @@
 name: Audit
 
 on:
+  workflow_dispatch:
   push:
+    branches: ["main"]
   pull_request:
   schedule:
     - cron: "30 12 * * *"
