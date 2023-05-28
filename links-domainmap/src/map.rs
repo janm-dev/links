@@ -610,7 +610,7 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T> {
 #[cfg(test)]
 mod tests {
 	#[cfg(not(feature = "std"))]
-	use alloc::fmt::format;
+	use alloc::format;
 	#[cfg(feature = "std")]
 	use std::collections::HashMap;
 
