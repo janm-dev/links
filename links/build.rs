@@ -104,12 +104,14 @@ fn hash_tags(tag_name: &'static str, names: impl IntoIterator<Item = &'static st
 					let buffer = buffer.clone();
 					let contents = contents.clone();
 
-					el.on_end_tag(move |_| {
-						let s = buffer.borrow();
-						contents.borrow_mut().push(s.to_owned());
+					if let Some(handlers) = el.end_tag_handlers() {
+						handlers.push(Box::new(move |_| {
+							let s = buffer.borrow();
+							contents.borrow_mut().push(s.to_owned());
 
-						Ok(())
-					})?;
+							Ok(())
+						}))
+					}
 
 					Ok(())
 				}),
