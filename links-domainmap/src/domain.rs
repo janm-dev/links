@@ -567,10 +567,7 @@ mod tests {
 		for (input, expected) in DOMAIN_REFERENCE {
 			let res = Domain::reference(input).map(|d| &*Box::leak(d.to_string().into_boxed_str()));
 
-			assert_eq!(
-				res, *expected,
-				"`Domain::reference({input:?})` is `{res:?}`, expected `{expected:?}`"
-			);
+			assert_eq!(res, *expected);
 		}
 	}
 
@@ -579,10 +576,7 @@ mod tests {
 		for (input, expected) in DOMAIN_PRESENTED {
 			let res = Domain::presented(input).map(|d| &*Box::leak(d.to_string().into_boxed_str()));
 
-			assert_eq!(
-				res, *expected,
-				"`Domain::presented({input:?})` is `{res:?}`, expected `{expected:?}`"
-			);
+			assert_eq!(res, *expected);
 		}
 
 		assert!(Domain::presented("xn--example.com").is_err());
@@ -602,10 +596,7 @@ mod tests {
 			let presented = Domain::presented(presented).unwrap();
 			let res = reference.matches(&presented).unwrap();
 
-			assert_eq!(
-				res, expected,
-				r#""{reference}".matches("{presented}") is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 		}
 
 		for &(a, b, expected) in DOMAIN_PRESENTED_MATCHES_PRESENTED {
@@ -613,10 +604,7 @@ mod tests {
 			let b = Domain::presented(b).unwrap();
 			let res = a.matches(&b);
 
-			assert_eq!(
-				res, expected,
-				r#""{a}".matches("{b}") is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 		}
 
 		for &(a, b, expected) in DOMAIN_REFERENCE_MATCHES_REFERENCE {
@@ -624,10 +612,7 @@ mod tests {
 			let b = Domain::reference(b).unwrap();
 			let res = a.matches(&b);
 
-			assert_eq!(
-				res, expected,
-				r#""{a}".matches("{b}") is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 		}
 	}
 
@@ -638,10 +623,7 @@ mod tests {
 			let presented = Domain::presented(presented).unwrap();
 			let res = reference == presented;
 
-			assert_eq!(
-				res, expected,
-				r#""{reference}" == "{presented}" is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 
 			assert_eq!(reference == presented, presented == reference);
 		}
@@ -651,16 +633,10 @@ mod tests {
 			let b = Domain::presented(b).unwrap();
 
 			let res = a == b;
-			assert_eq!(
-				res, expected,
-				r#""{a}" == "{b}" is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 
 			let res = b == a;
-			assert_eq!(
-				res, expected,
-				r#""{b}" == "{a}" is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 		}
 
 		for &(a, b, expected) in DOMAIN_REFERENCE_EQ_REFERENCE {
@@ -668,16 +644,10 @@ mod tests {
 			let b = Domain::reference(b).unwrap();
 
 			let res = a == b;
-			assert_eq!(
-				res, expected,
-				r#""{a}" == "{b}" is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 
 			let res = b == a;
-			assert_eq!(
-				res, expected,
-				r#""{b}" == "{a}" is {res:?}, expected {expected:?}"#
-			);
+			assert_eq!(res, expected);
 		}
 	}
 
@@ -764,6 +734,23 @@ mod tests {
 			.unwrap_err()
 			.source()
 			.is_none());
+
+		assert_eq!(
+			Domain::presented("www.a$df.com").unwrap_err(),
+			Domain::presented("a$df.com").unwrap_err(),
+		);
+		assert_eq!(
+			Domain::presented("xn--example.com").unwrap_err(),
+			Domain::presented("foo.xn--example.com").unwrap_err()
+		);
+		assert_ne!(
+			Domain::presented("www.a$df.com").unwrap_err(),
+			Domain::presented("a#df.com").unwrap_err(),
+		);
+		assert_ne!(
+			Domain::presented("xn--example.com").unwrap_err(),
+			Domain::presented("foo.*.com").unwrap_err()
+		);
 	}
 
 	#[test]

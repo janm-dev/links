@@ -947,6 +947,7 @@ mod tests {
 		assert!(map == cloned);
 		assert!(map == other);
 		assert!(map == map);
+		assert!(map != DomainMap::new());
 
 		#[cfg(feature = "std")]
 		{
