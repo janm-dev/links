@@ -13,6 +13,7 @@
 use alloc::vec::{IntoIter as VecIter, Vec};
 use core::{
 	fmt::Debug,
+	hash::{Hash, Hasher},
 	mem,
 	slice::{Iter as SliceIter, IterMut as SliceIterMut},
 };
@@ -104,7 +105,7 @@ use crate::Domain;
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct DomainMap<T> {
 	data: Vec<(Domain, T)>,
 }
@@ -492,6 +493,30 @@ impl<T> Default for DomainMap<T> {
 	}
 }
 
+impl<T: PartialEq> PartialEq for DomainMap<T> {
+	fn eq(&self, other: &Self) -> bool {
+		if self.len() != other.len() {
+			return false;
+		}
+
+		self.iter()
+			.all(|(key, value)| other.get_eq(key).map_or(false, |v| value == v))
+	}
+}
+
+impl<T: Eq> Eq for DomainMap<T> {}
+
+impl<T: Hash> Hash for DomainMap<T> {
+	fn hash<H: Hasher>(&self, state: &mut H) {
+		let mut sorted = self.data.iter().collect::<Vec<&(Domain, T)>>();
+		sorted.sort_unstable_by_key(|(domain, _)| domain);
+
+		for element in sorted {
+			(*element).hash(state);
+		}
+	}
+}
+
 impl<T> FromIterator<(Domain, T)> for DomainMap<T> {
 	fn from_iter<I: IntoIterator<Item = (Domain, T)>>(iter: I) -> Self {
 		let iter = iter.into_iter();
@@ -584,6 +609,11 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T> {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(not(feature = "std"))]
+	use alloc::fmt::format;
+	#[cfg(feature = "std")]
+	use std::collections::HashMap;
+
 	use super::*;
 
 	#[test]
@@ -612,12 +642,16 @@ mod tests {
 			None
 		);
 
-		map.set(Domain::presented("*.example.com").unwrap(), 1);
+		map.set(Domain::presented("example.com").unwrap(), 1);
+		map.set(Domain::presented("*.example.com").unwrap(), 10);
 
-		assert_eq!(map.get(&Domain::reference("example.com").unwrap()), None);
+		assert_eq!(
+			map.get(&Domain::reference("example.com").unwrap()),
+			Some(&1)
+		);
 		assert_eq!(
 			map.get(&Domain::reference("foo.example.com").unwrap()),
-			Some(&1)
+			Some(&10)
 		);
 	}
 
@@ -634,22 +668,31 @@ mod tests {
 			None
 		);
 
-		map.set(Domain::presented("*.example.com").unwrap(), 1);
+		map.set(Domain::presented("example.com").unwrap(), 1);
+		map.set(Domain::presented("*.example.com").unwrap(), 10);
 
 		assert_eq!(
 			map.get_mut(&Domain::reference("example.com").unwrap()),
-			None
+			Some(&mut 1)
 		);
 
 		let val = map
+			.get_mut(&Domain::reference("example.com").unwrap())
+			.unwrap();
+		*val += 100;
+
+		let foo_val = map
 			.get_mut(&Domain::reference("foo.example.com").unwrap())
 			.unwrap();
-
-		*val += 1;
+		*foo_val += 100;
 
 		assert_eq!(
+			map.get_mut(&Domain::reference("example.com").unwrap()),
+			Some(&mut 101)
+		);
+		assert_eq!(
 			map.get_mut(&Domain::reference("foo.example.com").unwrap()),
-			Some(&mut 2)
+			Some(&mut 110)
 		);
 	}
 
@@ -758,12 +801,74 @@ mod tests {
 	}
 
 	#[test]
+	fn domainmap_len_clear() {
+		let mut map = DomainMap::<u32>::new();
+
+		assert!(map.is_empty());
+		assert_eq!(map.len(), 0);
+
+		map.set(Domain::presented("example.com").unwrap(), 1);
+		map.set(Domain::presented("*.example.com").unwrap(), 10);
+		map.set(Domain::presented("foo.example.com").unwrap(), 100);
+
+		assert!(!map.is_empty());
+		assert_eq!(map.len(), 3);
+
+		map.clear();
+
+		assert!(map.is_empty());
+		assert_eq!(map.len(), 0);
+	}
+
+	#[test]
 	fn domainmap_iter() {
 		let mut map = DomainMap::<u32>::new();
 
 		let a = Domain::presented("example.com").unwrap();
 		let b = Domain::presented("*.example.com").unwrap();
 		let c = Domain::presented("foo.example.com").unwrap();
+
+		map.set(a.clone(), 1);
+		map.set(b.clone(), 10);
+		map.set(c.clone(), 100);
+
+		for (domain, value) in map.iter() {
+			// Iteration order is not specified
+			assert!(
+				(*domain == a && *value == 1)
+					|| (*domain == b && *value == 10)
+					|| (*domain == c && *value == 100)
+			);
+		}
+
+		for (domain, value) in map.iter_mut() {
+			// Iteration order is not specified
+			assert!(
+				(*domain == a && *value == 1)
+					|| (*domain == b && *value == 10)
+					|| (*domain == c && *value == 100)
+			);
+
+			*value += 1000;
+		}
+
+		#[allow(clippy::explicit_into_iter_loop)]
+		for (domain, value) in map.into_iter() {
+			// Iteration order is not specified
+			assert!(
+				(domain == a && value == 1001)
+					|| (domain == b && value == 1010)
+					|| (domain == c && value == 1100)
+			);
+
+			drop(domain);
+		}
+
+		map = DomainMap::<u32>::new();
+
+		let a = Domain::presented("example.net").unwrap();
+		let b = Domain::presented("*.example.net").unwrap();
+		let c = Domain::presented("foo.example.net").unwrap();
 
 		map.set(a.clone(), 1);
 		map.set(b.clone(), 10);
@@ -798,6 +903,57 @@ mod tests {
 			);
 
 			drop(domain);
+		}
+	}
+
+	#[test]
+	#[allow(clippy::many_single_char_names)]
+	fn domainmap_from_iter_extend() {
+		let a = Domain::presented("example.net").unwrap();
+		let b = Domain::presented("*.example.net").unwrap();
+		let c = Domain::presented("foo.example.net").unwrap();
+		let e = Domain::presented("example.com").unwrap();
+		let d = Domain::presented("bar.example.com").unwrap();
+
+		let mut map = DomainMap::<u32>::from_iter([(a, 1), (b, 10), (c, 100)]);
+
+		assert_eq!(map.len(), 3);
+
+		map.extend([(e, 1000), (d, 10000)]);
+
+		assert_eq!(map.len(), 5);
+	}
+
+	#[test]
+	fn domainmap_misc_traits() {
+		let mut map = DomainMap::<u32>::new();
+		let mut other = DomainMap::<u32>::new();
+
+		let a = Domain::presented("example.com").unwrap();
+		let b = Domain::presented("*.example.com").unwrap();
+		let c = Domain::presented("foo.example.com").unwrap();
+
+		map.set(a.clone(), 1);
+		map.set(b.clone(), 10);
+		map.set(c.clone(), 100);
+
+		other.set(c, 100);
+		other.set(b, 10);
+		other.set(a, 1);
+
+		assert!(format!("{map:?}").contains("DomainMap"));
+
+		let cloned = map.clone();
+		assert!(map == cloned);
+		assert!(map == other);
+		assert!(map == map);
+
+		#[cfg(feature = "std")]
+		{
+			let mut hash_map = HashMap::<_, usize>::new();
+			hash_map.insert(cloned, 3);
+			assert_eq!(hash_map.get(&map), Some(&3));
+			assert_eq!(hash_map.get(&other), Some(&3));
 		}
 	}
 }

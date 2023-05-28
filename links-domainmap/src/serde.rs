@@ -4,6 +4,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::format;
 use core::{
+	any,
 	fmt::{Formatter, Result as FmtResult},
 	marker::PhantomData,
 };
@@ -22,7 +23,10 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for DomainMapVisitor<T> {
 	type Value = DomainMap<T>;
 
 	fn expecting(&self, f: &mut Formatter) -> FmtResult {
-		f.write_str("a map with domain name keys")
+		f.write_fmt(format_args!(
+			"a map with domain name keys and {} values",
+			any::type_name::<T>()
+		))
 	}
 
 	fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -139,6 +143,11 @@ mod tests {
 				);
 			}
 		}
+
+		assert!(serde_json::from_str::<Domain>(r#"[1, 2, 3]"#)
+			.unwrap_err()
+			.to_string()
+			.contains("a valid domain name"));
 	}
 
 	#[test]
@@ -178,5 +187,10 @@ mod tests {
 				.get(&Domain::reference("example.com").unwrap()),
 			Some(&PI)
 		);
+
+		assert!(serde_json::from_str::<DomainMap<u16>>(r#""string""#)
+			.unwrap_err()
+			.to_string()
+			.contains("a map with domain name keys and u16 values"));
 	}
 }

@@ -48,7 +48,10 @@
 
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
-use core::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
+use core::{
+	cmp::Ordering,
+	fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
+};
 #[cfg(feature = "std")]
 use std::error::Error;
 
@@ -363,11 +366,7 @@ impl Domain {
 
 		let mut labels = input.split(SEPERATORS).peekable();
 
-		let is_wildcard = if let Some(&leftmost) = labels.peek() {
-			leftmost == "*"
-		} else {
-			return Err(ParseError::Empty);
-		};
+		let is_wildcard = *labels.peek().expect("the iterator is never empty") == "*";
 
 		if is_wildcard {
 			// Skip the `"*"` label
@@ -446,9 +445,12 @@ impl Display for Domain {
 			fmt.write_str("*.")?;
 		}
 
-		if let Some(label) = self.labels.last() {
-			Display::fmt(label, fmt)?;
-		}
+		Display::fmt(
+			self.labels
+				.last()
+				.expect("a domain always has at least one label"),
+			fmt,
+		)?;
 
 		for label in self.labels.iter().rev().skip(1) {
 			fmt.write_char('.')?;
@@ -459,11 +461,29 @@ impl Display for Domain {
 	}
 }
 
+impl PartialOrd for Domain {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl Ord for Domain {
+	fn cmp(&self, other: &Self) -> Ordering {
+		match self.labels.cmp(&other.labels) {
+			Ordering::Equal => match (self.is_wildcard, other.is_wildcard) {
+				(true, false) => Ordering::Greater,
+				(false, true) => Ordering::Less,
+				_ => Ordering::Equal,
+			},
+			ord => ord,
+		}
+	}
+}
+
 /// An error encountered while parsing a domain name
 #[derive(Debug)]
 pub enum ParseError {
-	/// The domain name has no non-wildcard labels (`""`, `"."`, `"*"`, or
-	/// `"*."`)
+	/// The domain name has no non-wildcard labels
 	Empty,
 	/// The length of the domain exceeds 253
 	TooLong,
@@ -530,11 +550,13 @@ impl From<idna::Errors> for ParseError {
 
 #[cfg(test)]
 mod tests {
-
 	#[cfg(not(feature = "std"))]
-	use alloc::{boxed::Box, format, string::ToString};
+	use alloc::{boxed::Box, collections::BTreeMap, format, string::ToString};
 	#[cfg(feature = "std")]
-	use std::error::Error;
+	use std::{
+		collections::{BTreeMap, HashMap},
+		error::Error,
+	};
 
 	use super::*;
 	#[allow(clippy::wildcard_imports)]
@@ -674,5 +696,100 @@ mod tests {
 				assert_eq!(format!("{reference:#}"), alternate_format);
 			};
 		}
+	}
+
+	#[test]
+	fn domain_misc_traits() {
+		let domain = Domain::presented("example.com").unwrap();
+		let wildcard = Domain::presented("*.example.com").unwrap();
+		let foo = Domain::presented("foo.example.com").unwrap();
+		let a = Domain::presented("foo.an-example.com").unwrap();
+
+		let cloned = domain.clone();
+		assert!(domain == cloned);
+
+		assert_eq!(format!("{domain:?}"), format!("{cloned:?}"));
+		assert!(format!("{domain:?}").contains("Domain"));
+
+		assert!(domain == domain);
+		assert!(wildcard == wildcard);
+		assert!(foo != Domain::presented("com.example.foo").unwrap());
+
+		assert!(domain < wildcard);
+		assert!(domain < foo);
+		assert!(wildcard < foo);
+		assert!(a < domain);
+		assert!(a < foo);
+		assert!(a < wildcard);
+
+		assert!(wildcard > domain);
+		assert!(foo > domain);
+		assert!(foo > wildcard);
+		assert!(domain > a);
+		assert!(foo > a);
+		assert!(wildcard > a);
+
+		for (a, b) in [&domain, &wildcard, &foo, &a]
+			.into_iter()
+			.zip([&domain, &wildcard, &foo, &a])
+		{
+			assert_eq!(a.partial_cmp(b), Some(a.cmp(b)));
+			assert_eq!(a.partial_cmp(b), b.partial_cmp(a).map(Ordering::reverse));
+		}
+
+		let mut btree_map = BTreeMap::<_, usize>::new();
+		btree_map.insert(domain.clone(), 3);
+
+		#[cfg(feature = "std")]
+		{
+			let mut hash_map = HashMap::<_, usize>::new();
+			hash_map.insert(cloned, 3);
+			assert_eq!(hash_map.get(&domain), Some(&3));
+		}
+	}
+
+	#[test]
+	fn parseerror_error() {
+		assert!(Domain::presented("xn--example.com").is_err());
+		#[cfg(feature = "std")]
+		assert!(Domain::presented("xn--example.com")
+			.unwrap_err()
+			.source()
+			.unwrap()
+			.is::<idna::Errors>());
+
+		assert!(Domain::presented("example..com").is_err());
+		#[cfg(feature = "std")]
+		assert!(Domain::presented("example..com")
+			.unwrap_err()
+			.source()
+			.is_none());
+	}
+
+	#[test]
+	fn parseerror_debug_display() {
+		format!("{:?}", ParseError::Empty).contains("Empty");
+		format!("{}", ParseError::Empty).contains("the domain name has no non-wildcard labels");
+
+		format!("{:?}", ParseError::TooLong).contains("TooLong");
+		format!("{}", ParseError::TooLong).contains("the length of the domain exceeds 253");
+
+		format!("{:?}", ParseError::LabelEmpty).contains("LabelEmpty");
+		format!("{}", ParseError::LabelEmpty).contains("the label is empty");
+
+		format!("{:?}", ParseError::LabelTooLong).contains("LabelTooLong");
+		format!("{}", ParseError::LabelTooLong).contains("the length of the label exceeds 63");
+
+		format!("{:?}", ParseError::InvalidChar(' ')).contains("InvalidChar");
+		format!("{}", ParseError::InvalidChar(' '))
+			.contains("the input contains the invalid character ' '");
+
+		format!("{:?}", ParseError::InvalidHyphen).contains("InvalidHyphen");
+		format!("{}", ParseError::InvalidHyphen)
+			.contains("a label has a hyphen at the start or end");
+
+		format!("{:?}", Domain::presented("xn--example").unwrap_err()).contains("Idna");
+		format!("{}", Domain::presented("xn--example").unwrap_err())
+			.contains("an error occurred during processing of an internationalized input: ");
 	}
 }

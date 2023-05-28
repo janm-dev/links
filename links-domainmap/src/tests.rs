@@ -27,6 +27,7 @@ pub const DOMAIN_REFERENCE: &[(&str, Result<&str, ParseError>)] = &[
 	// Wildcard in reference identifier
 	("*.example.com", Err(ParseError::InvalidChar('*'))),
 	// Consecutive dots
+	("..", Err(ParseError::LabelEmpty)),
 	("..example.com", Err(ParseError::LabelEmpty)),
 	("foo..example.com", Err(ParseError::LabelEmpty)),
 	("example.com..", Err(ParseError::LabelEmpty)),
@@ -132,6 +133,7 @@ pub const DOMAIN_PRESENTED: &[(&str, Result<&str, ParseError>)] = &[
 	// Empty domain name
 	("", Err(ParseError::Empty)),
 	(".", Err(ParseError::Empty)),
+	("*", Err(ParseError::Empty)),
 	// Wildcard
 	("*.com", Ok("*.com")),
 	("*.co.uk", Ok("*.co.uk")),
@@ -141,6 +143,7 @@ pub const DOMAIN_PRESENTED: &[(&str, Result<&str, ParseError>)] = &[
 	("*oo.example.com", Err(ParseError::InvalidChar('*'))),
 	("foo.*.example.com", Err(ParseError::InvalidChar('*'))),
 	// Consecutive dots
+	("..", Err(ParseError::LabelEmpty)),
 	("..example.com", Err(ParseError::LabelEmpty)),
 	("foo..example.com", Err(ParseError::LabelEmpty)),
 	("example.com..", Err(ParseError::LabelEmpty)),
