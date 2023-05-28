@@ -10,8 +10,8 @@
 //!
 //! - `std` (on by default): Enable features that require the standard library,
 //!   such as the `std::error::Error` trait
-//! - `serde`: Enable `serde` serialization and deserialization for `DomainMap`,
-//!   `Domain`, and `Label`
+//! - `serde`: Enable `serde` serialization and deserialization for `DomainMap`
+//!   and `Domain`
 //!
 //! # Example usage
 //!

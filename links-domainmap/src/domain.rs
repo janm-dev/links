@@ -55,13 +55,8 @@ use core::{
 #[cfg(feature = "std")]
 use std::error::Error;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// A domain name label, stored in lowercase in its ASCII-encoded form
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Label(String);
 
 impl Label {

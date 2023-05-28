@@ -136,10 +136,7 @@ mod tests {
 				)
 				.expect("couldn't deserialize domain");
 
-				assert_eq!(
-					domain, res,
-					"deserialize(serialize(`{domain:?}`)) is `{res:?}`, expected `{domain:?}`"
-				);
+				assert_eq!(domain, res);
 			}
 		}
 
