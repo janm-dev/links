@@ -1,0 +1,38 @@
+[package]
+name = "links-domainmap"
+version = "0.1.0"
+edition = "2021"
+publish = false
+authors = ["janm-dev"]
+description = "A map with domain name keys with support for wildcards"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/janm-dev/links"
+keywords = [
+	"domain name",
+	"map",
+	"domainmap",
+	"certificate",
+	"dns",
+]
+categories = ["data-structures", "no-std"]
+rust-version = "1.64"
+
+[features]
+default = ["std"]
+# Enable features of links-domainmap that require the standard library.
+std = ["serde?/std"]
+# Enable `serde` serialization and deserialization for `DomainMap`, `Domain`,
+# and `Label`
+serde = ["dep:serde"]
+
+[dependencies]
+idna = "0.3.0"
+serde = { version = "1.0.163", optional = true, default-features = false, features = [
+	"derive",
+	"alloc",
+] }
+
+[dev-dependencies]
+serde_json = { version = "1.0.96", default-features = false, features = [
+	"alloc",
+] }

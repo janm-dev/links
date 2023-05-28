@@ -61,3 +61,17 @@ jobs:
       - run: docker run -d -p 6379:6379 -p 6380:6380 -v ${{ github.workspace }}/links/tests/cert.pem:/cert.pem:ro -v ${{ github.workspace }}/links/tests/key.pem:/key.pem:ro redis:${{ matrix.version }} --tls-port 6380 --tls-auth-clients no --tls-cert-file /cert.pem --tls-key-file /key.pem
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --features test-redis
+
+  test-domainmap:
+    strategy:
+      fail-fast: false
+      matrix:
+        features:
+          ["", "--features=std", "--features=serde", "--features=std,serde"]
+    name: Test links-domainmap with features "${{ matrix.features }}"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cd links-domainmap && cargo test --no-default-features ${{ matrix.features }}
