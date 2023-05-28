@@ -110,23 +110,51 @@ impl Label {
 		let label = idna::domain_to_ascii(label)?;
 		Self::new_ace(label)
 	}
+
+	/// Get the internal string representing this label
+	///
+	/// The returned value is an ASCII lowercase string, with non-ASCII
+	/// characters encoded using punycode. The string does not contain any `.`s.
+	/// It may however be a "fake A-label", i.e. start with "xn--", but
+	/// not be valid punycode.
+	///
+	/// # Example
+	///
+	/// ```rust
+	/// # use links_domainmap::{Domain, Label, ParseError};
+	/// # fn main() -> Result<(), ParseError> {
+	/// let domain = Domain::presented("παράδειγμα.EXAMPLE.com")?;
+	/// for label in domain.labels() {
+	/// 	assert!(label.as_str().is_ascii());
+	/// 	assert!(label
+	/// 		.as_str()
+	/// 		.chars()
+	/// 		.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'));
+	/// }
+	/// # Ok(())
+	/// # }
+	/// ```
+	#[must_use]
+	pub fn as_str(&self) -> &str {
+		self.as_ref()
+	}
 }
 
 impl Display for Label {
 	fn fmt(&self, fmt: &mut Formatter<'_>) -> FmtResult {
 		if fmt.alternate() {
-			let (res, err) = idna::domain_to_unicode(self.0.as_str());
+			let (res, err) = idna::domain_to_unicode(self.as_str());
 
 			// Try encoding as Unicode, but use the original label if that fails
 			let res = if err.is_err() {
-				self.0.as_str()
+				self.as_str()
 			} else {
 				res.as_str()
 			};
 
 			fmt.write_str(res)
 		} else {
-			fmt.write_str(self.0.as_str())
+			fmt.write_str(self.as_str())
 		}
 	}
 }
