@@ -493,6 +493,7 @@ impl Listener {
 	/// # Errors
 	/// This function returns an error if it can not set up the listening
 	/// socket.
+	#[allow(clippy::unused_async)] // TODO
 	pub async fn new(
 		addr: Option<IpAddr>,
 		port: Option<u16>,
