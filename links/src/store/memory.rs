@@ -120,6 +120,7 @@ impl StoreBackend for Store {
 		}
 	}
 
+	#[allow(clippy::significant_drop_tightening)] // Clippy bug, see https://github.com/rust-lang/rust-clippy/issues/10413
 	async fn rem_statistics(
 		&self,
 		description: StatisticDescription,
