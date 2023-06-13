@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 anyhow = "1.0.71"
 async-trait = "0.1.68"
 basic-toml = "0.1.2"
-clap = { version = "4.3.0", features = ["derive", "env"] }
+clap = { version = "4.3.3", features = ["derive", "env"] }
 colored = "2.0.0"
 fred = { version = "6.3.0", features = [
 	"metrics",
@@ -41,14 +41,14 @@ pico-args = { version = "0.5.0", features = [
 ], default-features = false }
 prost = { version = "0.11.9", default-features = false }
 rand = "0.8.5"
-regex = "1.8.3"
+regex = "1.8.4"
 rustls-pemfile = "1.0.2"
-serde = { version = "1.0.163", features = ["derive"] }
+serde = { version = "1.0.164", features = ["derive"] }
 serde_json = "1.0.96"
 serde_yaml = "0.9.21"
 socket2 = "0.5.3"
 thiserror = "1.0.40"
-time = { version = "0.3.21", features = [
+time = { version = "0.3.22", features = [
 	"macros",
 	"parsing",
 	"formatting",
@@ -56,7 +56,7 @@ time = { version = "0.3.21", features = [
 tokio = { version = "1.28.2", features = [
 	"rt-multi-thread",
 ] }
-tokio-rustls = "0.24.0"
+tokio-rustls = "0.24.1"
 tonic = { version = "0.9.2", default-features = false, features = [
 	"gzip",
 	"tls",
@@ -74,13 +74,13 @@ strum = { version = "0.24.1", features = ["derive"] }
 
 [build-dependencies]
 base64 = "0.21.2"
-lol_html = "1.0.0"
+lol_html = "1.0.1"
 minify-html = "0.11.1"
 sha2 = "0.10.6"
 tonic-build = "0.9.2"
 
 [dev-dependencies]
-regex = "1.8.3"
+regex = "1.8.4"
 reqwest = { version = "0.11.18", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",

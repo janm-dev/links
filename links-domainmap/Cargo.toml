@@ -20,13 +20,15 @@ rust-version = "1.64"
 [features]
 default = ["std"]
 # Enable features of links-domainmap that require the standard library.
-std = ["serde?/std"]
+std = ["idna/std", "serde?/std"]
 # Enable `serde` serialization and deserialization for `DomainMap` and `Domain`
 serde = ["dep:serde"]
 
 [dependencies]
-idna = "0.3.0"
-serde = { version = "1.0.163", optional = true, default-features = false, features = [
+idna = { version = "0.4.0", default-features = false, features = [
+	"alloc",
+] }
+serde = { version = "1.0.164", optional = true, default-features = false, features = [
 	"derive",
 	"alloc",
 ] }
