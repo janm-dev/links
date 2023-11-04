@@ -296,10 +296,8 @@ async fn get(
 		IdOrVanity::Id(id) => (Some(id), None),
 	};
 
-	let link = if id.is_some() {
-		let mut req = Request::new(GetRedirectRequest {
-			id: id.unwrap().to_string(),
-		});
+	let link = if let Some(id) = id {
+		let mut req = Request::new(GetRedirectRequest { id: id.to_string() });
 		req.metadata_mut().append("auth", token.clone());
 		client
 			.get_redirect(req)
