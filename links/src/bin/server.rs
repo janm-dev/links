@@ -138,7 +138,7 @@ fn main() -> Result<(), anyhow::Error> {
 		.enable_all()
 		.thread_name_fn(|| {
 			static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);
-			let id = ATOMIC_ID.fetch_add(1, Ordering::SeqCst);
+			let id = ATOMIC_ID.fetch_add(1, Ordering::Relaxed);
 			format!("links-worker-{id:#04x}")
 		})
 		.build()
