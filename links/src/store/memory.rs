@@ -100,11 +100,13 @@ impl StoreBackend for Store {
 		let stats = self.stats.read();
 		Ok(stats
 			.iter()
-			.filter_map(|(k, v)| description.matches(k).then(|| (k.clone(), *v)))
+			.filter(|&(k, _)| description.matches(k))
+			.map(|(k, v)| (k.clone(), *v))
 			.collect())
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::significant_drop_tightening)]
 	async fn incr_statistic(&self, statistic: Statistic) -> Result<Option<StatisticValue>> {
 		let mut stats = self.stats.write();
 
@@ -128,7 +130,8 @@ impl StoreBackend for Store {
 		let mut stats = self.stats.write();
 		let matches = stats
 			.keys()
-			.filter_map(|k| description.matches(k).then(|| k.clone()))
+			.filter(|&k| description.matches(k))
+			.map(Clone::clone)
 			.collect::<Vec<_>>();
 
 		Ok(matches
