@@ -139,7 +139,7 @@ To build a links redirector Docker container, run `docker build .`. The server b
 
 ### MSRV
 
-The minimum supported rust version is currently Rust 1.65, but this may change in the future with a minor version update.
+The minimum supported rust version is currently Rust 1.70, but this may change in the future with a minor version update.
 
 ## Directory structure
 
