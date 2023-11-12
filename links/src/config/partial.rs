@@ -1,13 +1,7 @@
 //! Links server configuration as seen by the user
 
 use std::{
-	collections::HashMap,
-	env,
-	ffi::OsStr,
-	fs,
-	io::Error as IoError,
-	path::{Path, PathBuf},
-	str::FromStr,
+	collections::HashMap, env, ffi::OsStr, fs, io::Error as IoError, path::Path, str::FromStr,
 };
 
 use basic_toml::Error as TomlError;
@@ -17,13 +11,10 @@ use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
 use strum::{Display as EnumDisplay, EnumString};
 use thiserror::Error;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
 use crate::{
-	config::{
-		global::{Config, Hsts, Tls},
-		ListenAddress, LogLevel,
-	},
+	config::{global::Hsts, CertificateSource, DefaultCertificateSource, ListenAddress, LogLevel},
 	stats::StatisticCategories,
 	store::BackendType,
 };
@@ -72,13 +63,10 @@ pub struct Partial {
 	pub listeners: Option<Vec<ListenAddress>>,
 	/// What types of statistics should be collected
 	pub statistics: Option<StatisticCategories>,
-	/// Enable TLS for HTTPS and encrypted gRPC, requires `tls_key` and
-	/// `tls_cert` to be set
-	pub tls_enable: Option<bool>,
-	/// TLS key file path, required when TLS is enabled
-	pub tls_key: Option<PathBuf>,
-	/// TLS certificate file path, required when TLS is enabled
-	pub tls_cert: Option<PathBuf>,
+	/// Default TLS certificate and key source
+	pub default_certificate: Option<DefaultCertificateSource>,
+	/// TLS certificate and key sources
+	pub certificates: Option<Vec<CertificateSource>>,
 	/// HTTP Strict Transport Security setting on redirect
 	pub hsts: Option<PartialHsts>,
 	/// HTTP Strict Transport Security `max_age` header attribute (retention
@@ -161,16 +149,56 @@ impl Partial {
 
 		let listeners = args
 			.opt_value_from_fn("--listeners", |s| serde_json::from_str(s))
+			.map_err(|err| {
+				warn!(
+					%err,
+					"Error parsing configuration from command-line argument '--listeners'"
+				);
+			})
 			.ok()
 			.flatten();
 
 		let statistics = args
 			.opt_value_from_fn("--statistics", |s| serde_json::from_str(s))
+			.map_err(|err| {
+				warn!(
+					%err,
+					"Error parsing configuration from command-line argument '--statistics'"
+				);
+			})
+			.ok()
+			.flatten();
+
+		let default_certificate = args
+			.opt_value_from_fn("--default-certificate", |s| serde_json::from_str(s))
+			.map_err(|err| {
+				warn!(
+					%err,
+					"Error parsing configuration from command-line argument '--default-certificate'"
+				);
+			})
+			.ok()
+			.flatten();
+
+		let certificates = args
+			.opt_value_from_fn("--certificates", |s| serde_json::from_str(s))
+			.map_err(|err| {
+				warn!(
+					%err,
+					"Error parsing configuration from command-line argument '--certificates'"
+				);
+			})
 			.ok()
 			.flatten();
 
 		let store_config = args
 			.opt_value_from_fn("--store-config", |s| serde_json::from_str(s))
+			.map_err(|err| {
+				warn!(
+					%err,
+					"Error parsing configuration from command-line argument '--store-config'"
+				);
+			})
 			.ok()
 			.flatten();
 
@@ -179,9 +207,8 @@ impl Partial {
 			token: args.opt_value_from_str("--token").unwrap_or(None),
 			listeners,
 			statistics,
-			tls_enable: args.opt_value_from_str("--tls-enable").unwrap_or(None),
-			tls_key: args.opt_value_from_str("--tls-key").unwrap_or(None),
-			tls_cert: args.opt_value_from_str("--tls-cert").unwrap_or(None),
+			default_certificate,
+			certificates,
 			hsts: args.opt_value_from_str("--hsts").unwrap_or(None),
 			hsts_max_age: args.opt_value_from_str("--hsts-max-age").unwrap_or(None),
 			https_redirect: args.opt_value_from_str("--https-redirect").unwrap_or(None),
@@ -199,15 +226,68 @@ impl Partial {
 	#[instrument(level = "debug", ret)]
 	pub fn from_env_vars() -> Self {
 		let listeners = env::var("LINKS_LISTENERS")
-			.map_or(None, |s| serde_json::from_str(&s).ok())
+			.map_or(None, |s| {
+				serde_json::from_str(&s)
+					.map_err(|err| {
+						warn!(
+							%err,
+							"Error parsing configuration from environment variable 'LINKS_LISTENERS'"
+						);
+					})
+					.ok()
+			})
 			.flatten();
 
 		let statistics = env::var("LINKS_STATISTICS")
-			.map_or(None, |s| serde_json::from_str(&s).ok())
+			.map_or(None, |s| {
+				serde_json::from_str(&s)
+					.map_err(|err| {
+						warn!(
+							%err,
+							"Error parsing configuration from environment variable 'LINKS_STATISTICS'"
+						);
+					})
+					.ok()
+			})
+			.flatten();
+
+		let default_certificate = env::var("LINKS_DEFAULT_CERTIFICATE")
+			.map_or(None, |s| {
+				serde_json::from_str(&s)
+					.map_err(|err| {
+						warn!(
+							%err,
+							"Error parsing configuration from environment variable 'LINKS_DEFAULT_CERTIFICATE'"
+						);
+					})
+					.ok()
+			})
+			.flatten();
+
+		let certificates = env::var("LINKS_CERTIFICATES")
+			.map_or(None, |s| {
+				serde_json::from_str(&s)
+					.map_err(|err| {
+						warn!(
+							%err,
+							"Error parsing configuration from environment variable 'LINKS_CERTIFICATES'"
+						);
+					})
+					.ok()
+			})
 			.flatten();
 
 		let store_config = env::var("LINKS_STORE_CONFIG")
-			.map_or(None, |s| serde_json::from_str(&s).ok())
+			.map_or(None, |s| {
+				serde_json::from_str(&s)
+					.map_err(|err| {
+						warn!(
+							%err,
+							"Error parsing configuration from environment variable 'LINKS_STORE_CONFIG'"
+						);
+					})
+					.ok()
+			})
 			.flatten();
 
 		Self {
@@ -215,9 +295,8 @@ impl Partial {
 			token: parse_env_var("LINKS_TOKEN"),
 			listeners,
 			statistics,
-			tls_enable: parse_env_var("LINKS_TLS_ENABLE"),
-			tls_key: parse_env_var("LINKS_TLS_KEY"),
-			tls_cert: parse_env_var("LINKS_TLS_CERT"),
+			default_certificate,
+			certificates,
 			hsts: parse_env_var("LINKS_HSTS"),
 			hsts_max_age: parse_env_var("LINKS_HSTS_MAX_AGE"),
 			https_redirect: parse_env_var("LINKS_HTTPS_REDIRECT"),
@@ -237,43 +316,6 @@ impl Partial {
 			PartialHsts::Enable => Some(Hsts::Enable(self.hsts_max_age?)),
 			PartialHsts::IncludeSubDomains => Some(Hsts::IncludeSubDomains(self.hsts_max_age?)),
 			PartialHsts::Preload => Some(Hsts::Preload(self.hsts_max_age?)),
-		}
-	}
-}
-
-impl From<&Config> for Partial {
-	fn from(config: &Config) -> Self {
-		let (tls_enable, key_file, cert_file) = match config.tls() {
-			Tls::Disable => (false, None, None),
-			Tls::Enable {
-				ref key_file,
-				ref cert_file,
-			} => (true, Some(key_file.clone()), Some(cert_file.clone())),
-		};
-
-		let (hsts, hsts_max_age) = match config.hsts() {
-			Hsts::Disable => (PartialHsts::Disable, None),
-			Hsts::Enable(max_age) => (PartialHsts::Enable, Some(max_age)),
-			Hsts::IncludeSubDomains(max_age) => (PartialHsts::IncludeSubDomains, Some(max_age)),
-			Hsts::Preload(max_age) => (PartialHsts::Preload, Some(max_age)),
-		};
-
-		Self {
-			log_level: Some(config.log_level()),
-			token: Some(config.token().to_string()),
-			listeners: Some(config.listeners()),
-			statistics: Some(config.statistics()),
-			tls_enable: Some(tls_enable),
-			tls_key: key_file,
-			tls_cert: cert_file,
-			hsts: Some(hsts),
-			hsts_max_age,
-			https_redirect: Some(config.https_redirect()),
-			send_alt_svc: Some(config.send_alt_svc()),
-			send_server: Some(config.send_server()),
-			send_csp: Some(config.send_csp()),
-			store: Some(config.store()),
-			store_config: Some(config.store_config()),
 		}
 	}
 }

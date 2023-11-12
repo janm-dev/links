@@ -12,7 +12,7 @@ use parking_lot::RwLock;
 use rand::{distributions::Alphanumeric, Rng};
 use tracing::{debug, instrument, warn};
 
-use super::{ListenAddress, LogLevel};
+use super::{CertificateSource, DefaultCertificateSource, ListenAddress, LogLevel};
 use crate::{
 	config::partial::Partial, server::Protocol, stats::StatisticCategories, store::BackendType,
 	util::A_YEAR,
@@ -68,19 +68,6 @@ impl Config {
 	#[must_use]
 	pub fn new_static(file: Option<PathBuf>) -> &'static Self {
 		Box::leak(Box::new(Self::new(file)))
-	}
-
-	/// Create a new [`Config`] from the provided [`ConfigInner`]. This function
-	/// is only for testing purposes. Use [`Config::new`][new] outside of tests.
-	///
-	/// [new]: fn@links::config::global::Config::new
-	#[cfg(test)]
-	#[must_use]
-	const fn from_inner(inner: ConfigInner) -> Self {
-		Self {
-			inner: RwLock::new(inner),
-			file: None,
-		}
 	}
 
 	/// Update this config from environment variables, config file, and
@@ -149,10 +136,16 @@ impl Config {
 		self.inner.read().statistics
 	}
 
-	/// Get the TLS configuration
+	/// Get the default TLS certificate source
 	#[must_use]
-	pub fn tls(&self) -> Tls {
-		self.inner.read().tls.clone()
+	pub fn default_certificate(&self) -> DefaultCertificateSource {
+		self.inner.read().default_certificate.clone()
+	}
+
+	/// Get the TLS certificate configuration
+	#[must_use]
+	pub fn certificates(&self) -> Vec<CertificateSource> {
+		self.inner.read().certificates.clone()
 	}
 
 	/// Get the `hsts` configuration option
@@ -218,7 +211,8 @@ impl Display for Config {
 			)
 			.field("listeners", &serde_json::to_string(&self.listeners()))
 			.field("statistics", &serde_json::to_string(&self.statistics()))
-			.field("tls", &self.tls())
+			.field("default_certificate", &self.default_certificate())
+			.field("certificates", &self.certificates())
 			.field("hsts", &self.hsts())
 			.field("https_redirect", &self.https_redirect())
 			.field("send_alt_svc", &self.send_alt_svc())
@@ -245,8 +239,10 @@ struct ConfigInner {
 	pub listeners: Vec<ListenAddress>,
 	/// Which types of statistics should be collected
 	pub statistics: StatisticCategories,
-	/// TLS configuration (HTTPS and gRPC)
-	pub tls: Tls,
+	/// Default TLS certificate source
+	pub default_certificate: DefaultCertificateSource,
+	/// TLS certificate sources
+	pub certificates: Vec<CertificateSource>,
 	/// HTTP Strict Transport Security setting on redirect
 	pub hsts: Hsts,
 	/// Redirect incoming HTTP requests to HTTPS first, before the actual
@@ -266,9 +262,9 @@ struct ConfigInner {
 }
 
 impl ConfigInner {
-	/// Update the config from a [`Partial`]. This overwrites all fields
-	/// of this [`Config`] from the provided [`Partial`], if they are set in
-	/// that partial config.
+	/// Update the config from a [`Partial`]. This overwrites all fields of this
+	/// [`Config`] from the provided [`Partial`], if they are set in that
+	/// partial config.
 	fn update_from_partial(&mut self, partial: &Partial) {
 		if let Some(log_level) = partial.log_level {
 			self.log_level = log_level;
@@ -286,37 +282,12 @@ impl ConfigInner {
 			self.statistics = statistics;
 		}
 
-		match (
-			partial.tls_enable,
-			partial.tls_key.as_ref(),
-			partial.tls_cert.as_ref(),
-		) {
-			(Some(false), ..) => self.tls = Tls::Disable,
-			(Some(true), Some(key_file), Some(cert_file)) => {
-				self.tls = Tls::Enable {
-					key_file: key_file.clone(),
-					cert_file: cert_file.clone(),
-				}
-			}
-			(None, Some(key_file), Some(cert_file)) if self.tls.is_enable() => {
-				self.tls = Tls::Enable {
-					key_file: key_file.clone(),
-					cert_file: cert_file.clone(),
-				}
-			}
-			(None, Some(key_file), None) if self.tls.is_enable() => {
-				self.tls = Tls::Enable {
-					key_file: key_file.clone(),
-					cert_file: self.tls.cert_file().expect("TLS is enabled").clone(),
-				}
-			}
-			(None, None, Some(cert_file)) if self.tls.is_enable() => {
-				self.tls = Tls::Enable {
-					key_file: self.tls.key_file().expect("TLS is enabled").clone(),
-					cert_file: cert_file.clone(),
-				}
-			}
-			_ => (),
+		if let Some(ref default_certificate) = partial.default_certificate {
+			self.default_certificate = default_certificate.clone();
+		}
+
+		if let Some(ref certificates) = partial.certificates {
+			self.certificates = certificates.clone();
 		}
 
 		if let Some(hsts) = partial.hsts() {
@@ -384,7 +355,8 @@ impl Default for ConfigInner {
 			],
 			statistics: StatisticCategories::default(),
 			https_redirect: false,
-			tls: Tls::default(),
+			default_certificate: DefaultCertificateSource::None,
+			certificates: Vec::default(),
 			hsts: Hsts::default(),
 			send_alt_svc: false,
 			send_server: true,
@@ -478,139 +450,10 @@ impl Default for Hsts {
 	}
 }
 
-/// TLS settings for the links redirector server. Applies to both HTTP(S) and
-/// the RPC API.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum Tls {
-	/// Disable TLS. With this option only HTTP *without* TLS (no HTTPS) is
-	/// supported, and gRPC traffic is unencrypted. Incoming TLS connections
-	/// will be rejected. Not recommended.
-	#[default]
-	Disable,
-	/// Enable TLS. TLS listeners can be created using the provided key and cert
-	/// files. Recommended.
-	Enable {
-		/// Path to the file containing a PEM-encoded TLS private key. All file
-		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
-		/// are supported.
-		key_file: PathBuf,
-		/// Path to the file containing a PEM-encoded TLS certificate. All file
-		/// formats supported by [`rustls-pemfile`](https://docs.rs/rustls-pemfile/)
-		/// are supported.
-		cert_file: PathBuf,
-	},
-}
-
-impl Tls {
-	/// Check if this [`Tls`] is [`Tls::Enable`]
-	#[must_use]
-	pub fn is_enable(&self) -> bool {
-		!self.is_disable()
-	}
-
-	/// Check if this [`Tls`] is [`Tls::Disable`]
-	#[must_use]
-	pub fn is_disable(&self) -> bool {
-		*self == Self::Disable
-	}
-
-	/// Get the certificate file path if TLS is enabled
-	#[must_use]
-	pub const fn cert_file(&self) -> Option<&PathBuf> {
-		match self {
-			Self::Disable => None,
-			Self::Enable {
-				key_file: _,
-				cert_file,
-			} => Some(cert_file),
-		}
-	}
-
-	/// Get the key file path if TLS is enabled
-	#[must_use]
-	pub const fn key_file(&self) -> Option<&PathBuf> {
-		match self {
-			Self::Disable => None,
-			Self::Enable {
-				key_file,
-				cert_file: _,
-			} => Some(key_file),
-		}
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use crate::stats::StatisticType;
-
-	#[test]
-	fn config_inner_update_from_partial_tls() {
-		let mut inner = ConfigInner::default();
-
-		assert!(inner.tls.is_disable());
-
-		inner.update_from_partial(&Partial {
-			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
-			tls_key: Some(PathBuf::from("/path/to/key.pem")),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_disable());
-
-		inner.update_from_partial(&Partial {
-			tls_enable: Some(true),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_disable());
-
-		inner.update_from_partial(&Partial {
-			tls_enable: Some(true),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_disable());
-
-		inner.update_from_partial(&Partial {
-			tls_enable: Some(true),
-			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_disable());
-
-		inner.update_from_partial(&Partial {
-			tls_enable: Some(true),
-			tls_cert: Some(PathBuf::from("/path/to/cert.pem")),
-			tls_key: Some(PathBuf::from("/path/to/key.pem")),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_enable());
-		assert_eq!(inner.tls.cert_file(), Some(&"/path/to/cert.pem".into()));
-		assert_eq!(inner.tls.key_file(), Some(&"/path/to/key.pem".into()));
-
-		let mut inner = ConfigInner {
-			tls: Tls::Enable {
-				key_file: "/path/to/key.pem".into(),
-				cert_file: "/path/to/cert.pem".into(),
-			},
-			..Default::default()
-		};
-
-		inner.update_from_partial(&Partial {
-			tls_cert: Some(PathBuf::from("/path/to/some-other-cert.pem")),
-			..Default::default()
-		});
-
-		assert!(inner.tls.is_enable());
-		assert_eq!(
-			inner.tls.cert_file(),
-			Some(&"/path/to/some-other-cert.pem".into())
-		);
-		assert_eq!(inner.tls.key_file(), Some(&"/path/to/key.pem".into()));
-	}
 
 	#[test]
 	fn config_inner_update_from_partial_all() {
@@ -628,11 +471,11 @@ mod tests {
 
 		inner.update_from_partial(&full_partial);
 
-		assert!(!dbg!(format!(
-			"{:?}",
-			Partial::from(&Config::from_inner(dbg!(inner)))
-		))
-		.contains("None"));
+		assert_ne!(inner, ConfigInner {
+			// This would otherwise be randomly generated and fail the test
+			token: Arc::clone(&inner.token),
+			..Default::default()
+		});
 	}
 
 	#[test]

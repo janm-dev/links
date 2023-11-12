@@ -73,12 +73,8 @@ pub fn start_server(tls: bool) -> Terminator<impl FnOnce()> {
 
 	if tls {
 		args.extend([
-			"--tls-enable",
-			"true",
-			"--tls-cert",
-			"tests/cert.pem",
-			"--tls-key",
-			"tests/key.pem",
+			"--default-certificate",
+			r#"{"source": "files", "cert": "tests/cert.pem", "key": "tests/key.pem"}"#,
 		])
 	}
 

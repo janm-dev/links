@@ -5,6 +5,7 @@ mod util;
 use std::{path::PathBuf, str::FromStr, time::Duration};
 
 use reqwest::{redirect::Policy, Certificate, Client, ClientBuilder};
+use serde_json::json;
 use tokio::{fs, time};
 
 const TEST_CONFIG: &str = include_str!("test-config.toml");
@@ -82,7 +83,7 @@ async fn config_reload() {
 
 #[tokio::test]
 #[serial_test::serial]
-async fn tls_reload() {
+async fn tls_reload_default() {
 	let cert_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
 		.unwrap()
 		.join("links_test_file_reload-tls_reload-cert")
@@ -97,15 +98,90 @@ async fn tls_reload() {
 	let key_path_str = util::convert_path(key_path.to_str().unwrap());
 	fs::write(&key_path, TEST_KEY).await.unwrap();
 
+	let certificate = json! {
+		{
+			"source": "files",
+			"cert": cert_path_str,
+			"key": key_path_str
+		}
+	}
+	.to_string();
+
 	let _terminator = util::start_server_with_args(vec![
 		"-c",
 		"tests/test-config.toml",
-		"--tls-enable",
-		"true",
-		"--tls-key",
-		key_path_str.as_str(),
-		"--tls-cert",
-		cert_path_str.as_str(),
+		"--default-certificate",
+		certificate.as_str(),
+		"--watcher-timeout",
+		"50",
+		"--watcher-debounce",
+		"50",
+	]);
+
+	// Can't reuse the client, because the connection would be kept alive, and
+	// the certificate reloading wouldn't be noticed
+	let res_before = get_client_with_cert(TEST_CERT)
+		.get("https://localhost/example")
+		.send()
+		.await;
+	let other_res_before = get_client_with_cert(OTHER_TEST_CERT)
+		.get("https://localhost/example")
+		.send()
+		.await;
+
+	fs::write(&cert_path, OTHER_TEST_CERT).await.unwrap();
+	fs::write(&key_path, OTHER_TEST_KEY).await.unwrap();
+
+	time::sleep(Duration::from_millis(500)).await;
+
+	let res_after = get_client_with_cert(TEST_CERT)
+		.get("https://localhost/example")
+		.send()
+		.await;
+	let other_res_after = get_client_with_cert(OTHER_TEST_CERT)
+		.get("https://localhost/example")
+		.send()
+		.await;
+
+	assert!(dbg!(res_before).is_ok());
+	assert!(dbg!(other_res_before).is_err());
+
+	assert!(dbg!(res_after).is_err());
+	assert!(dbg!(other_res_after).is_ok());
+}
+
+#[tokio::test]
+#[serial_test::serial]
+async fn tls_reload_domains() {
+	let cert_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
+		.unwrap()
+		.join("links_test_file_reload-tls_reload-cert")
+		.with_extension("pem");
+	let cert_path_str = util::convert_path(cert_path.to_str().unwrap());
+	fs::write(&cert_path, TEST_CERT).await.unwrap();
+
+	let key_path = PathBuf::from_str(env!("CARGO_TARGET_TMPDIR"))
+		.unwrap()
+		.join("links_test_file_reload-tls_reload-key")
+		.with_extension("pem");
+	let key_path_str = util::convert_path(key_path.to_str().unwrap());
+	fs::write(&key_path, TEST_KEY).await.unwrap();
+
+	let certificates = json! {
+		[{
+			"source": "files",
+			"domains": ["localhost"],
+			"cert": cert_path_str,
+			"key": key_path_str
+		}]
+	}
+	.to_string();
+
+	let _terminator = util::start_server_with_args(vec![
+		"-c",
+		"tests/test-config.toml",
+		"--certificates",
+		certificates.as_str(),
 		"--watcher-timeout",
 		"50",
 		"--watcher-debounce",
