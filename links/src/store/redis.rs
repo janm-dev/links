@@ -316,7 +316,7 @@ impl StoreBackend for Store {
 		)?;
 
 		Ok(values
-			.get(0)
+			.first()
 			.and_then(RedisValue::as_u64)
 			.and_then(StatisticValue::new))
 	}
