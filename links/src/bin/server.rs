@@ -36,7 +36,7 @@ use anyhow::anyhow;
 use crossbeam_channel::unbounded;
 use links::{
 	certs::CertificateResolver,
-	config::{CertConfigUpdate, CertificateWatcher, Config, LogLevel},
+	config::{CertConfigUpdate, CertificateWatcher, Config, DefaultCertificateSource, LogLevel},
 	server::{
 		store_setup, Listener, PlainHttpAcceptor, PlainRpcAcceptor, Protocol, TlsHttpAcceptor,
 		TlsRpcAcceptor,
@@ -207,292 +207,308 @@ fn main() -> Result<(), anyhow::Error> {
 			.unwrap_or(1000u64),
 	);
 
+	// The `links-config` thread is responsible for updating the server's
+	// configuration when it is changed
 	let cert_watcher_updates_tx = cert_watcher.get_config_sender();
-	thread::scope(|scope| {
-		// The `links-config` thread is responsible for updating the server's
-		// configuration when it is changed
-		thread::Builder::new()
-			.name("links-config".to_string())
-			.spawn_scoped(scope, move || loop {
-				match watcher_rx.recv_timeout(if last_file_event.is_none() {
-					watcher_timeout
-				} else {
-					watcher_debounce.min(watcher_timeout) / 4
-				}) {
-					Ok(event) => {
-						debug!(?event, "Received file event from watcher");
-						last_file_event = Some(Instant::now());
-					}
-					Err(RecvTimeoutError::Disconnected) => error!("File watching error"),
-					Err(RecvTimeoutError::Timeout) => (),
+	let config_thread = thread::Builder::new()
+		.name("links-config".to_string())
+		.spawn(move || loop {
+			match watcher_rx.recv_timeout(if last_file_event.is_none() {
+				watcher_timeout
+			} else {
+				watcher_debounce.min(watcher_timeout) / 4
+			}) {
+				Ok(event) => {
+					debug!(?event, "Received file event from watcher");
+					last_file_event = Some(Instant::now());
 				}
+				Err(RecvTimeoutError::Disconnected) => error!("File watching error"),
+				Err(RecvTimeoutError::Timeout) => (),
+			}
 
-				if last_file_event.is_none()
-					|| last_file_event.unwrap().elapsed() < watcher_debounce
-				{
-					continue;
-				}
+			if last_file_event.is_none() || last_file_event.unwrap().elapsed() < watcher_debounce {
+				continue;
+			}
 
-				// Reset file event debouncing timeout
-				last_file_event = None;
+			// Reset file event debouncing timeout
+			last_file_event = None;
 
-				// Retain some old config options, then update config
-				let old_default_cert = config.default_certificate();
-				let old_certs = config.certificates();
-				let old_store = (config.store(), config.store_config());
-				let old_listeners = config.listeners();
-				config.update();
-				let new_default_cert = config.default_certificate();
-				let new_certs = config.certificates();
-				let new_store = (config.store(), config.store_config());
-				let new_listeners = config.listeners();
+			// Retain some old config options, then update config
+			let old_default_cert = config.default_certificate();
+			let old_certs = config.certificates();
+			let old_store = (config.store(), config.store_config());
+			let old_listeners = config.listeners();
+			config.update();
+			let new_default_cert = config.default_certificate();
+			let new_certs = config.certificates();
+			let new_store = (config.store(), config.store_config());
+			let new_listeners = config.listeners();
 
-				// If the default TLS certificate source changed, update it
-				if old_default_cert != new_default_cert {
-					debug!("Updating default certificate source");
+			// If the default TLS certificate source changed, update it
+			if old_default_cert != new_default_cert {
+				debug!("Updating default certificate source");
+
+				cert_watcher_updates_tx
+					.send(CertConfigUpdate::DefaultUpdated(new_default_cert.clone()))
+					.expect("Certificate configuration update unsuccessful");
+
+				cert_config_updates_tx
+					.send(CertConfigUpdate::DefaultUpdated(new_default_cert))
+					.expect("Certificate configuration update unsuccessful");
+			}
+
+			// If TLS certificate sources changed, update them
+			if old_certs != new_certs {
+				debug!("Updating certificate sources");
+
+				// Unwatch and remove removed sources
+				for source in old_certs.iter().filter(|c| !new_certs.contains(c)) {
+					debug!(
+						?source,
+						"Removing certificate source for [{}]",
+						source
+							.domains
+							.iter()
+							.map(ToString::to_string)
+							.collect::<Vec<_>>()
+							.join(", ")
+					);
 
 					cert_watcher_updates_tx
-						.send(CertConfigUpdate::DefaultUpdated(new_default_cert.clone()))
+						.send(CertConfigUpdate::SourceRemoved(source.clone()))
 						.expect("Certificate configuration update unsuccessful");
 
 					cert_config_updates_tx
-						.send(CertConfigUpdate::DefaultUpdated(new_default_cert))
+						.send(CertConfigUpdate::SourceRemoved(source.clone()))
 						.expect("Certificate configuration update unsuccessful");
 				}
 
-				// If TLS certificate sources changed, update them
-				if old_certs != new_certs {
-					debug!("Updating certificate sources");
-
-					// Unwatch and remove removed sources
-					for source in old_certs.iter().filter(|c| !new_certs.contains(c)) {
-						debug!(
-							?source,
-							"Removing certificate source for [{}]",
-							source
-								.domains
-								.iter()
-								.map(ToString::to_string)
-								.collect::<Vec<_>>()
-								.join(", ")
-						);
-
-						cert_watcher_updates_tx
-							.send(CertConfigUpdate::SourceRemoved(source.clone()))
-							.expect("Certificate configuration update unsuccessful");
-
-						cert_config_updates_tx
-							.send(CertConfigUpdate::SourceRemoved(source.clone()))
-							.expect("Certificate configuration update unsuccessful");
-					}
-
-					// Watch added sources and add their certs/keys
-					for source in new_certs.iter().filter(|c| !old_certs.contains(c)) {
-						debug!(
-							?source,
-							"Adding certificate source for [{}]",
-							source
-								.domains
-								.iter()
-								.map(ToString::to_string)
-								.collect::<Vec<_>>()
-								.join(", ")
-						);
-
-						cert_watcher_updates_tx
-							.send(CertConfigUpdate::SourceAdded(source.clone()))
-							.expect("Certificate configuration update unsuccessful");
-
-						cert_config_updates_tx
-							.send(CertConfigUpdate::SourceAdded(source.clone()))
-							.expect("Certificate configuration update unsuccessful");
-					}
-				} else {
-					debug!("Certificate config not changed, continuing with existing cert sources");
-				}
-
-				// If the store type or config changed, create a new store to replace the
-				// existing one
-				if old_store != new_store {
-					info!(
-						"Updating store: {} ({})",
-						new_store.0,
-						stringify_map(&new_store.1)
+				// Watch added sources and add their certs/keys
+				for source in new_certs.iter().filter(|c| !old_certs.contains(c)) {
+					debug!(
+						?source,
+						"Adding certificate source for [{}]",
+						source
+							.domains
+							.iter()
+							.map(ToString::to_string)
+							.collect::<Vec<_>>()
+							.join(", ")
 					);
 
-					match rt.block_on(store_setup(config, false)) {
-						Ok(store) => current_store.update(store),
-						Err(err) => {
-							error!(?err, "Error creating new store, retaining old store")
-						}
-					}
-				} else {
-					debug!("Store config not changed, continuing with existing store");
+					cert_watcher_updates_tx
+						.send(CertConfigUpdate::SourceAdded(source.clone()))
+						.expect("Certificate configuration update unsuccessful");
+
+					cert_config_updates_tx
+						.send(CertConfigUpdate::SourceAdded(source.clone()))
+						.expect("Certificate configuration update unsuccessful");
 				}
+			} else {
+				debug!("Certificate config not changed, continuing with existing cert sources");
+			}
 
-				// Update listeners per the new config
-				listeners.retain(|l| new_listeners.contains(&l.listen_address()));
-
-				for addr in new_listeners {
-					if !old_listeners.contains(&addr) {
-						listeners.push(match addr.protocol {
-							Protocol::Http => {
-								match rt.block_on(Listener::new(
-									addr.address,
-									addr.port,
-									plain_http_acceptor,
-								)) {
-									Ok(listener) => listener,
-									Err(err) => {
-										error!("Error creating new listener on \"{addr}\": {err}");
-										continue;
-									}
-								}
-							}
-							Protocol::Https => match rt.block_on(Listener::new(
-								addr.address,
-								addr.port,
-								tls_http_acceptor,
-							)) {
-								Ok(listener) => listener,
-								Err(err) => {
-									error!("Error creating new listener on \"{addr}\": {err}");
-									continue;
-								}
-							},
-							Protocol::Grpc => match rt.block_on(Listener::new(
-								addr.address,
-								addr.port,
-								plain_rpc_acceptor,
-							)) {
-								Ok(listener) => listener,
-								Err(err) => {
-									error!("Error creating new listener on \"{addr}\": {err}");
-									continue;
-								}
-							},
-							Protocol::Grpcs => match rt.block_on(Listener::new(
-								addr.address,
-								addr.port,
-								tls_rpc_acceptor,
-							)) {
-								Ok(listener) => listener,
-								Err(err) => {
-									error!("Error creating new listener on \"{addr}\": {err}");
-									continue;
-								}
-							},
-						})
-					}
-				}
-
-				debug!(
-					"Updated listeners, currently active: {:?}",
-					listeners
-						.iter()
-						.map(|l| l.listen_address())
-						.collect::<Vec<_>>()
+			// If the store type or config changed, create a new store to replace the
+			// existing one
+			if old_store != new_store {
+				info!(
+					"Updating store: {} ({})",
+					new_store.0,
+					stringify_map(&new_store.1)
 				);
 
-				info!(?config, "Configuration reloaded");
-			})
-			.expect("error spawning configuration-reloading thread");
-
-		// The `links-cert-updates` thread is responsible for updating the certificate
-		// resolver when the underlying certificate sources are updated
-		let resolver = Arc::clone(&cert_resolver);
-		thread::Builder::new()
-			.name("links-cert-updates".to_string())
-			.spawn_scoped(scope, move || loop {
-				let (sources, default) = cert_watcher.watch(watcher_debounce);
-				debug!(?sources, "Certificate source update received from watcher");
-
-				if let Some(default) = default.into_cs() {
-					debug!(?default, "Updating default certificate");
-
-					match default.get_certkey() {
-						Ok(ck) => resolver.set_default(Some(Arc::new(ck))),
-						Err(err) => error!(%err, "Couldn't get default TLS certificate / key"),
+				match rt.block_on(store_setup(config, false)) {
+					Ok(store) => current_store.update(store),
+					Err(err) => {
+						error!(?err, "Error creating new store, retaining old store")
 					}
 				}
+			} else {
+				debug!("Store config not changed, continuing with existing store");
+			}
 
-				for source in sources {
-					debug!(?source, "Updating certificate source");
+			// Update listeners per the new config
+			listeners.retain(|l| new_listeners.contains(&l.listen_address()));
 
-					let certkey = match source.get_certkey().map(Arc::new) {
-						Ok(certkey) => certkey,
-						Err(error) => {
-							error!(%error, "Couldn't get TLS certificate / key");
-							continue;
-						}
-					};
-
-					for domain in source.domains {
-						debug!("Updating certificate for {domain}");
-						resolver.set(domain, Arc::clone(&certkey));
-					}
-				}
-
-				info!("TLS certificates reloaded");
-			})
-			.expect("error spawning certificate-reloading thread");
-
-		// The `links-cert-reconfig` thread is responsible for updating the certificate
-		// resolver when certificate source configuration is updated
-		thread::Builder::new()
-			.name("links-cert-reconfig".to_string())
-			.spawn_scoped(scope, move || loop {
-				let update = cert_config_updates_rx
-					.recv()
-					.expect("Certificate configuration channel closed");
-				debug!(?update, "Certificate source config update received");
-
-				match update {
-					CertConfigUpdate::DefaultUpdated(default) => {
-						if let Some(source) = default.into_cs() {
-							match source.get_certkey() {
-								Ok(cert) => {
-									cert_resolver.set_default(Some(Arc::new(cert)));
-									info!(?source, "Default certificate updated");
-								}
+			for addr in new_listeners {
+				if !old_listeners.contains(&addr) {
+					listeners.push(match addr.protocol {
+						Protocol::Http => {
+							match rt.block_on(Listener::new(
+								addr.address,
+								addr.port,
+								plain_http_acceptor,
+							)) {
+								Ok(listener) => listener,
 								Err(err) => {
-									error!(%err, "Error updating default certificate");
+									error!("Error creating new listener on \"{addr}\": {err}");
+									continue;
 								}
 							}
-						} else {
-							cert_resolver.set_default(None);
-							info!("Default certificate removed");
 						}
-					}
-					CertConfigUpdate::SourceAdded(source) => {
-						match source.get_certkey().map(Arc::new) {
-							Ok(certkey) => {
-								for domain in &source.domains {
-									debug!("Setting certificate for {domain}");
-									cert_resolver.set(domain.clone(), Arc::clone(&certkey));
-								}
+						Protocol::Https => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							tls_http_acceptor,
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+						Protocol::Grpc => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							plain_rpc_acceptor,
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+						Protocol::Grpcs => match rt.block_on(Listener::new(
+							addr.address,
+							addr.port,
+							tls_rpc_acceptor,
+						)) {
+							Ok(listener) => listener,
+							Err(err) => {
+								error!("Error creating new listener on \"{addr}\": {err}");
+								continue;
+							}
+						},
+					})
+				}
+			}
 
-								info!(?source, "Certificate updated");
+			debug!(
+				"Updated listeners, currently active: {:?}",
+				listeners
+					.iter()
+					.map(|l| l.listen_address())
+					.collect::<Vec<_>>()
+			);
+
+			info!(?config, "Configuration reloaded");
+		})
+		.expect("error spawning configuration-reloading thread");
+
+	// The `links-cert-updates` thread is responsible for updating the certificate
+	// resolver when the underlying certificate sources are updated
+	let resolver = Arc::clone(&cert_resolver);
+	let cert_updates_thread = thread::Builder::new()
+		.name("links-cert-updates".to_string())
+		.spawn(move || loop {
+			let (sources, default) = cert_watcher.watch(watcher_debounce);
+			debug!(?sources, "Certificate source update received from watcher");
+
+			if let Some(default) = default.into_cs() {
+				debug!(?default, "Updating default certificate");
+
+				match default.get_certkey() {
+					Ok(ck) => resolver.set_default(Some(Arc::new(ck))),
+					Err(err) => error!(%err, "Couldn't get default TLS certificate / key"),
+				}
+			}
+
+			for source in sources {
+				debug!(?source, "Updating certificate source");
+
+				let certkey = match source.get_certkey().map(Arc::new) {
+					Ok(certkey) => certkey,
+					Err(error) => {
+						error!(%error, "Couldn't get TLS certificate / key");
+						continue;
+					}
+				};
+
+				for domain in source.domains {
+					debug!("Updating certificate for {domain}");
+					resolver.set(domain, Arc::clone(&certkey));
+				}
+			}
+
+			info!("TLS certificates reloaded");
+		})
+		.expect("error spawning certificate-reloading thread");
+
+	// The `links-cert-reconfig` thread is responsible for updating the certificate
+	// resolver when certificate source configuration is updated
+	let cert_reconfig_thread = thread::Builder::new()
+		.name("links-cert-reconfig".to_string())
+		.spawn(move || loop {
+			let update = cert_config_updates_rx
+				.recv()
+				.expect("Certificate configuration channel closed");
+			debug!(?update, "Certificate source config update received");
+
+			match update {
+				CertConfigUpdate::DefaultUpdated(default) => {
+					if let Some(source) = default.into_cs() {
+						match source.get_certkey() {
+							Ok(cert) => {
+								cert_resolver.set_default(Some(Arc::new(cert)));
+								info!(?source, "Default certificate updated");
 							}
 							Err(err) => {
-								error!(%err, ?source, "Error updating certificate");
+								error!(%err, "Error updating default certificate");
 							}
 						}
-					}
-					CertConfigUpdate::SourceRemoved(source) => {
-						for domain in &source.domains {
-							debug!("Removing certificate for {domain}");
-							cert_resolver.remove(domain);
-						}
-
-						info!(?source, "Certificate removed");
+					} else {
+						cert_resolver.set_default(None);
+						info!("Default certificate removed");
 					}
 				}
-			})
-			.expect("error spawning certificate-reloading thread");
+				CertConfigUpdate::SourceAdded(source) => match source.get_certkey().map(Arc::new) {
+					Ok(certkey) => {
+						for domain in &source.domains {
+							debug!("Setting certificate for {domain}");
+							cert_resolver.set(domain.clone(), Arc::clone(&certkey));
+						}
 
-		info!(%config, "Links redirector server started");
-	});
+						info!(?source, "Certificate updated");
+					}
+					Err(err) => {
+						error!(%err, ?source, "Error updating certificate");
+					}
+				},
+				CertConfigUpdate::SourceRemoved(source) => {
+					for domain in &source.domains {
+						debug!("Removing certificate for {domain}");
+						cert_resolver.remove(domain);
+					}
 
-	unreachable!("The server stopped unexpectedly")
+					info!(?source, "Certificate removed");
+				}
+			}
+		})
+		.expect("error spawning certificate-updating thread");
+
+	info!(%config, "Links redirector server started");
+
+	// During coverage-collecting tests, in order to collect correct coverage
+	// data, use stdin to stop the server instead of relying on a kill signal,
+	// which also stops coverage reporting
+	#[cfg(coverage)]
+	loop {
+		use std::io::{self, Read};
+
+		let mut buf = [0u8];
+		io::stdin().read_exact(&mut buf[..]).unwrap();
+
+		if buf == [b'x'] {
+			info!("Server stopping");
+			return Ok(());
+		}
+	}
+
+	#[cfg(not(coverage))]
+	{
+		config_thread.join().expect("thread panicked");
+		cert_updates_thread.join().expect("thread panicked");
+		cert_reconfig_thread.join().expect("thread panicked");
+		unreachable!("The server stopped unexpectedly")
+	}
 }
