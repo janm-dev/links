@@ -39,10 +39,52 @@ pub enum IntoPartialError {
 	UnknownExtension,
 }
 
+/// JSON-deserialize the provided command-line argument, returning `Some(...)`
+/// if it is present, has a value, and was successfully parsed, and `None`
+/// otherwise
+fn deserialize_arg<T: for<'a> Deserialize<'a>>(
+	args: &mut Arguments,
+	key: &'static str,
+) -> Option<T> {
+	args.opt_value_from_fn(key, |s| serde_json::from_str(s))
+		.map_err(|err| {
+			warn!(
+				%err,
+				"Error parsing configuration from command-line argument '{key}'"
+			);
+		})
+		.ok()
+		.flatten()
+}
+
 /// Parse the provided environment variable, returning `Some(...)` if it is
 /// present, has a value, and was successfully parsed, and `None` otherwise
-fn parse_env_var<T: FromStr>(key: &'static str) -> Option<T> {
-	env::var(key).map_or(None, |s| s.parse().ok())
+fn parse_env_var<T: FromStr>(key: &str) -> Option<T> {
+	env::var(key).map_or(None, |s| {
+		s.parse()
+			.map_err(|_| {
+				warn!("Error parsing configuration from environment variable '{key}'");
+			})
+			.ok()
+	})
+}
+
+/// JSON-deserialize the provided environment variable, returning `Some(...)` if
+/// it is present, has a value, and was successfully parsed, and `None`
+/// otherwise
+fn deserialize_env_var<T: for<'a> Deserialize<'a>>(key: &str) -> Option<T> {
+	env::var(key)
+		.map_or(None, |s| {
+			serde_json::from_str(&s)
+				.map_err(|err| {
+					warn!(
+						%err,
+						"Error parsing configuration from environment variable '{key}'"
+					);
+				})
+				.ok()
+		})
+		.flatten()
 }
 
 /// Links redirector configuration as seen from the user's perspective. This is
@@ -146,69 +188,13 @@ impl Partial {
 	#[instrument(level = "debug", ret)]
 	pub fn from_args() -> Self {
 		let mut args = Arguments::from_env();
-
-		let listeners = args
-			.opt_value_from_fn("--listeners", |s| serde_json::from_str(s))
-			.map_err(|err| {
-				warn!(
-					%err,
-					"Error parsing configuration from command-line argument '--listeners'"
-				);
-			})
-			.ok()
-			.flatten();
-
-		let statistics = args
-			.opt_value_from_fn("--statistics", |s| serde_json::from_str(s))
-			.map_err(|err| {
-				warn!(
-					%err,
-					"Error parsing configuration from command-line argument '--statistics'"
-				);
-			})
-			.ok()
-			.flatten();
-
-		let default_certificate = args
-			.opt_value_from_fn("--default-certificate", |s| serde_json::from_str(s))
-			.map_err(|err| {
-				warn!(
-					%err,
-					"Error parsing configuration from command-line argument '--default-certificate'"
-				);
-			})
-			.ok()
-			.flatten();
-
-		let certificates = args
-			.opt_value_from_fn("--certificates", |s| serde_json::from_str(s))
-			.map_err(|err| {
-				warn!(
-					%err,
-					"Error parsing configuration from command-line argument '--certificates'"
-				);
-			})
-			.ok()
-			.flatten();
-
-		let store_config = args
-			.opt_value_from_fn("--store-config", |s| serde_json::from_str(s))
-			.map_err(|err| {
-				warn!(
-					%err,
-					"Error parsing configuration from command-line argument '--store-config'"
-				);
-			})
-			.ok()
-			.flatten();
-
 		Self {
 			log_level: args.opt_value_from_str("--log-level").unwrap_or(None),
 			token: args.opt_value_from_str("--token").unwrap_or(None),
-			listeners,
-			statistics,
-			default_certificate,
-			certificates,
+			listeners: deserialize_arg(&mut args, "--listeners"),
+			statistics: deserialize_arg(&mut args, "--statistics"),
+			default_certificate: deserialize_arg(&mut args, "--default-certificate"),
+			certificates: deserialize_arg(&mut args, "--certificates"),
 			hsts: args.opt_value_from_str("--hsts").unwrap_or(None),
 			hsts_max_age: args.opt_value_from_str("--hsts-max-age").unwrap_or(None),
 			https_redirect: args.opt_value_from_str("--https-redirect").unwrap_or(None),
@@ -216,7 +202,7 @@ impl Partial {
 			send_server: args.opt_value_from_str("--send-server").unwrap_or(None),
 			send_csp: args.opt_value_from_str("--send-csp").unwrap_or(None),
 			store: args.opt_value_from_str("--store").unwrap_or(None),
-			store_config,
+			store_config: deserialize_arg(&mut args, "--store-config"),
 		}
 	}
 
@@ -225,78 +211,13 @@ impl Partial {
 	#[must_use]
 	#[instrument(level = "debug", ret)]
 	pub fn from_env_vars() -> Self {
-		let listeners = env::var("LINKS_LISTENERS")
-			.map_or(None, |s| {
-				serde_json::from_str(&s)
-					.map_err(|err| {
-						warn!(
-							%err,
-							"Error parsing configuration from environment variable 'LINKS_LISTENERS'"
-						);
-					})
-					.ok()
-			})
-			.flatten();
-
-		let statistics = env::var("LINKS_STATISTICS")
-			.map_or(None, |s| {
-				serde_json::from_str(&s)
-					.map_err(|err| {
-						warn!(
-							%err,
-							"Error parsing configuration from environment variable 'LINKS_STATISTICS'"
-						);
-					})
-					.ok()
-			})
-			.flatten();
-
-		let default_certificate = env::var("LINKS_DEFAULT_CERTIFICATE")
-			.map_or(None, |s| {
-				serde_json::from_str(&s)
-					.map_err(|err| {
-						warn!(
-							%err,
-							"Error parsing configuration from environment variable 'LINKS_DEFAULT_CERTIFICATE'"
-						);
-					})
-					.ok()
-			})
-			.flatten();
-
-		let certificates = env::var("LINKS_CERTIFICATES")
-			.map_or(None, |s| {
-				serde_json::from_str(&s)
-					.map_err(|err| {
-						warn!(
-							%err,
-							"Error parsing configuration from environment variable 'LINKS_CERTIFICATES'"
-						);
-					})
-					.ok()
-			})
-			.flatten();
-
-		let store_config = env::var("LINKS_STORE_CONFIG")
-			.map_or(None, |s| {
-				serde_json::from_str(&s)
-					.map_err(|err| {
-						warn!(
-							%err,
-							"Error parsing configuration from environment variable 'LINKS_STORE_CONFIG'"
-						);
-					})
-					.ok()
-			})
-			.flatten();
-
 		Self {
 			log_level: parse_env_var("LINKS_LOG_LEVEL"),
 			token: parse_env_var("LINKS_TOKEN"),
-			listeners,
-			statistics,
-			default_certificate,
-			certificates,
+			listeners: deserialize_env_var("LINKS_LISTENERS"),
+			statistics: deserialize_env_var("LINKS_STATISTICS"),
+			default_certificate: deserialize_env_var("LINKS_DEFAULT_CERTIFICATE"),
+			certificates: deserialize_env_var("LINKS_CERTIFICATES"),
 			hsts: parse_env_var("LINKS_HSTS"),
 			hsts_max_age: parse_env_var("LINKS_HSTS_MAX_AGE"),
 			https_redirect: parse_env_var("LINKS_HTTPS_REDIRECT"),
@@ -304,7 +225,7 @@ impl Partial {
 			send_server: parse_env_var("LINKS_SEND_SERVER"),
 			send_csp: parse_env_var("LINKS_SEND_CSP"),
 			store: parse_env_var("LINKS_STORE"),
-			store_config,
+			store_config: deserialize_env_var("LINKS_STORE_CONFIG"),
 		}
 	}
 
@@ -382,4 +303,43 @@ pub enum PartialHsts {
 	/// and <https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security> first,
 	/// and make sure that this won't cause any problems before enabling it.
 	Preload,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_deserialize_arg() {
+		let mut args = Arguments::from_vec(vec![
+			"--certificates".into(),
+			r#"[{"source": "files", "domains": ["example.com"], "cert": "./cert.pem", "key": "./key.pem"}]"#.into(),
+			"--listeners".into(),
+			"yes, please".into(),
+		]);
+
+		assert!(deserialize_arg::<Vec<ListenAddress>>(&mut args, "--listeners").is_none());
+		assert!(deserialize_arg::<Vec<CertificateSource>>(&mut args, "--certificates").is_some());
+	}
+
+	#[test]
+	fn test_parse_env_var() {
+		env::set_var("LINKS_LOG_LEVEL", "no logging, thanks");
+		env::set_var("LINKS_HSTS", "include");
+
+		assert!(parse_env_var::<LogLevel>("LINKS_LOG_LEVEL").is_none());
+		assert!(parse_env_var::<PartialHsts>("LINKS_HSTS").is_some());
+	}
+
+	#[test]
+	fn test_deserialize_env_var() {
+		env::set_var(
+			"LINKS_CERTIFICATES",
+			r#"[{"source": "files", "domains": ["example.com"], "cert": "./cert.pem", "key": "./key.pem"}]"#,
+		);
+		env::set_var("LINKS_LISTENERS", "yes, please");
+
+		assert!(deserialize_env_var::<Vec<ListenAddress>>("LINKS_LISTENERS").is_none());
+		assert!(deserialize_env_var::<Vec<CertificateSource>>("LINKS_CERTIFICATES").is_some());
+	}
 }
