@@ -129,15 +129,13 @@ fn main() -> Result<(), anyhow::Error> {
 			.expect("Certificate configuration update unsuccessful");
 	}
 
-	cert_watcher.send_config_update(CertConfigUpdate::DefaultUpdated(
-		config.default_certificate(),
-	));
+	if let default @ DefaultCertificateSource::Some { .. } = config.default_certificate() {
+		cert_watcher.send_config_update(CertConfigUpdate::DefaultUpdated(default.clone()));
 
-	cert_config_updates_tx
-		.send(CertConfigUpdate::DefaultUpdated(
-			config.default_certificate(),
-		))
-		.expect("Certificate configuration update unsuccessful");
+		cert_config_updates_tx
+			.send(CertConfigUpdate::DefaultUpdated(default))
+			.expect("Certificate configuration update unsuccessful");
+	}
 
 	// Start tokio async runtime
 	let rt = Builder::new_multi_thread()
