@@ -212,7 +212,7 @@ pub async fn get_rpc_client(
 	if enable_tls {
 		let tls_config = ClientTlsConfig::new();
 
-		let channel = Channel::from_shared(format!("grpc://{}:{}", host.as_ref(), port))
+		let channel = Channel::from_shared(format!("https://{}:{}", host.as_ref(), port))
 			.unwrap()
 			.tls_config(tls_config)
 			.unwrap()
@@ -224,7 +224,7 @@ pub async fn get_rpc_client(
 			.send_compressed(CompressionEncoding::Gzip)
 			.accept_compressed(CompressionEncoding::Gzip)
 	} else {
-		LinksClient::connect(format!("grpc://{}:{}", host.as_ref(), port))
+		LinksClient::connect(format!("http://{}:{}", host.as_ref(), port))
 			.await
 			.unwrap()
 			.send_compressed(CompressionEncoding::Gzip)
