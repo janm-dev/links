@@ -361,7 +361,7 @@ impl Domain {
 
 		let mut labels = input.split(SEPERATORS).peekable();
 
-		let is_wildcard = *labels.peek().expect("the iterator is never empty") == "*";
+		let is_wildcard = *labels.peek().ok_or(ParseError::Empty)? == "*";
 
 		if is_wildcard {
 			// Skip the `"*"` label
@@ -704,6 +704,7 @@ mod tests {
 
 		let mut btree_map = BTreeMap::<_, usize>::new();
 		btree_map.insert(domain.clone(), 3);
+		assert_eq!(btree_map.get(&domain), Some(&3));
 
 		#[cfg(feature = "std")]
 		{
