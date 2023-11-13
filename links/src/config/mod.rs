@@ -13,7 +13,10 @@
 //! - `statistics` - A list of statistics categories to be collected (see
 //!   [statistics][`crate::stats`] for details). **Default `redirect`, `basic`,
 //!   and `protocol`**.
-//! - `tls` - A list of TLS certificate/key sources (see
+//! - `default_certificate` - An optional TLS certificate/key source to be used
+//!   for requests with an unknown/unrecognized domain names (see
+//!   [certificates][`crate::certs`] for details). **Default `None`**.
+//! - `certificates` - A list of TLS certificate/key sources (see
 //!   [certificates][`crate::certs`] for details). **Default empty**.
 //! - `hsts` - HTTP strict transport security setting. Possible values:
 //!   `disable`, `enable`, `includeSubDomains`, `preload`. **Default `enable`**.

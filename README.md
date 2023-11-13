@@ -10,8 +10,11 @@
 ## What it does
 
 Links is an all-in-one link shortener, redirecting links like <https://example.com/07Qdzc9W> or <https://example.com/my-cool-link> to wherever you want, all while optionally collecting useful, but privacy-focused, statistics.
-Links can be configured via a [command line interface](#cli), or (soon) via an HTTP-based api and website. Redirects are stored in a flexible, configurable way. Currently, a volatile in-memory store <sup>(not recommended)</sup> and [Redis](https://redis.com/) <sup>(recommended)</sup> are supported.
-Links is designed to scale up and down horizontally as much as needed. You can run the links server as a [standalone executable](#standalone-executable) or in a lightweight [Docker container](#docker-container), load-balancing between different redirector servers however necessary (all requests are stateless, so each HTTP/gRPC request can be sent to any redirector).
+Links can be configured via a [command line interface](#cli), or (soon) via an HTTP-based api and website.
+Redirects are stored in a flexible, configurable way.
+Currently, a volatile in-memory store <sup>(not recommended)</sup> and [Redis](https://redis.com/) <sup>(recommended)</sup> are supported.
+Links is designed to scale up and down horizontally as much as needed.
+You can run the links server as a [standalone executable](#standalone-executable) or in a lightweight [Docker container](#docker-container), load-balancing between different redirector servers however necessary (all requests are stateless, so each HTTP/gRPC request can be sent to any redirector).
 
 ## [Code documentation](https://docs.links.janm.dev/links/index.html)
 
@@ -19,15 +22,27 @@ Links is designed to scale up and down horizontally as much as needed. You can r
 
 ### Standalone executable
 
-To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments. The server will listen for incoming HTTP requests on port 80 on all interfaces and addresses and for API calls on port 50051 on localhost. There will also be inactive (due to no TLS configuration) listeners ready on port 443 for HTTPS and port 530 for encrypted gRPC API calls, both on all interfaces.
+To start the links redirector server without TLS encryption (no HTTPS, unencrypted gRPC API), simply run the server executable without any arguments.
+The server will listen for incoming HTTP requests on port 80 on all interfaces and addresses and for API calls on port 50051 on localhost.
+There will also be unresponsive (due to no TLS certificates) listeners ready on port 443 for HTTPS and port 530 for encrypted gRPC API calls, both on all interfaces.
 
-To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), a certificate and key are required. You can get some for free from [Let's Encrypt](https://letsencrypt.org/). Once you have both of them saved somewhere in `pem` format, run the links server with `--tls-enable true` to enable tls, and pass the certificate file path with `--tls-cert` and the key file path with `--tls-key` (i.e. `links-server --tls-enable true --tls-cert path/to/cert.pem --tls-key path/to/key.pem`). Optionally, you can use `--https-redirect true` to redirect all HTTP requests to HTTPS first, before the external redirect. The command-line options have the same name as the same config option in the file, but they are in `kebab-case`, e.g. `--log-level ...`. For information about other optional arguments, run the links server with the `--help` flag.
+To run the server with TLS (HTTP, HTTPS, and encrypted gRPC), one or more certificate sources need to be configured.
+For most use-cases a default certificate is enough (it will be used for all requests, regardless of [TLS SNI](https://en.wikipedia.org/wiki/Server_Name_Indication)).
+The default TLS certificate source is configured using the `default_certificate` config option (see [TLS configuration](#tls-configuration) below for details).
+When multiple different certificates are desired for different domain names, they can be configured with the `certificates` config option.
 
-In addition to command-line arguments, the links redirector server can also be configured using a config file, in toml, yaml, or json format. To load the configuration file, specify it with `--config path/to/config.file` when running the server. Self-documenting example config files can be found at [example-config.toml](./example-config.toml), [example-config.yaml](./example-config.yaml), and [example-config.json](./example-config.json).
+In addition to command-line arguments, the links redirector server can also be configured using a config file, in toml, yaml, or json format.
+To load the configuration file, specify it with `--config path/to/config.file` when running the server.
+Self-documenting example config files can be found at [example-config.toml](./example-config.toml), [example-config.yaml](./example-config.yaml), and [example-config.json](./example-config.json).
+For information about optional startup arguments, run the links server with the `--help` flag.
 
-Environment variables can also be used for configuration, similarly to command-line arguments. The environment variables have the same name as the same config option in the file, but they are in `SCREAMING_SNAKE_CASE` with the prefix `LINKS_`, e.g. `LINKS_LOG_LEVEL=...`.
+Environment variables can also be used for configuration, similarly to command-line arguments.
+The environment variables have the same name as the config options in the file, but they are in `SCREAMING_SNAKE_CASE` with the prefix `LINKS_`, e.g. `LINKS_LOG_LEVEL=...`.
 
-You can use one or more of the above configuration methods at the same time. If an option is specified with multiple of these methods, the following order of precedence is used, later sources overriding earlier ones:
+The configuration file (and all TLS certificates/keys) are automatically reloaded when they are updated.
+
+You can use one or more of the above configuration methods at the same time.
+If an option is specified with multiple of these methods, the following order of precedence is used, later sources overriding earlier ones:
 
 0. default values
 1. environment variables
@@ -36,7 +51,31 @@ You can use one or more of the above configuration methods at the same time. If 
 
 ### Docker container
 
-Since the links docker container is essentially just the server executable in container format, most of [the above section](#standalone-executable) applies, with one difference - tls is enabled by default with a randomly generated (at container build-time) self-signed certificate. This certificate and key pair should never be used in production, but they are useful for local testing. The certificate is located in `/cert.pem`, and the key in `/key.pem`. This default configuration is set from a config file located in `/config.toml`, set via the docker command with `--config /config.toml`.
+Since the links docker container is essentially just the server executable in container format, most of [the above section](#standalone-executable) applies, with one difference - tls is enabled by default with a randomly generated (at container build-time) self-signed certificate.
+This certificate and key pair should never be used in production, but they are useful for local testing.
+The certificate is located in `/cert.pem`, and the key in `/key.pem`.
+This default configuration is set from a config file located in `/config.toml`, set via the docker command with `--config /config.toml`.
+
+### TLS configuration
+
+TLS certificates for the links redirector server are configured by setting certificate sources, either as certificates for a specific set of domain names, or a default certificate (used when no other certificates' domain names match or a request has no known domain name).
+
+A certificate source is configured as below:
+
+```toml
+# The type of this source
+source = "source type"
+# The domains for which to use this certificate (optional for the default source)
+domains = ["first.domain", "second.domain", "etc"]
+# Other configuration options, depending on the source type
+other_option = "other value"
+```
+
+Currently, the following source types are supported:
+
+- `files` - read the certificate and key from files:
+  - `key = "path/to/key.pem"` - file path of the private key in PEM format
+  - `cert = "path/to/cert.pem"` - file path of the certificate in PEM format
 
 ## Editing redirects
 
@@ -44,7 +83,9 @@ Since the links docker container is essentially just the server executable in co
 
 You can access the low-level gRPC API via the links cli to perform operations on the backend store.
 
-For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-t` to enable TLS encryption (required when it is enabled in the server), `-H` or `LINKS_RPC_HOST` to specify the redirector's hostname, `-P` or `LINKS_RPC_PORT` to specify the redirector's gRPC API port, and `-T` or `LINKS_RPC_TOKEN` to specify the API token. Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand. In a development environment, replace `links-cli` with `cargo run --bin cli --`.
+For all the below commands, you can use `--help` to get help, `-v` to get more verbose results, `-t` to enable TLS encryption (required when it is enabled in the server), `-H` or `LINKS_RPC_HOST` to specify the redirector's hostname, `-P` or `LINKS_RPC_PORT` to specify the redirector's gRPC API port, and `-T` or `LINKS_RPC_TOKEN` to specify the API token.
+Run `links-cli help` for more info about the cli, or `links-cli help SUBCOMMAND` for more information about the specific subcommand.
+In a development environment, replace `links-cli` with `cargo run --bin cli --`.
 
 To create a new redirect with a random ID and an optional vanity path, run
 
@@ -75,15 +116,24 @@ TODO - not implemented yet
 
 ## Statistics
 
-The links redirector server can collect some statistics about each request. These statistics are designed to preserve user privacy, while still offering useful information about redirects. For more information about the specific types of statistics that are collected, see the documentation for [`StatisticType` in `/src/stats/internals.rs`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
+The links redirector server can collect some statistics about each request.
+These statistics are designed to preserve user privacy, while still offering useful information about redirects.
+For more information about the specific types of statistics that are collected, see the documentation for [`StatisticType` in `/src/stats/internals.rs`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
 
-If supported, statistics are stored in the same store as redirects, as a mapping of statistic information (link, type, data, time) to that statistic's value (an integer counter). That counter is simply incremented every time that specific statistic is collected. The time in a statistic represents a period of 15 minutes during which that statistic was collected. By storing the time this way, multiple statistics can not (as easily) be associated with each other to potentially [fingerprint](https://en.wikipedia.org/wiki/Device_fingerprint) a user, while still allowing some time-based analysis of redirects.
+If supported, statistics are stored in the same store as redirects, as a mapping of statistic information (link, type, data, time) to that statistic's value (an integer counter).
+That counter is simply incremented every time that specific statistic is collected.
+The time in a statistic represents a period of 15 minutes during which that statistic was collected.
+By storing the time this way, multiple statistics can not (as easily) be associated with each other to potentially [fingerprint](https://en.wikipedia.org/wiki/Device_fingerprint) a user, while still allowing some time-based analysis of redirects.
 
-Data for statistics is collected on the redirector server from various parts of the request (e.g. HTTP headers, TLS protocol info, etc.), without the use of Cookies or any client-side code. This may however still involve processing, sharing, and potentially storing private information (e.g. the user's IP address), so compliance with privacy (and other) laws must be ensured before deploying links. For details on what data is used for each type of statistic, see the documentation for [`StatisticType`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
+Data for statistics is collected on the redirector server from various parts of the request (e.g. HTTP headers, TLS protocol info, etc.), without the use of Cookies or any client-side code.
+This may however still involve processing, sharing, and potentially storing private information (e.g. the user's IP address), so compliance with privacy (and other) laws must be ensured before deploying links.
+For details on what data is used for each type of statistic, see the documentation for [`StatisticType`](https://docs.links.janm.dev/links/stats/internals/enum.StatisticType.html).
 
 ### Configuration
 
-Statistic collection can be configured by specifying a list of statistic categories to collect. Statistics with types not in any of these categories will not be collected. The following categories of statistics are currently supported:
+Statistic collection can be configured by specifying a list of statistic categories to collect.
+Statistics with types not in any of these categories will not be collected.
+The following categories of statistics are currently supported:
 
 - `redirect` - A request was redirected:
   - [`Request`] - A request was processed (no data)
@@ -119,23 +169,38 @@ Links has 3 main parts:
 - A backend store (e.g. Redis), responsible for storing redirect and vanity path information
 - A configuration utility/service, responsible for allowing the user to set up redirects
 
-All redirects have an ID - a 40 bit / 5 byte number, represented as an 8 character string in the format of `digit + 7 * base 38`, e.g. `07Qdzc9W` (see docs in `/src/id.rs` for more details). This ID format is designed to be readable and short, while giving a unique ID for over a trillion different redirects.
+All redirects have an ID - a 40 bit / 5 byte number, represented as an 8 character string in the format of `digit + 7 * base 38`, e.g. `07Qdzc9W` (see docs in `/src/id.rs` for more details).
+This ID format is designed to be readable and short, while giving a unique ID for over a trillion different redirects.
 
-When the redirector server receives a request, it first checks if the path of the request is a links ID (starts with a digit, e.g. `07Qdzc9W`) or a vanity path (freeform text, doesn't start with a digit). If the path is not an ID, the server gets the ID of that redirect from the store. Then, the server gets the destination URL of the redirect corresponding to the ID. It then redirects the request to that URL, or responds with a 404 status if the ID or destination URL could not be found.
+When the redirector server receives a request, it first checks if the path of the request is a links ID (starts with a digit, e.g. `07Qdzc9W`) or a vanity path (freeform text, doesn't start with a digit).
+If the path is not an ID, the server gets the ID of that redirect from the store.
+Then, the server gets the destination URL of the redirect corresponding to the ID.
+It then redirects the request to that URL, or responds with a 404 status if the ID or destination URL could not be found.
 
 Just before the redirect, the links server collects some information about the request and uses that information to gather the appropriate [statistics](#statistics), which are queued for collection some time after the client is redirected.
 
-The redirector server is also responsible for allowing the user to edit redirects via a low-level gRPC API. You can interact with that API via a [command-line utility](#cli) or (soon) via an HTTP-based API and website. Definitions for the gRPC interface are located in `/proto/links.proto`. This API exists so that you can easily interact with the redirect store in a generic way, no matter what the actual storage backend is, or how much links has been scaled (though you _can_ (soon) optionally disable that API).
+The redirector server is also responsible for allowing the user to edit redirects via a low-level gRPC API.
+You can interact with that API via a [command-line utility](#cli) or (soon) via an HTTP-based API and website.
+Definitions for the gRPC interface are located in `/proto/links.proto`.
+This API exists so that you can easily interact with the redirect store in a generic way, no matter what the actual storage backend is, or how much links has been scaled (though you _can_ (soon) optionally disable that API).
 
-The backend store is accessed by the redirector server, and can also be used via the gRPC API. No external access is needed to set up or edit redirects. The storage backend implementation is generic, so that you can choose where redirects are stored. Redirects are stored in a backend-specific way, but generally as a map of `vanity path -> ID` and `ID -> destination URL`, with statistics being stored as a mapping of `statistic (link, type, data, time) -> statistic value`.
+The backend store is accessed by the redirector server, and can also be used via the gRPC API.
+No external access is needed to set up or edit redirects.
+The storage backend implementation is generic, so that you can choose where redirects are stored.
+Redirects are stored in a backend-specific way, but generally as a map of `vanity path -> ID` and `ID -> destination URL`, with statistics being stored as a mapping of `statistic (link, type, data, time) -> statistic value`.
 
 ## How to build it
 
-To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs). You also need to install a recent version of [protoc](https://github.com/protocolbuffers/protobuf#protocol-compiler-installation) to compile .proto files.
+To build links, you first need to install a recent version of [Rust](https://www.rust-lang.org), ideally via [rustup](https://rustup.rs).
+You also need to install a recent version of [protoc](https://github.com/protocolbuffers/protobuf#protocol-compiler-installation) to compile .proto files.
 Once you have all of those installed, you can simply run `cargo build --release` to build an optimized release version of all links binaries, which will be located in `/target/release/`.
-If you just want to try links out, you can also just run it with `cargo run`. This version will not be optimized and will include debug symbols, but will compile faster.
+If you just want to try links out, you can also just run it with `cargo run`.
+This version will not be optimized and will include debug symbols, but will compile faster.
 
-To build a links redirector Docker container, run `docker build .`. The server binary in the container will be release-optimized. The container itself is made to be lightweight, using a `FROM scratch` container with statically linked musl-libc for the final image to avoid the size overhead of Debian or Alpine. The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
+To build a links redirector Docker container, run `docker build .`.
+The server binary in the container will be release-optimized.
+The container itself is made to be lightweight, using a `FROM scratch` container with statically linked musl-libc for the final image to avoid the size overhead of Debian or Alpine.
+The final container image is only approximately 10 MB, about 35% smaller than an Alpine-based image.
 
 ### MSRV
 
@@ -157,8 +222,9 @@ The minimum supported rust version is currently Rust 1.70, but this may change i
 ## Attribution
 
 - The readme header is based on an image of the Gale crater on Mars (where there is a rock outcrop named "Link") courtesy NASA/JPL-Caltech.
-- While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of its dependencies. Dependency license information is included with each [release](https://github.com/janm-dev/links/releases).
+- While this repository doesn't contain the dependencies' source code, compiled distributions of links may contain compiled/binary forms of its dependencies, license information for which is included with each [release](https://github.com/janm-dev/links/releases).
 
 ## License
 
-This project is licensed under GNU AGPLv3 or later (`AGPL-3.0-or-later`). You can find the full license text in the LICENSE file.
+This project is licensed under GNU AGPLv3 or later (`AGPL-3.0-or-later`).
+You can find the full license text in the LICENSE file.
