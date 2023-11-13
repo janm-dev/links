@@ -15,7 +15,7 @@ use crate::Domain;
 
 /// A map with [domain name][Domain] keys, with support for wildcards
 ///
-/// A [`DomainMap<T>`] holds "[reference identifiers]" (domain names possibly
+/// A [`DomainMap<T>`] holds "[presented identifiers]" (domain names possibly
 /// with wildcards) as [`Domain`]s. A [`DomainMap`] can be indexed using a
 /// [`Domain`], which stores either a "[reference identifier]" (for matching
 /// methods, e.g. `get` or `get_mut`) or a "[presented identifier]" (for
@@ -458,7 +458,8 @@ impl<T> DomainMap<T> {
 	/// # Ok(())
 	/// # }
 	/// ```
-	pub fn iter(&self) -> impl Iterator<Item = (&Domain, &T)> {
+	#[must_use]
+	pub fn iter(&self) -> Iter<'_, T> {
 		<&Self as IntoIterator>::into_iter(self)
 	}
 
@@ -482,7 +483,8 @@ impl<T> DomainMap<T> {
 	/// # Ok(())
 	/// # }
 	/// ```
-	pub fn iter_mut(&mut self) -> impl Iterator<Item = (&Domain, &mut T)> {
+	#[must_use]
+	pub fn iter_mut(&mut self) -> IterMut<'_, T> {
 		<&mut Self as IntoIterator>::into_iter(self)
 	}
 }
@@ -833,6 +835,7 @@ mod tests {
 		map.set(b.clone(), 10);
 		map.set(c.clone(), 100);
 
+		#[allow(clippy::explicit_iter_loop)]
 		for (domain, value) in map.iter() {
 			// Iteration order is not specified
 			assert!(
@@ -842,6 +845,16 @@ mod tests {
 			);
 		}
 
+		for (domain, value) in &map {
+			// Iteration order is not specified
+			assert!(
+				(*domain == a && *value == 1)
+					|| (*domain == b && *value == 10)
+					|| (*domain == c && *value == 100)
+			);
+		}
+
+		#[allow(clippy::explicit_iter_loop)]
 		for (domain, value) in map.iter_mut() {
 			// Iteration order is not specified
 			assert!(
@@ -850,11 +863,32 @@ mod tests {
 					|| (*domain == c && *value == 100)
 			);
 
-			*value += 1000;
+			*value += 300;
+		}
+		for (domain, value) in &mut map {
+			// Iteration order is not specified
+			assert!(
+				(*domain == a && *value == 301)
+					|| (*domain == b && *value == 310)
+					|| (*domain == c && *value == 400)
+			);
+
+			*value += 700;
 		}
 
 		#[allow(clippy::explicit_into_iter_loop)]
-		for (domain, value) in map.into_iter() {
+		for (domain, value) in map.clone().into_iter() {
+			// Iteration order is not specified
+			assert!(
+				(domain == a && value == 1001)
+					|| (domain == b && value == 1010)
+					|| (domain == c && value == 1100)
+			);
+
+			drop(domain);
+		}
+
+		for (domain, value) in map {
 			// Iteration order is not specified
 			assert!(
 				(domain == a && value == 1001)

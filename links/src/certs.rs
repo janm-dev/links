@@ -13,8 +13,8 @@ use tokio_rustls::rustls::{
 use tracing::debug;
 
 /// A [`ResolvesServerCert`] implementor, resolving TLS certificates based on
-/// the domain name using `links-domainmap`. Behaviour for unknown or
-/// unrecognized domain names can be specified using `default`.
+/// the domain name using `links-domainmap`. The default certificate for unknown
+/// or unrecognized domain names can be specified using `default`.
 ///
 /// [`ResolvesServerCert`]: https://docs.rs/rustls/latest/rustls/server/trait.ResolvesServerCert.html
 pub struct CertificateResolver {
@@ -25,8 +25,7 @@ pub struct CertificateResolver {
 }
 
 impl CertificateResolver {
-	/// Create a new `CertificateResolver` from a [`CertifiedKey`]. The default
-	/// cert/key pair (if any) is provided as `default_certkey`.
+	/// Create a new empty `CertificateResolver` from a [`CertifiedKey`]
 	#[must_use]
 	pub const fn new() -> Self {
 		Self {
