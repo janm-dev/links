@@ -590,6 +590,7 @@ pub struct Iter<'a, T: 'a> {
 impl<'a, T: 'a> Iterator for Iter<'a, T> {
 	type Item = (&'a Domain, &'a T);
 
+	#[allow(clippy::map_identity)] // false positive, the map is from `&(k, v)` to `(&k, &v)`
 	fn next(&mut self) -> Option<Self::Item> {
 		self.inner.next().map(|(k, v)| (k, v))
 	}
