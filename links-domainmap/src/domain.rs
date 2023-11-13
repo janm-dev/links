@@ -170,8 +170,8 @@ impl AsRef<str> for Label {
 /// the left-most label is equal to `'*'`, `is_wildcard` is set to true, and the
 /// label itself is *not* stored in `labels`.
 ///
-/// See the [module-level documentation][crate::domain] for details about syntax
-/// rules for domain names.
+/// See the [library documentation][crate] for details about syntax rules for
+/// domain names.
 ///
 /// # `Eq` vs `matches()`
 ///

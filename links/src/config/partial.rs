@@ -88,10 +88,10 @@ fn deserialize_env_var<T: for<'a> Deserialize<'a>>(key: &str) -> Option<T> {
 }
 
 /// Links redirector configuration as seen from the user's perspective. This is
-/// easier to parse, but less idiomatic and not as easy to use as [`Config`]. As
-/// this is a representation of links' configuration from one source only, all
-/// fields are optional, which allows incremental updates to the actual
-/// [`Config`] struct.
+/// easier to parse, but less idiomatic and not as easy to use as
+/// [`Config`][super::Config]. As this is a representation of links'
+/// configuration from one source only, all fields are optional, which allows
+/// incremental updates to the actual [`Config`][super::Config] struct.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Partial {

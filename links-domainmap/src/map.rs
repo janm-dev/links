@@ -1,13 +1,4 @@
 //! A map with [domain name][Domain] keys, with support for wildcards
-//!
-//! A [`DomainMap<T>`] holds "[reference identifiers]" (domain names possibly
-//! with wildcards) as [`Domain`]s. A [`DomainMap`] can be indexed using a
-//! [`Domain`], which stores either a "[reference identifier]" (for matching
-//! methods, e.g. `get` or `get_mut`) or a "[presented identifier]" (for
-//! equality-comparing methods, e.g. `get_eq` or `remove`).
-//!
-//! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
-//! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::{IntoIter as VecIter, Vec};
@@ -22,7 +13,13 @@ use std::vec::IntoIter as VecIter;
 
 use crate::Domain;
 
-/// A map with [domain name][Domain] keys, with support for wildcards.
+/// A map with [domain name][Domain] keys, with support for wildcards
+///
+/// A [`DomainMap<T>`] holds "[reference identifiers]" (domain names possibly
+/// with wildcards) as [`Domain`]s. A [`DomainMap`] can be indexed using a
+/// [`Domain`], which stores either a "[reference identifier]" (for matching
+/// methods, e.g. `get` or `get_mut`) or a "[presented identifier]" (for
+/// equality-comparing methods, e.g. `get_eq` or `remove`).
 ///
 /// Currently, this is implemented using an associative array, but this may
 /// change in the future.
@@ -105,6 +102,9 @@ use crate::Domain;
 /// # Ok(())
 /// # }
 /// ```
+///
+/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
+/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
 #[derive(Debug, Clone)]
 pub struct DomainMap<T> {
 	data: Vec<(Domain, T)>,

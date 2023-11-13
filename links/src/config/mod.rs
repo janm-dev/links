@@ -92,7 +92,7 @@ pub struct CertificateWatcher {
 	/// Receiver for certificate source configuration updates
 	config_rx: Receiver<CertConfigUpdate>,
 	/// Sender for certificate source configuration updates, can be retrieved
-	/// using [`get_config_sender`].
+	/// using [`Self::get_config_sender()`].
 	config_tx: Sender<CertConfigUpdate>,
 }
 

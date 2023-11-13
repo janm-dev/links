@@ -217,6 +217,7 @@ The minimum supported rust version is currently Rust 1.70, but this may change i
 | `/links/`            | the main links library, redirector server and CLI |
 | `/links-id/`         | the links ID library                              |
 | `/links-normalized/` | links normalized string data structures           |
+| `/links-domainmap/`  | the domain name -> certificate map used by links  |
 | `/Dockerfile`        | links redirector server docker container          |
 
 ## Attribution
