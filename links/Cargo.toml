@@ -69,10 +69,10 @@ tonic = { version = "0.10.2", default-features = false, features = [
 	"prost",
 ] }
 tracing = "0.1.40"
-tracing-appender = { version = "0.2.2", features = [
+tracing-appender = { version = "0.2.3", features = [
 	"parking_lot",
 ] }
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.18"
 strum = { version = "0.25.0", features = ["derive"] }
 crossbeam-channel = "0.5.8"
 
