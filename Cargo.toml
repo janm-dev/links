@@ -1,5 +1,11 @@
 [workspace]
-members = ["links", "links-id", "links-normalized"]
+resolver = "2"
+members = [
+	"links",
+	"links-id",
+	"links-normalized",
+	"links-domainmap",
+]
 
 [profile.release]
 incremental = false

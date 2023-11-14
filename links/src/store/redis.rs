@@ -31,9 +31,10 @@ use std::{
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use fred::{
-	pool::RedisPool,
+	bytes_utils::Str,
+	clients::RedisPool,
 	prelude::*,
-	types::{ArcStr, RespVersion, Server, TlsConnector},
+	types::{RespVersion, Server, TlsConnector},
 };
 use links_id::Id;
 use links_normalized::{Link, Normalized};
@@ -110,7 +111,7 @@ impl StoreBackend for Store {
 						s.trim()
 							.split_once(':')
 							.map(|v| {
-								let host = ArcStr::from(v.0);
+								let host = Str::from(v.0);
 
 								Ok(Server {
 									host: host.clone(),
@@ -128,7 +129,7 @@ impl StoreBackend for Store {
 				.map(|s| {
 					s.split_once(':')
 						.map::<Result<_, anyhow::Error>, _>(|v| {
-							Ok((ArcStr::from(v.0), v.1.parse::<u16>()?))
+							Ok((Str::from(v.0), v.1.parse::<u16>()?))
 						})
 						.ok_or_else(|| anyhow!("couldn't parse connect value"))?
 				})
@@ -163,6 +164,7 @@ impl StoreBackend for Store {
 
 		let pool = RedisPool::new(
 			pool_config,
+			None,
 			None,
 			Some(ReconnectPolicy::new_constant(0, 100)),
 			config
@@ -316,7 +318,7 @@ impl StoreBackend for Store {
 		)?;
 
 		Ok(values
-			.get(0)
+			.first()
 			.and_then(RedisValue::as_u64)
 			.and_then(StatisticValue::new))
 	}

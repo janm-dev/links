@@ -41,14 +41,24 @@ listeners = ["http::", "https::", "grpcs::"]
 # - `user-agent` enables statistic types `UserAgent`, `UserAgentMobile`, and `UserAgentPlatform`
 statistics = ["redirect", "basic", "protocol", "user-agent"]
 
-# Enable/disable TLS for HTTPS and encrypted gRPC
-tls_enable = true
+# The default TLS certificate source for HTTPS and encrypted gRPC, used when no
+# other certificate matches or the domain name of a request is not known
+#
+# The sources supported here are the same as in `certificates`, but the
+# `domains` property is optional (and only used for getting certificates from
+# sources that need the information, e.g. ACME)
+default_certificate = { source = "files", cert = "/cert.pem", key = "/key.pem" }
 
-# Path to the TLS key, encoded in PEM format
-tls_key = "/key.pem"
-
-# Path to the TLS cert, encoded in PEM format
-tls_cert = "/cert.pem"
+# TLS certificate sources for HTTPS and encrypted gRPC
+#
+# Each source has a format of `{ source = "source-type", domains = [
+# 	"example.com", "www.example.com", "*.example.net"
+# ], other_options = "other_values" }`
+#
+# Currently, the following sources are supported:
+# - `files`: get the certificate from the file specified as `cert` and the
+#            private key from the file specified as `key`
+#certificates = []
 
 # Enable/disable HTTP strict transport security
 # Possible values are "disable" / "off", "enable" / "on", "include" / "includeSubDomains", and "preload"

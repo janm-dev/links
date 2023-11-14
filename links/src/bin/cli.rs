@@ -188,7 +188,7 @@ where
 	let client = if cli.tls {
 		let tls_config = ClientTlsConfig::new();
 
-		let channel = Channel::from_shared(format!("grpc://{}:{}", cli.host, port))
+		let channel = Channel::from_shared(format!("https://{}:{}", cli.host, port))
 			.format_err("The host or port is invalid")?
 			.tls_config(tls_config)
 			.expect("Invalid TLS config")
@@ -200,7 +200,7 @@ where
 			.send_compressed(CompressionEncoding::Gzip)
 			.accept_compressed(CompressionEncoding::Gzip)
 	} else {
-		LinksClient::connect(format!("grpc://{}:{}", cli.host, port))
+		LinksClient::connect(format!("http://{}:{}", cli.host, port))
 			.await
 			.format_err("Could not connect to gRPC API server")?
 			.send_compressed(CompressionEncoding::Gzip)
@@ -296,10 +296,8 @@ async fn get(
 		IdOrVanity::Id(id) => (Some(id), None),
 	};
 
-	let link = if id.is_some() {
-		let mut req = Request::new(GetRedirectRequest {
-			id: id.unwrap().to_string(),
-		});
+	let link = if let Some(id) = id {
+		let mut req = Request::new(GetRedirectRequest { id: id.to_string() });
 		req.metadata_mut().append("auth", token.clone());
 		client
 			.get_redirect(req)

@@ -95,11 +95,11 @@ impl Links for Api {
 		let store = self.store();
 
 		let Ok(id) = Id::try_from(req.into_inner().id) else {
-			return Err(Status::new(Code::InvalidArgument, "id is invalid"))
+			return Err(Status::new(Code::InvalidArgument, "id is invalid"));
 		};
 
 		let Ok(link) = store.get_redirect(id).await else {
-			return Err(Status::new(Code::Internal, "store operation failed"))
+			return Err(Status::new(Code::Internal, "store operation failed"));
 		};
 
 		let res = Ok(Response::new(rpc::GetRedirectResponse {

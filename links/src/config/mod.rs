@@ -13,12 +13,11 @@
 //! - `statistics` - A list of statistics categories to be collected (see
 //!   [statistics][`crate::stats`] for details). **Default `redirect`, `basic`,
 //!   and `protocol`**.
-//! - `tls_enable` - Whether to enable TLS for HTTPS and RPC. **Default
-//!   `false`**.
-//! - `tls_key` - TLS private key file path. Required if TLS is enabled. **No
-//!   default**.
-//! - `tls_cert` - TLS certificate file path. Required if TLS is enabled. **No
-//!   default**.
+//! - `default_certificate` - An optional TLS certificate/key source to be used
+//!   for requests with an unknown/unrecognized domain names (see
+//!   [certificates][`crate::certs`] for details). **Default `None`**.
+//! - `certificates` - A list of TLS certificate/key sources (see
+//!   [certificates][`crate::certs`] for details). **Default empty**.
 //! - `hsts` - HTTP strict transport security setting. Possible values:
 //!   `disable`, `enable`, `includeSubDomains`, `preload`. **Default `enable`**.
 //! - `hsts_max_age` - The HSTS max-age setting (in seconds). **Default
@@ -41,20 +40,364 @@ mod partial;
 
 use std::{
 	fmt::{Debug, Display, Formatter, Result as FmtResult},
+	fs,
+	io::Error as IoError,
 	net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
 	num::ParseIntError,
+	path::PathBuf,
 	str::FromStr,
+	sync::Mutex,
+	time::Duration,
 };
 
+use crossbeam_channel::{select, unbounded, Receiver, Sender};
+use links_domainmap::Domain;
+use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use strum::{Display as EnumDisplay, EnumString, ParseError};
-use tracing::Level;
+use tokio_rustls::rustls::{
+	sign::{self, CertifiedKey, SignError},
+	Certificate, PrivateKey,
+};
+use tracing::{debug, error, Level};
 
 pub use self::{
-	global::{Config, Hsts, Redirector, Tls},
+	global::{Config, Hsts, Redirector},
 	partial::{IntoPartialError, Partial, PartialHsts},
 };
 use crate::server::Protocol;
+
+/// An update to certificate configuration
+#[derive(Debug)]
+pub enum CertConfigUpdate {
+	/// The default certificate source was updated
+	DefaultUpdated(DefaultCertificateSource),
+	/// A certificate source was added and should start being watched
+	SourceAdded(CertificateSource),
+	/// A certificate source was removed and should stop being watched
+	SourceRemoved(CertificateSource),
+}
+
+/// A watcher for updates to certificate sources
+#[derive(Debug)]
+pub struct CertificateWatcher {
+	/// All currently-watched non-default certificate sources
+	sources: Vec<CertificateSource>,
+	/// The default certificate source
+	default_source: DefaultCertificateSource,
+	/// Underlying watcher for certificates read from files
+	files_watcher: RecommendedWatcher,
+	/// Receiver for file modification events from `files_watcher`
+	files_rx: Receiver<Event>,
+	/// Receiver for certificate source configuration updates
+	config_rx: Receiver<CertConfigUpdate>,
+	/// Sender for certificate source configuration updates, can be retrieved
+	/// using [`Self::get_config_sender()`].
+	config_tx: Sender<CertConfigUpdate>,
+}
+
+impl CertificateWatcher {
+	/// Create a new [`CertificateWatcher`]
+	///
+	/// # Errors
+	/// This function returns an error if the file watcher for `files`
+	/// certificate sources could not be set up
+	#[allow(clippy::missing_panics_doc)]
+	pub fn new() -> anyhow::Result<Self> {
+		let (files_tx, files_rx) = unbounded();
+		let (config_tx, config_rx) = unbounded();
+		let files_watcher = notify::recommended_watcher(move |res| match res {
+			Ok(ev) => files_tx
+				.send(ev)
+				.expect("the certificate file watching channel closed unexpectedly"),
+			Err(err) => error!(%err, "certificate file watching error"),
+		})?;
+
+		Ok(Self {
+			sources: Vec::new(),
+			default_source: DefaultCertificateSource::None,
+			files_watcher,
+			files_rx,
+			config_rx,
+			config_tx,
+		})
+	}
+
+	/// Watch for changes to the certificates
+	///
+	/// Blocks until a change has occurred, returning all [`CertificateSource`]s
+	/// that have changed and need to be reloaded. The first element in the
+	/// tuple contains all updated sources from `certificates`, the second is
+	/// the default certificate source (or `None` if it hasn't been updated).
+	/// May return multiple certificate sources at once if one event caused all
+	/// of them to need updating. May return a false positive (a certificate
+	/// source may be returned when it hasn't actually changed).
+	#[allow(clippy::missing_panics_doc)]
+	pub fn watch(
+		&mut self,
+		debounce_time: Duration,
+	) -> (Vec<CertificateSource>, DefaultCertificateSource) {
+		let debounced = Mutex::new(Option::<(Vec<_>, _)>::None);
+
+		let handle_files = |this: &mut Self, event| {
+			debug!(?event, "Received file event from watcher");
+			let file_sources = this
+				.sources
+				.iter()
+				.filter(|s| match s.source {
+					CertificateSourceType::Files { .. } => true,
+				})
+				.cloned()
+				.collect();
+
+			let mut db = debounced.lock().expect("lock poisoned");
+			if let Some(ref mut debounced) = *db {
+				for source in file_sources {
+					if !debounced.0.contains(&source) {
+						debounced.0.push(source);
+					}
+				}
+
+				if matches!(this.default_source, DefaultCertificateSource::Some {
+					source: CertificateSourceType::Files { .. },
+					..
+				}) {
+					debounced.1 = this.default_source.clone();
+				}
+			} else {
+				*db = Some((
+					file_sources,
+					if matches!(this.default_source, DefaultCertificateSource::Some {
+						source: CertificateSourceType::Files { .. },
+						..
+					}) {
+						this.default_source.clone()
+					} else {
+						DefaultCertificateSource::None
+					},
+				));
+			}
+		};
+
+		let handle_config = |this: &mut Self, msg| match msg {
+			CertConfigUpdate::DefaultUpdated(default) => {
+				if let Some((Err(err), source)) = this
+					.default_source
+					.clone()
+					.into_cs()
+					.map(|s| (s.unwatch(this), s))
+				{
+					error!(%err, ?source, "default certificate source could not be unwatched");
+				}
+
+				this.default_source = default;
+
+				if let Some((Err(err), source)) = this
+					.default_source
+					.clone()
+					.into_cs()
+					.map(|s| (s.watch(this), s))
+				{
+					error!(%err, ?source, "default certificate source could not be watched");
+				}
+			}
+			CertConfigUpdate::SourceRemoved(source) => {
+				this.sources.retain(|s| s != &source);
+				if let Err(err) = source.unwatch(this) {
+					error!(%err, ?source, "certificate source could not be unwatched");
+				}
+			}
+			CertConfigUpdate::SourceAdded(source) => {
+				if let Err(err) = source.watch(this) {
+					error!(%err, ?source, "certificate source could not be watched");
+				}
+				this.sources.push(source);
+			}
+		};
+
+		loop {
+			select! {
+				recv(self.files_rx) -> msg => handle_files(self, msg.expect("certificate watcher channel closed")),
+				recv(self.config_rx) -> msg => handle_config(self, msg.expect("certificate watcher channel closed")),
+				default(debounce_time) => if debounced.lock().expect("lock poisoned").is_some() {
+					break debounced.into_inner().expect("lock poisoned").expect("the option was just checked to be some");
+				}
+			}
+		}
+	}
+
+	/// Get the sender for certificate source configuration updates
+	#[must_use]
+	pub fn get_config_sender(&self) -> Sender<CertConfigUpdate> {
+		self.config_tx.clone()
+	}
+
+	/// Send a config update to be processed by this watcher
+	pub fn send_config_update(&self, update: CertConfigUpdate) {
+		if self.config_tx.send(update).is_err() {
+			unreachable!("the receiver is owned by this watcher, so this channel can not be closed")
+		}
+	}
+}
+
+/// The source of the default certificate/key pair
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case", untagged)]
+pub enum DefaultCertificateSource {
+	/// No default certificate
+	None,
+	/// The default certificate's source
+	Some {
+		/// The domains that this certificate will be gotten for, if applicable
+		/// to the `source` type
+		#[serde(default)]
+		domains: Vec<Domain>,
+		/// The type of certificate source and type-specific configuration
+		#[serde(flatten)]
+		source: CertificateSourceType,
+	},
+}
+
+impl DefaultCertificateSource {
+	/// Convert this [`DefaultCertificateSource`] into a [`CertificateSource`],
+	/// setting the `domains` to an empty vec if not specified. Returns `None`
+	/// if this is `DefaultCertificateSource::None`
+	#[must_use]
+	pub fn into_cs(self) -> Option<CertificateSource> {
+		match self {
+			Self::None => None,
+			Self::Some { domains, source } => Some(CertificateSource { domains, source }),
+		}
+	}
+}
+
+/// The source of a certificate/key pair
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct CertificateSource {
+	/// The domains that this certificate will be used for
+	pub domains: Vec<Domain>,
+	/// The type of certificate source and type-specific configuration
+	#[serde(flatten)]
+	pub source: CertificateSourceType,
+}
+
+impl CertificateSource {
+	/// Get the certificate and private key
+	///
+	/// # IO
+	/// Depending on the type of this [`CertificateSource`], blocking IO may be
+	/// performed. This function should not be called in async contexts.
+	///
+	/// # Errors
+	/// This function may return various errors on failure, see
+	/// [`CertificateAcquisitionError`] for more details
+	pub fn get_certkey(&self) -> Result<CertifiedKey, CertificateAcquisitionError> {
+		match &self.source {
+			CertificateSourceType::Files { cert, key } => {
+				let certs = fs::read(cert)?;
+				let key = fs::read(key)?;
+
+				let certs: Vec<Certificate> = rustls_pemfile::certs(&mut &certs[..])?
+					.into_iter()
+					.map(Certificate)
+					.collect();
+				let key = rustls_pemfile::pkcs8_private_keys(&mut &key[..])?
+					.into_iter()
+					.map(PrivateKey)
+					.next()
+					.ok_or(CertificateAcquisitionError::MissingKey)?;
+
+				let cert_key = CertifiedKey::new(certs, sign::any_supported_type(&key)?);
+
+				// Check if the certificate matches the key
+				// TODO: Waiting on <https://github.com/rustls/rustls/issues/618>,
+				// TODO: <https://github.com/briansmith/webpki/issues/35>,
+				// TODO: <https://github.com/briansmith/ring/issues/419>,
+				// TODO: or similar.
+
+				Ok(cert_key)
+			}
+		}
+	}
+
+	/// Start watching for updates to the certificate source
+	///
+	/// # Errors
+	/// This function returns an error if the certificate source could not
+	/// successfully be watched due to e.g. file watching errors
+	pub fn watch(&self, watcher: &mut CertificateWatcher) -> anyhow::Result<()> {
+		match &self.source {
+			CertificateSourceType::Files { cert, key } => {
+				watcher
+					.files_watcher
+					.watch(cert, RecursiveMode::NonRecursive)?;
+				watcher
+					.files_watcher
+					.watch(key, RecursiveMode::NonRecursive)?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Stop watching for updates to the certificate source
+	///
+	/// # Errors
+	/// This function returns an error if the certificate source could not
+	/// successfully be unwatched due to e.g. file watching errors
+	pub fn unwatch(&self, watcher: &mut CertificateWatcher) -> anyhow::Result<()> {
+		match &self.source {
+			CertificateSourceType::Files { cert, key } => {
+				watcher.files_watcher.unwatch(cert)?;
+				watcher.files_watcher.unwatch(key)?;
+			}
+		}
+
+		Ok(())
+	}
+}
+
+/// The error returned when getting a certificate/key pair fails
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum CertificateAcquisitionError {
+	/// A filesystem error occurred (e.g. a file containing a certificate could
+	/// not be read)
+	#[error("A filesystem error occurred")]
+	FileIo(#[from] IoError),
+	/// The key can not be found
+	#[error("No key found")]
+	MissingKey,
+	/// The private key is invalid or unsupported
+	#[error("The private key is invalid or unsupported")]
+	InvalidKey(#[from] SignError),
+}
+
+/// The type of certificate source, for example certificate/key files, ACME,
+/// secret storage, etc.
+///
+/// Each variant has a name (serialized as `source`), a list of domains for
+/// which the certificate is to be used (serialized as `domains`), and any other
+/// variant-specific configuration (serialized in `snake_case` with
+/// appropriately typed values).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "source", rename_all = "kebab-case")]
+pub enum CertificateSourceType {
+	/// Use the certificate from the `cert` file and the private key from the
+	/// `key` file. Currently only the PEM file format is supported.
+	///
+	/// # Example
+	/// ```toml
+	/// { source = "files", domains = ["example.com", "*.example.net"], cert = "./cert.pem", key = "./key.pem" }
+	/// ```
+	Files {
+		/// The file path of the certificate file (PEM format)
+		cert: PathBuf,
+		/// The file path of the private key file (PEM format)
+		key: PathBuf,
+	},
+}
 
 /// The error returned by fallible conversions into [`ListenAddress`],
 /// containing the invalid input value

@@ -168,7 +168,7 @@ async fn stats_get() {
 	let args = vec!["--token", "abc123", "stats-get"];
 
 	let res = util::run_cli(args.clone());
-	assert_re!(r#"^\[\]$"#, res);
+	assert_re!(r"^\[\]$", res);
 
 	reqwest::get("http://localhost/test").await.unwrap();
 
@@ -184,12 +184,12 @@ async fn stats_get_vanity() {
 	let args = vec!["--token", "abc123", "stats-get", "test"];
 
 	let res = util::run_cli(args.clone());
-	assert_re!(r#"^\[\]$"#, res);
+	assert_re!(r"^\[\]$", res);
 
 	reqwest::get("http://localhost/test").await.unwrap();
 
 	let res = util::run_cli(args);
-	assert_re!(r#"^\[\[.+\]\]$"#, res);
+	assert_re!(r"^\[\[.+\]\]$", res);
 }
 
 /// Test `cli stats-get <VANITY> <TYPE>` without TLS
@@ -200,7 +200,7 @@ async fn stats_get_vanity_type() {
 	let args = vec!["--token", "abc123", "stats-get", "test", "request"];
 
 	let res = util::run_cli(args.clone());
-	assert_re!(r#"^\[\]$"#, res);
+	assert_re!(r"^\[\]$", res);
 
 	reqwest::get("http://localhost/test").await.unwrap();
 
