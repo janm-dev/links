@@ -299,11 +299,11 @@ impl CertificateSource {
 				let key = fs::read(key)?;
 
 				let certs: Result<Vec<Certificate>, _> = rustls_pemfile::certs(&mut &certs[..])
-					.map(|res| res.map(|der| Certificate(der.secret_pkcs8_der().to_vec())))
+					.map(|res| res.map(|der| Certificate(der.to_vec())))
 					.collect();
 				let certs = certs?;
 				let key = rustls_pemfile::pkcs8_private_keys(&mut &key[..])
-					.map(|res| res.map(|der| PrivateKey(der.to_vec())))
+					.map(|res| res.map(|der| PrivateKey(der.secret_pkcs8_der().to_vec())))
 					.next()
 					.ok_or(CertificateAcquisitionError::MissingKey)??;
 
