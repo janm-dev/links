@@ -51,7 +51,7 @@ serde_json = "1.0.108"
 serde_yaml = "0.9.27"
 socket2 = "0.5.5"
 thiserror = "1.0.51"
-time = { version = "0.3.30", features = [
+time = { version = "0.3.31", features = [
 	"macros",
 	"parsing",
 	"formatting",
