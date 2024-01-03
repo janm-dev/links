@@ -9,3 +9,10 @@ updates:
       - janm-dev
     labels:
       - updates
+    groups:
+      patch:
+        update-types:
+          - "patch"
+      minor:
+        update-types:
+          - "minor"
