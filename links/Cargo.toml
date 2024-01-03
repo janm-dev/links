@@ -59,7 +59,7 @@ time = { version = "0.3.31", features = [
 tokio = { version = "1.35.1", features = [
 	"rt-multi-thread",
 ] }
-tokio-rustls = "0.24.1"
+tokio-rustls = "0.25.0"
 tonic = { version = "0.10.2", default-features = false, features = [
 	"gzip",
 	"tls",
