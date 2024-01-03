@@ -48,7 +48,7 @@ regex = "1.10.2"
 rustls-pemfile = "2.0.0"
 serde = { version = "1.0.194", features = ["derive"] }
 serde_json = "1.0.109"
-serde_yaml = "0.9.29"
+serde_yaml = "0.9.30"
 socket2 = "0.5.5"
 thiserror = "1.0.56"
 time = { version = "0.3.31", features = [
