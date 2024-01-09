@@ -14,7 +14,7 @@ rust-version = "1.70"
 fred = ["dep:fred"]
 
 [dependencies]
-fred = { version = "7.1.0", optional = true, default-features = false }
+fred = { version = "7.1.1", optional = true, default-features = false }
 lazy_static = "1.4.0"
 rand = "0.8.5"
 regex = "1.10.2"
