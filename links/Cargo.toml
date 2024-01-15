@@ -30,7 +30,7 @@ async-trait = "0.1.77"
 basic-toml = "0.1.8"
 clap = { version = "4.4.16", features = ["derive", "env"] }
 colored = "2.1.0"
-fred = { version = "7.1.1", features = [
+fred = { version = "7.1.2", features = [
 	"metrics",
 	"enable-rustls",
 	"reconnect-on-auth-error",
