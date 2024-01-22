@@ -28,7 +28,7 @@ links-domainmap = { path = "../links-domainmap", version = "*", features = [
 anyhow = "1.0.79"
 async-trait = "0.1.77"
 basic-toml = "0.1.8"
-clap = { version = "4.4.17", features = ["derive", "env"] }
+clap = { version = "4.4.18", features = ["derive", "env"] }
 colored = "2.1.0"
 fred = { version = "7.1.2", features = [
 	"metrics",
@@ -44,7 +44,7 @@ pico-args = { version = "0.5.0", features = [
 ], default-features = false }
 prost = "0.12.3"
 rand = "0.8.5"
-regex = "1.10.2"
+regex = "1.10.3"
 rustls-pemfile = "2.0.0"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
@@ -84,7 +84,7 @@ sha2 = "0.10.8"
 tonic-build = "0.10.2"
 
 [dev-dependencies]
-regex = "1.10.2"
+regex = "1.10.3"
 reqwest = { version = "0.11.23", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
