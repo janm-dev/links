@@ -51,7 +51,7 @@ serde_json = "1.0.113"
 serde_yaml = "0.9.31"
 socket2 = "0.5.5"
 thiserror = "1.0.56"
-time = { version = "0.3.31", features = [
+time = { version = "0.3.32", features = [
 	"macros",
 	"parsing",
 	"formatting",
@@ -85,7 +85,7 @@ tonic-build = "0.10.2"
 
 [dev-dependencies]
 regex = "1.10.3"
-reqwest = { version = "0.11.23", default-features = false, features = [
+reqwest = { version = "0.11.24", default-features = false, features = [
 	"rustls-tls-native-roots",
 	"gzip",
 ] }
