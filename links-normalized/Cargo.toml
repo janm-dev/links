@@ -15,10 +15,10 @@ fred = ["dep:fred"]
 
 [dependencies]
 fred = { version = "7.1.2", optional = true, default-features = false }
-serde = { version = "1.0.196", features = ["derive"] }
+serde = { version = "1.0.197", features = ["derive"] }
 thiserror = "1.0.57"
 unicode-normalization = "0.1.22"
 uriparse = "0.6.4"
 
 [dev-dependencies]
-serde_json = "1.0.113"
+serde_json = "1.0.114"
