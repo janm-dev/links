@@ -74,7 +74,7 @@ tracing-appender = { version = "0.2.3", features = [
 ] }
 tracing-subscriber = "0.3.18"
 strum = { version = "0.26.1", features = ["derive"] }
-crossbeam-channel = "0.5.11"
+crossbeam-channel = "0.5.12"
 
 [build-dependencies]
 base64 = "0.21.7"
