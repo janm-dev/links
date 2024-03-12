@@ -140,7 +140,7 @@ mod tests {
 			}
 		}
 
-		assert!(serde_json::from_str::<Domain>(r#"[1, 2, 3]"#)
+		assert!(serde_json::from_str::<Domain>(r"[1, 2, 3]")
 			.unwrap_err()
 			.to_string()
 			.contains("a valid domain name"));
