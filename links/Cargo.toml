@@ -25,9 +25,9 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.80"
+anyhow = "1.0.81"
 async-trait = "0.1.77"
-basic-toml = "0.1.8"
+basic-toml = "0.1.9"
 clap = { version = "4.5.2", features = ["derive", "env"] }
 colored = "2.1.0"
 fred = { version = "7.1.2", features = [
@@ -50,7 +50,7 @@ serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 serde_yaml = "0.9.32"
 socket2 = "0.5.6"
-thiserror = "1.0.57"
+thiserror = "1.0.58"
 time = { version = "0.3.34", features = [
 	"macros",
 	"parsing",
@@ -78,7 +78,7 @@ crossbeam-channel = "0.5.12"
 
 [build-dependencies]
 base64 = "0.22.0"
-lol_html = "1.2.0"
+lol_html = "1.2.1"
 minify-html = "0.15.0"
 sha2 = "0.10.8"
 tonic-build = "0.11.0"
