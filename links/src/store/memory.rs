@@ -48,6 +48,7 @@ impl StoreBackend for Store {
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn new(_config: &HashMap<String, String>) -> Result<Self> {
 		Ok(Self {
 			redirects: RwLock::new(HashMap::new()),
@@ -57,42 +58,49 @@ impl StoreBackend for Store {
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn get_redirect(&self, from: Id) -> Result<Option<Link>> {
 		let redirects = self.redirects.read();
 		Ok(redirects.get(&from).map(ToOwned::to_owned))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn set_redirect(&self, from: Id, to: Link) -> Result<Option<Link>> {
 		let mut redirects = self.redirects.write();
 		Ok(redirects.insert(from, to))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn rem_redirect(&self, from: Id) -> Result<Option<Link>> {
 		let mut redirects = self.redirects.write();
 		Ok(redirects.remove(&from))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn get_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		let vanity = self.vanity.read();
 		Ok(vanity.get(&from).map(ToOwned::to_owned))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn set_vanity(&self, from: Normalized, to: Id) -> Result<Option<Id>> {
 		let mut vanity = self.vanity.write();
 		Ok(vanity.insert(from, to))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn rem_vanity(&self, from: Normalized) -> Result<Option<Id>> {
 		let mut vanity = self.vanity.write();
 		Ok(vanity.remove(&from))
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn get_statistics(
 		&self,
 		description: StatisticDescription,
@@ -106,6 +114,7 @@ impl StoreBackend for Store {
 	}
 
 	#[instrument(level = "trace", ret, err)]
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	#[allow(clippy::significant_drop_tightening)]
 	async fn incr_statistic(&self, statistic: Statistic) -> Result<Option<StatisticValue>> {
 		let mut stats = self.stats.write();
@@ -123,6 +132,7 @@ impl StoreBackend for Store {
 	}
 
 	#[allow(clippy::significant_drop_tightening)] // Clippy bug, see https://github.com/rust-lang/rust-clippy/issues/10413
+	#[allow(clippy::blocks_in_conditions)] // False positive, see https://github.com/rust-lang/rust-clippy/issues/12281
 	async fn rem_statistics(
 		&self,
 		description: StatisticDescription,

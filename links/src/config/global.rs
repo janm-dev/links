@@ -275,7 +275,7 @@ impl ConfigInner {
 		}
 
 		if let Some(ref listeners) = partial.listeners {
-			self.listeners = listeners.clone();
+			self.listeners.clone_from(listeners);
 		}
 
 		if let Some(statistics) = partial.statistics {
@@ -287,7 +287,7 @@ impl ConfigInner {
 		}
 
 		if let Some(ref certificates) = partial.certificates {
-			self.certificates = certificates.clone();
+			self.certificates.clone_from(certificates);
 		}
 
 		if let Some(hsts) = partial.hsts() {

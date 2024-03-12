@@ -98,6 +98,12 @@ impl CertificateResolver {
 	}
 }
 
+impl Default for CertificateResolver {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 impl ResolvesServerCert for CertificateResolver {
 	fn resolve(&self, client_hello: ClientHello) -> Option<Arc<CertifiedKey>> {
 		let cert = self.get(

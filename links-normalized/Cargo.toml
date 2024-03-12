@@ -7,14 +7,14 @@ authors = ["janm-dev"]
 description = "Easy to use case-insensitive normalized unicode strings and web URLs."
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/janm-dev/links"
-rust-version = "1.70"
+rust-version = "1.74"
 
 [features]
 # Support for conversion to/from Redis types using `fred`
 fred = ["dep:fred"]
 
 [dependencies]
-fred = { version = "7.1.2", optional = true, default-features = false }
+fred = { version = "8.0.4", optional = true, default-features = false }
 serde = { version = "1.0.197", features = ["derive"] }
 thiserror = "1.0.58"
 unicode-normalization = "0.1.23"

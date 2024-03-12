@@ -327,6 +327,7 @@ mod tests {
 	use super::*;
 
 	#[test]
+	#[allow(clippy::unnecessary_fallible_conversions)]
 	fn id_or_vanity() {
 		assert_eq!(
 			IdOrVanity::Id([0x11, 0x33, 0x55, 0x77, 0x99].into()),
@@ -336,6 +337,16 @@ mod tests {
 		assert_eq!(
 			IdOrVanity::Vanity("example-test".into()),
 			IdOrVanity::try_from("example-test").unwrap()
+		);
+
+		assert_eq!(
+			IdOrVanity::Id([0x11, 0x33, 0x55, 0x77, 0x99].into()),
+			IdOrVanity::from("0fXMgWQz")
+		);
+
+		assert_eq!(
+			IdOrVanity::Vanity("example-test".into()),
+			IdOrVanity::from("example-test")
 		);
 	}
 
@@ -386,6 +397,7 @@ mod tests {
 	}
 
 	#[test]
+	#[allow(clippy::unnecessary_fallible_conversions)]
 	fn http_version() {
 		assert_eq!(
 			HttpVersion::from_str("HTTP/1.1").unwrap().as_str(),
@@ -396,6 +408,8 @@ mod tests {
 			HttpVersion::try_from(HttpVersion::V2.as_str()).unwrap(),
 			HttpVersion::V2
 		);
+
+		assert_eq!(HttpVersion::from(HttpVersion::V2.as_str()), HttpVersion::V2);
 
 		assert!(Version::try_from(HttpVersion::Unknown).is_err());
 
