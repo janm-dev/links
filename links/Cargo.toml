@@ -35,7 +35,7 @@ fred = { version = "8.0.4", features = [
 	"enable-rustls",
 	"partial-tracing",
 ] }
-hyper = "0.14.28"
+hyper = "1.2.0"
 notify = "6.1.1"
 parking_lot = "0.12.1"
 pico-args = { version = "0.5.0", features = [
