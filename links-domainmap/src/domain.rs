@@ -47,7 +47,7 @@
 //! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
 
 #[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use core::{
 	cmp::Ordering,
 	fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
@@ -55,11 +55,9 @@ use core::{
 #[cfg(feature = "std")]
 use std::error::Error;
 
-use crate::smallstr::SmallStr;
-
 /// A domain name label, stored in lowercase in its ASCII-encoded form
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Label(SmallStr);
+pub struct Label(String);
 
 impl Label {
 	/// Create a new [`Label`] from the given [ACE] input, checking if all
@@ -74,7 +72,7 @@ impl Label {
 	/// This function returns a [`ParseError`] if parsing of the label fails
 	///
 	/// [ACE]: https://datatracker.ietf.org/doc/html/rfc3490#section-2
-	pub(crate) fn new_ace(mut label: SmallStr) -> Result<Self, ParseError> {
+	pub(crate) fn new_ace(mut label: String) -> Result<Self, ParseError> {
 		if label.is_empty() {
 			return Err(ParseError::LabelEmpty);
 		}
@@ -107,7 +105,7 @@ impl Label {
 	///
 	/// This function returns a [`ParseError`] if parsing of the label fails
 	pub(crate) fn new_idn(label: &str) -> Result<Self, ParseError> {
-		let label = idna::domain_to_ascii(label)?.into();
+		let label = idna::domain_to_ascii(label)?;
 		Self::new_ace(label)
 	}
 
