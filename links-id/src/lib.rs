@@ -404,6 +404,7 @@ mod tests {
 	}
 
 	#[test]
+	#[allow(clippy::unnecessary_fallible_conversions)]
 	fn try_from_bytes() {
 		assert_eq!(
 			Id([0x01, 0x02, 0x03, 0x04, 0x05]),
