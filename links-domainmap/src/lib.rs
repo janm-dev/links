@@ -155,6 +155,7 @@ extern crate alloc;
 
 mod domain;
 mod map;
+pub(crate) mod smallstr;
 
 #[cfg(feature = "serde")]
 mod serde;
