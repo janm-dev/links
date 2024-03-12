@@ -6,13 +6,17 @@ accepted = [
 	"BSD-3-Clause",
 	"Apache-2.0",
 	"MPL-2.0",
+	"Unicode-DFS-2016",
+	"Unicode-3.0",
 ]
 
 targets = [
 	"x86_64-unknown-linux-gnu",
-	"x86_64-unknown-linux-musl",
-	"x86_64-pc-windows-msvc",
 	"aarch64-unknown-linux-gnu",
+	"x86_64-unknown-linux-musl",
+	"aarch64-apple-darwin",
+	"x86_64-apple-darwin",
+	"x86_64-pc-windows-msvc",
 ]
 
 workarounds = ["ring"]
@@ -28,8 +32,8 @@ accepted = ["AGPL-3.0"]
 [links-normalized]
 accepted = ["AGPL-3.0"]
 
-[unicode-ident]
-accepted = ["Unicode-DFS-2016"]
+[links-domainmap]
+accepted = ["AGPL-3.0"]
 
 [ring]
 accepted = ["OpenSSL"]

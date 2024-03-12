@@ -1,34 +1,31 @@
+[graph]
+all-features = true
 targets = [
-	{ triple = "x86_64-unknown-linux-gnu" },
-	{ triple = "x86_64-unknown-linux-musl" },
-	{ triple = "x86_64-pc-windows-msvc" },
-	{ triple = "aarch64-unknown-linux-gnu" },
+	"x86_64-unknown-linux-gnu",
+	"aarch64-unknown-linux-gnu",
+	"x86_64-unknown-linux-musl",
+	"aarch64-apple-darwin",
+	"x86_64-apple-darwin",
+	"x86_64-pc-windows-msvc",
 ]
 
 [advisories]
-vulnerability = "deny"
-unmaintained = "deny"
-yanked = "deny"
-notice = "warn"
-ignore = [
-	# Unaligned read on Windows (if custom allocator is used) in `atty`, used by
-	# `clap`, `colored`, and `fred`. `atty` is unmaintained, and being replaced
-	# in `clap` (#4249) and `colored` (#122). `fred` seems to only use `atty` in
-	# examples, tests, benchmarks, etc.
-	"RUSTSEC-2021-0145",
-]
+version = 2
+ignore = []
 
 [licenses]
-unlicensed = "deny"
+version = 2
 confidence-threshold = 0.9
 allow = [
-	"Unlicense",    # https://spdx.org/licenses/Unlicense
-	"CC0-1.0",      # https://spdx.org/licenses/CC0-1.0
-	"ISC",          # https://spdx.org/licenses/ISC
-	"MIT",          # https://spdx.org/licenses/MIT
-	"BSD-3-Clause", # https://spdx.org/licenses/BSD-3-Clause
-	"Apache-2.0",   # https://spdx.org/licenses/Apache-2.0
-	"MPL-2.0",      # https://spdx.org/licenses/MPL-2.0
+	"Unlicense",        # https://spdx.org/licenses/Unlicense
+	"CC0-1.0",          # https://spdx.org/licenses/CC0-1.0
+	"ISC",              # https://spdx.org/licenses/ISC
+	"MIT",              # https://spdx.org/licenses/MIT
+	"BSD-3-Clause",     # https://spdx.org/licenses/BSD-3-Clause
+	"Apache-2.0",       # https://spdx.org/licenses/Apache-2.0
+	"MPL-2.0",          # https://spdx.org/licenses/MPL-2.0
+	"Unicode-DFS-2016", # https://spdx.org/licenses/Unicode-DFS-2016
+	"Unicode-3.0",      # https://spdx.org/licenses/Unicode-3.0
 ]
 exceptions = [
 	{ name = "links", version = "*", allow = [
@@ -42,9 +39,6 @@ exceptions = [
 	] },
 	{ name = "links-domainmap", version = "*", allow = [
 		"AGPL-3.0", # https://spdx.org/licenses/AGPL-3.0-or-later
-	] },
-	{ name = "unicode-ident", version = "*", allow = [
-		"Unicode-DFS-2016", # https://spdx.org/licenses/Unicode-DFS-2016
 	] },
 	{ name = "ring", version = "*", allow = [
 		"OpenSSL", # https://spdx.org/licenses/OpenSSL
@@ -73,7 +67,3 @@ wildcards = "warn"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-registry = [
-	"https://github.com/rust-lang/crates.io-index",
-]
-allow-git = []
