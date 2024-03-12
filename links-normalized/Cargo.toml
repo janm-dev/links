@@ -14,11 +14,11 @@ rust-version = "1.70"
 fred = ["dep:fred"]
 
 [dependencies]
-fred = { version = "7.0.0", optional = true, default-features = false }
-serde = { version = "1.0.192", features = ["derive"] }
-thiserror = "1.0.50"
-unicode-normalization = "0.1.22"
+fred = { version = "7.1.2", optional = true, default-features = false }
+serde = { version = "1.0.197", features = ["derive"] }
+thiserror = "1.0.58"
+unicode-normalization = "0.1.23"
 uriparse = "0.6.4"
 
 [dev-dependencies]
-serde_json = "1.0.108"
+serde_json = "1.0.114"
