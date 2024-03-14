@@ -833,9 +833,9 @@ dependencies = [
 
 [[package]]
 name = "fred"
-version = "8.0.4"
+version = "8.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b4eaa3196a62b31b5c6830563e063562e6280af38f06f72456e6e1e8264e3cb"
+checksum = "9fcd11eb1309e72c6b23317309fe247f560da4e258364104f4e1a6821b381d77"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -844,7 +844,6 @@ dependencies = [
  "crossbeam-queue",
  "float-cmp",
  "futures",
- "lazy_static",
  "log",
  "parking_lot",
  "rand 0.8.5",
