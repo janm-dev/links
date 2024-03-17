@@ -220,7 +220,6 @@ impl TlsHttpAcceptor {
 		cert_resolver: Arc<CertificateResolver>,
 	) -> &'static Self {
 		let mut server_config = ServerConfig::builder()
-			.with_safe_defaults()
 			.with_no_client_auth()
 			.with_cert_resolver(cert_resolver);
 		server_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
@@ -348,7 +347,6 @@ impl TlsRpcAcceptor {
 		cert_resolver: Arc<CertificateResolver>,
 	) -> &'static Self {
 		let mut server_config = ServerConfig::builder()
-			.with_safe_defaults()
 			.with_no_client_auth()
 			.with_cert_resolver(cert_resolver);
 		server_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];

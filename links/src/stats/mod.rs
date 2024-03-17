@@ -294,7 +294,7 @@ impl Default for StatisticValue {
 mod tests {
 	use links_id::Id;
 	use links_normalized::Normalized;
-	use tokio_rustls::rustls::{ProtocolVersion, ALL_CIPHER_SUITES};
+	use tokio_rustls::rustls::{crypto::ring::ALL_CIPHER_SUITES, ProtocolVersion};
 
 	use super::*;
 

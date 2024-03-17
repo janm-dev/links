@@ -56,8 +56,10 @@ use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use strum::{Display as EnumDisplay, EnumString, ParseError};
 use tokio_rustls::rustls::{
-	sign::{self, CertifiedKey, SignError},
-	Certificate, PrivateKey,
+	crypto::ring::sign,
+	pki_types::{CertificateDer, PrivateKeyDer},
+	sign::CertifiedKey,
+	Error as RustlsError,
 };
 use tracing::{debug, error, Level};
 
@@ -298,12 +300,16 @@ impl CertificateSource {
 				let certs = fs::read(cert)?;
 				let key = fs::read(key)?;
 
-				let certs: Result<Vec<Certificate>, _> = rustls_pemfile::certs(&mut &certs[..])
-					.map(|res| res.map(|der| Certificate(der.to_vec())))
+				let certs: Result<Vec<CertificateDer>, _> = rustls_pemfile::certs(&mut &certs[..])
+					.map(|res| res.map(|der| CertificateDer::from(der.to_vec())))
 					.collect();
 				let certs = certs?;
 				let key = rustls_pemfile::pkcs8_private_keys(&mut &key[..])
-					.map(|res| res.map(|der| PrivateKey(der.secret_pkcs8_der().to_vec())))
+					.map(|res| {
+						res.map(|der| {
+							PrivateKeyDer::Pkcs8(der.secret_pkcs8_der().to_owned().into())
+						})
+					})
 					.next()
 					.ok_or(CertificateAcquisitionError::MissingKey)??;
 
@@ -370,7 +376,7 @@ pub enum CertificateAcquisitionError {
 	MissingKey,
 	/// The private key is invalid or unsupported
 	#[error("The private key is invalid or unsupported")]
-	InvalidKey(#[from] SignError),
+	InvalidKey(#[from] RustlsError),
 }
 
 /// The type of certificate source, for example certificate/key files, ACME,
