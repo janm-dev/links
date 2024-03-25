@@ -181,6 +181,7 @@ impl CertificateWatcher {
 			}
 		};
 
+		#[allow(clippy::cognitive_complexity)]
 		let handle_config = |this: &mut Self, msg| match msg {
 			CertConfigUpdate::DefaultUpdated(default) => {
 				if let Some((Err(err), source)) = this
