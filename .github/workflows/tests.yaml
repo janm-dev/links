@@ -16,9 +16,9 @@ jobs:
     env:
       LINKS_TEST_EXTERNAL: docker
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v1
+      - uses: arduino/setup-protoc@v3
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,11 +35,11 @@ jobs:
     name: Test with Rust ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.version }}
-      - uses: arduino/setup-protoc@v1
+      - uses: arduino/setup-protoc@v3
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -55,9 +55,9 @@ jobs:
     name: Test with Redis ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v1
+      - uses: arduino/setup-protoc@v3
         with:
           version: "3.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -75,7 +75,7 @@ jobs:
     name: Test links-domainmap with features "${{ matrix.features }}"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cd links-domainmap && cargo test --no-default-features ${{ matrix.features }}
