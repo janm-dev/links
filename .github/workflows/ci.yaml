@@ -18,7 +18,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo check
@@ -33,7 +33,7 @@ jobs:
           components: rustfmt
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly fmt --all -- --check
@@ -48,7 +48,7 @@ jobs:
           components: clippy
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly clippy -- -D warnings
@@ -63,7 +63,7 @@ jobs:
           components: llvm-tools-preview
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: sudo apt-get install -y ca-certificates && sudo cp ${{ github.workspace }}/links/tests/cert.pem /usr/local/share/ca-certificates/test-cert.crt && sudo update-ca-certificates && sudo /sbin/iptables -F && printf 'net.ipv4.ip_unprivileged_port_start = 50\nnet.ipv6.ip_unprivileged_port_start = 50\n' | sudo tee /etc/sysctl.d/50-unprivileged-ports.conf && sudo sysctl --system

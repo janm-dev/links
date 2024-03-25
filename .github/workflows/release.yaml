@@ -16,7 +16,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           cargo install --locked cargo-about
@@ -42,7 +42,7 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           sudo apt update
@@ -72,7 +72,7 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: arduino/setup-protoc@v3
         with:
-          version: "3.x"
+          version: "23.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           cargo build --release --target ${{ matrix.target }}
