@@ -2,8 +2,7 @@
 
 mod util;
 
-use hyper::{header::HeaderValue, StatusCode};
-use reqwest::{redirect::Policy, ClientBuilder};
+use reqwest::{header::HeaderValue, redirect::Policy, ClientBuilder, StatusCode};
 
 /// Test random API secret generation
 #[tokio::test]
