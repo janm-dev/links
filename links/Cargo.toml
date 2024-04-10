@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.81"
+anyhow = "1.0.82"
 async-trait = "0.1.79"
 basic-toml = "0.1.9"
 clap = { version = "4.5.4", features = ["derive", "env"] }
@@ -50,7 +50,7 @@ serde_json = "1.0.115"
 serde_yaml = "0.9.34"
 socket2 = "0.5.6"
 thiserror = "1.0.58"
-time = { version = "0.3.34", features = [
+time = { version = "0.3.35", features = [
 	"macros",
 	"parsing",
 	"formatting",
