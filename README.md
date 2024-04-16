@@ -227,5 +227,5 @@ The minimum supported rust version is currently Rust 1.74, but this may change i
 
 ## License
 
-This project is licensed under GNU AGPLv3 or later (`AGPL-3.0-or-later`).
+This project is licensed under the GNU AGPL version 3 or later (`AGPL-3.0-or-later`).
 You can find the full license text in the LICENSE file.
