@@ -18,7 +18,7 @@ fred = { version = "8.0.6", optional = true, default-features = false }
 lazy_static = "1.4.0"
 rand = "0.8.5"
 regex = "1.10.4"
-serde = { version = "1.0.198", features = ["derive"] }
+serde = { version = "1.0.199", features = ["derive"] }
 thiserror = "1.0.59"
 
 [dev-dependencies]
