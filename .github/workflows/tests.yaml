@@ -70,12 +70,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        version: ["1.64", "1.77", stable, beta]
         features:
           ["", "--features=std", "--features=serde", "--features=std,serde"]
-    name: Test links-domainmap with features "${{ matrix.features }}"
+    name: Test links-domainmap with features "${{ matrix.features }}" on Rust ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.version }}
       - uses: Swatinem/rust-cache@v2
       - run: cd links-domainmap && cargo test --no-default-features ${{ matrix.features }}
