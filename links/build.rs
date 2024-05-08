@@ -11,6 +11,8 @@ use minify_html::Cfg;
 use sha2::{Digest, Sha256};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+	println!("cargo::rustc-check-cfg=cfg(coverage)");
+
 	// Compile gRPC/protobuf
 	tonic_build::configure()
 		.build_client(true)
