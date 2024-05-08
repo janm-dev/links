@@ -50,8 +50,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		"https-redirect",
 	]);
 
-	println!("cargo:rerun-if-changed=../proto/links.proto");
-	println!("cargo:rerun-if-changed=../proto/*");
+	println!("cargo::rerun-if-changed=../proto/links.proto");
+	println!("cargo::rerun-if-changed=../proto/*");
 
 	Ok(())
 }
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Minify the html file in `path`. The resulting file will be output into the
 /// `OUT_DIR` directory with the name `name.html`
 fn minify(name: &str, path: PathBuf) {
-	println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
+	println!("cargo::rerun-if-changed={}", path.to_str().unwrap());
 
 	let out_path = PathBuf::from(env::var_os("OUT_DIR").unwrap())
 		.join(name)

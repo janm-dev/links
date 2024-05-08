@@ -204,7 +204,7 @@ The final container image is only approximately 10 MB, about 35% smaller than an
 
 ### MSRV
 
-The minimum supported rust version is currently Rust 1.74, but this may change in the future with a minor version update.
+The minimum supported rust version is currently Rust 1.77, but this may change in the future with a minor version update.
 
 ## Directory structure
 

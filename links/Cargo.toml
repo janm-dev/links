@@ -7,7 +7,7 @@ authors = ["janm-dev"]
 description = "An easy to set up selfhostable link shortener."
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/janm-dev/links"
-rust-version = "1.74"
+rust-version = "1.77"
 default-run = "server"
 
 [features]
