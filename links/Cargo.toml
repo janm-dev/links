@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.83"
+anyhow = "1.0.86"
 async-trait = "0.1.80"
 basic-toml = "0.1.9"
 clap = { version = "4.5.4", features = ["derive", "env"] }
@@ -41,7 +41,7 @@ parking_lot = "0.12.2"
 pico-args = { version = "0.5.0", features = [
 	"combined-flags",
 ], default-features = false }
-prost = "0.12.4"
+prost = "0.12.6"
 rand = "0.8.5"
 regex = "1.10.4"
 rustls-pemfile = "2.1.2"
@@ -49,7 +49,7 @@ serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
-thiserror = "1.0.60"
+thiserror = "1.0.61"
 time = { version = "0.3.36", features = [
 	"macros",
 	"parsing",
@@ -77,7 +77,7 @@ tracing-appender = { version = "0.2.3", features = [
 ] }
 tracing-subscriber = "0.3.18"
 strum = { version = "0.26.2", features = ["derive"] }
-crossbeam-channel = "0.5.12"
+crossbeam-channel = "0.5.13"
 
 [build-dependencies]
 base64 = "0.22.1"
