@@ -17,7 +17,7 @@ fred = ["dep:fred"]
 fred = { version = "8.0.6", optional = true, default-features = false }
 lazy_static = "1.4.0"
 rand = "0.8.5"
-regex = "1.10.4"
+regex = "1.10.5"
 serde = { version = "1.0.203", features = ["derive"] }
 thiserror = "1.0.61"
 
