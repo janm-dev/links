@@ -29,8 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		&proto_path,
 		"#[allow(clippy::pedantic, clippy::nursery, missing_docs, \
 		 clippy::redundant_async_block)]\npub mod rpc {\n"
-			.to_string() + &proto
-			+ "}\n",
+			.to_string()
+			+ &proto + "}\n",
 	)?;
 
 	// Include and minify html pages
