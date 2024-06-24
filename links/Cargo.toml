@@ -76,7 +76,7 @@ tracing-appender = { version = "0.2.3", features = [
 	"parking_lot",
 ] }
 tracing-subscriber = "0.3.18"
-strum = { version = "0.26.2", features = ["derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
 crossbeam-channel = "0.5.13"
 
 [build-dependencies]
