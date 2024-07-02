@@ -375,9 +375,9 @@ impl StoreBackend for Store {
 			Vec::new()
 		} else {
 			let values = self.pool.mget(stat_keys.clone()).await?;
-			self.pool.del(stat_keys).await?;
+			let () = self.pool.del(stat_keys).await?;
 			for key in keys {
-				self.pool.srem(key, stats_json.clone()).await?;
+				let () = self.pool.srem(key, stats_json.clone()).await?;
 			}
 			values
 		};

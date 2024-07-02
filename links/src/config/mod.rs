@@ -486,6 +486,9 @@ impl Display for ListenAddress {
 }
 
 impl PartialEq for ListenAddress {
+	// This is correct, a `None` address is distinct from all `Some(_)` addresses,
+	// but a `None` port is just the default port for that protocol
+	#[allow(clippy::suspicious_operation_groupings)]
 	fn eq(&self, other: &Self) -> bool {
 		self.protocol == other.protocol
 			&& self.address == other.address
