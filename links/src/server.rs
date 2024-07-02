@@ -34,7 +34,11 @@ use std::{
 	thread,
 };
 
-use hyper::{server::conn::Http, service::service_fn, Body, Request};
+use hyper::{rt, service::service_fn, Request};
+use hyper_util::{
+	rt::{TokioExecutor, TokioIo},
+	server::conn::auto::Builder,
+};
 use links_id::Id;
 use links_normalized::{Link, Normalized};
 use parking_lot::Mutex;
@@ -62,33 +66,33 @@ use crate::{
 	store::{Current, Store},
 };
 
-/// A handler that does external HTTP redirects using information from the
-/// provided store. Extra information for statistics can be passed via
-/// `stat_info`.
-pub async fn http_handler(
-	stream: impl AsyncRead + AsyncWrite + Send + Unpin + 'static,
-	store: Store,
-	config: &'static Config,
-	stat_info: ExtraStatisticInfo,
-) {
-	let redirector_service = service_fn(move |req: Request<Body>| {
-		redirector(req, store.clone(), config.redirector(), stat_info.clone())
-	});
-
-	if let Err(err) = Http::new()
-		.serve_connection(stream, redirector_service)
-		.await
-	{
-		error!(?err, "Error while handling HTTP connection");
-	}
-}
-
 /// Number of incoming connections that can be kept in the TCP socket backlog of
 /// a listener (see `listen`'s [linux man page] or [winsock docs] for details)
 ///
 /// [linux man page]: https://linux.die.net/man/2/listen
 /// [winsock docs]: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-listen
 const LISTENER_TCP_BACKLOG_SIZE: c_int = 1024;
+
+/// A handler that does external HTTP redirects using information from the
+/// provided store. Extra information for statistics can be passed via
+/// `stat_info`.
+pub async fn http_handler(
+	stream: impl rt::Read + rt::Write + Send + Unpin + 'static,
+	store: Store,
+	config: &'static Config,
+	stat_info: ExtraStatisticInfo,
+) {
+	let redirector_service = service_fn(move |req: Request<_>| {
+		redirector(req, store.clone(), config.redirector(), stat_info.clone())
+	});
+
+	if let Err(err) = Builder::new(TokioExecutor::new())
+		.serve_connection(stream, redirector_service)
+		.await
+	{
+		error!(?err, "Error while handling HTTP connection");
+	}
+}
 
 /// A handler that redirects incoming requests to their original URL, but with
 /// the HTTPS scheme instead.
@@ -97,13 +101,13 @@ const LISTENER_TCP_BACKLOG_SIZE: c_int = 1024;
 /// This function does not know the original URL scheme. If used as the handler
 /// for HTTPS requests, this might create a redirect loop.
 pub async fn http_to_https_handler(
-	stream: impl AsyncRead + AsyncWrite + Send + Unpin + 'static,
+	stream: impl rt::Read + rt::Write + Send + Unpin + 'static,
 	config: &'static Config,
 ) {
 	let redirector_service =
-		service_fn(move |req: Request<Body>| https_redirector(req, config.redirector()));
+		service_fn(move |req: Request<_>| https_redirector(req, config.redirector()));
 
-	if let Err(err) = Http::new()
+	if let Err(err) = Builder::new(TokioExecutor::new())
 		.serve_connection(stream, redirector_service)
 		.await
 	{
@@ -116,6 +120,8 @@ pub async fn rpc_handler(
 	stream: impl AsyncRead + AsyncWrite + Send + Unpin + 'static,
 	service: Routes,
 ) {
+	use hyper_0_14::server::conn::Http;
+
 	if let Err(rpc_err) = Http::new()
 		.http2_only(true)
 		.serve_connection(stream, service)
@@ -180,10 +186,10 @@ impl Acceptor<TcpStream> for PlainHttpAcceptor {
 			trace!("New plain connection from {remote_addr} on {local_addr}");
 
 			if config.https_redirect() {
-				http_to_https_handler(stream, config).await;
+				http_to_https_handler(TokioIo::new(stream), config).await;
 			} else {
 				http_handler(
-					stream,
+					TokioIo::new(stream),
 					current_store.get(),
 					config,
 					ExtraStatisticInfo::default(),
@@ -254,7 +260,13 @@ impl Acceptor<TcpStream> for TlsHttpAcceptor {
 						tls_cipher_suite: tls_conn.negotiated_cipher_suite(),
 					};
 
-					http_handler(stream, current_store.get(), config, extra_info).await;
+					http_handler(
+						TokioIo::new(stream),
+						current_store.get(),
+						config,
+						extra_info,
+					)
+					.await;
 				}
 				Err(err) => warn!("Error accepting incoming TLS connection: {err:?}"),
 			}

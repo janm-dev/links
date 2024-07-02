@@ -1,8 +1,10 @@
 //! The main part of links. This module contains code relating to actually
 //! redirecting requests.
 
+use std::fmt::Debug;
+
 use hyper::{
-	header::HeaderValue, http::uri::PathAndQuery, Body, Method, Request, Response, StatusCode, Uri,
+	header::HeaderValue, http::uri::PathAndQuery, Method, Request, Response, StatusCode, Uri,
 };
 use links_id::Id;
 use links_normalized::Normalized;
@@ -23,8 +25,8 @@ use crate::{
 /// [`Statistic`]s to be collected in addition to the ones inside of this
 /// function.
 #[instrument(level = "debug", name = "redirect-external", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), store = %store.backend_name(), time_ns = Empty, link = Empty, id = Empty, vanity = Empty, status_code = Empty))]
-pub async fn redirector(
-	req: Request<Body>,
+pub async fn redirector<B: Debug + Send + 'static>(
+	req: Request<B>,
 	store: Store,
 	config: Config,
 	stat_info: ExtraStatisticInfo,
@@ -178,8 +180,8 @@ pub async fn redirector(
 /// Redirects an incoming request to the same host and path, but with the
 /// `https` scheme.
 #[instrument(level = "debug", name = "redirect-https", skip_all, fields(http.version = ?req.version(), http.host = %req.uri().host().unwrap_or_else(|| req.headers().get("host").map_or_else(|| "[unknown]", |h| h.to_str().unwrap_or("[unknown]"))), http.path = ?req.uri().path(), http.method = %req.method(), time_ns = Empty, link = Empty, status_code = Empty))]
-pub async fn https_redirector(
-	req: Request<Body>,
+pub async fn https_redirector<B: Debug + Send + 'static>(
+	req: Request<B>,
 	config: Config,
 ) -> Result<Response<String>, anyhow::Error> {
 	let redirect_start = Instant::now();

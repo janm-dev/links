@@ -8,7 +8,6 @@ use std::{env, ffi::OsString, fmt::Debug};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use hyper::http::uri::InvalidUri;
 use links::{
 	api::{
 		GetRedirectRequest, GetStatisticsRequest, GetVanityRequest, LinksClient,
@@ -22,6 +21,7 @@ use links_id::{ConversionError, Id};
 use links_normalized::{Link, Normalized};
 use tonic::{
 	codec::CompressionEncoding,
+	codegen::http::uri::InvalidUri,
 	metadata::AsciiMetadataValue,
 	transport::{Channel, ClientTlsConfig, Error as TonicError},
 	Request, Status,
