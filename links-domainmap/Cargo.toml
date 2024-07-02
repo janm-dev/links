@@ -34,8 +34,9 @@ harness = false
 
 [dependencies]
 heapless = "0.8.0"
-idna = { version = "0.5.0", default-features = false, features = [
+idna = { version = "1.0.2", default-features = false, features = [
 	"alloc",
+	"compiled_data",
 ] }
 serde = { version = "1.0.203", optional = true, default-features = false, features = [
 	"derive",
