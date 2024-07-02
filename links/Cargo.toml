@@ -30,9 +30,9 @@ async-trait = "0.1.80"
 basic-toml = "0.1.9"
 clap = { version = "4.5.8", features = ["derive", "env"] }
 colored = "2.1.0"
-fred = { version = "8.0.6", features = [
+fred = { version = "9.0.3", features = [
 	"metrics",
-	"enable-rustls",
+	"enable-rustls-ring",
 	"partial-tracing",
 ] }
 hyper = "0.14.28"

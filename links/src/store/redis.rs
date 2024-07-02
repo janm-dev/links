@@ -30,7 +30,11 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
-use fred::{bytes_utils::Str, prelude::*, types::RespVersion};
+use fred::{
+	bytes_utils::Str,
+	prelude::*,
+	types::{ClusterDiscoveryPolicy, RespVersion},
+};
 use links_id::Id;
 use links_normalized::{Link, Normalized};
 use tokio::try_join;
@@ -118,6 +122,7 @@ impl StoreBackend for Store {
 							.ok_or_else(|| anyhow!("couldn't parse connect value"))?
 					})
 					.collect::<Result<_, anyhow::Error>>()?,
+				policy: ClusterDiscoveryPolicy::ConfigEndpoint,
 			}
 		} else {
 			let (host, port) = config
@@ -308,18 +313,21 @@ impl StoreBackend for Store {
 			.incr(format!("links:stat:{link}:{stat_type}:{time}:{data}"))
 			.await?;
 
-		try_join!(
-			self.pool
-				.sadd::<(), _, _>("links:stat-all".to_string(), &stat_json),
-			self.pool
-				.sadd::<(), _, _>(format!("links:stat-link:{link}"), &stat_json),
-			self.pool
-				.sadd::<(), _, _>(format!("links:stat-type:{stat_type}"), &stat_json),
-			self.pool
-				.sadd::<(), _, _>(format!("links:stat-data:{data}"), &stat_json),
-			self.pool
-				.sadd::<(), _, _>(format!("links:stat-time:{time}"), &stat_json),
-		)?;
+		Box::pin(async {
+			try_join!(
+				self.pool
+					.sadd::<(), _, _>("links:stat-all".to_string(), &stat_json),
+				self.pool
+					.sadd::<(), _, _>(format!("links:stat-link:{link}"), &stat_json),
+				self.pool
+					.sadd::<(), _, _>(format!("links:stat-type:{stat_type}"), &stat_json),
+				self.pool
+					.sadd::<(), _, _>(format!("links:stat-data:{data}"), &stat_json),
+				self.pool
+					.sadd::<(), _, _>(format!("links:stat-time:{time}"), &stat_json),
+			)
+		})
+		.await?;
 
 		Ok(values
 			.first()
