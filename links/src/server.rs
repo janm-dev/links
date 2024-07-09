@@ -34,10 +34,11 @@ use std::{
 	thread,
 };
 
-use hyper::{rt, service::service_fn, Request};
+use hyper::{rt, server::conn::http2, service::service_fn, Request};
 use hyper_util::{
 	rt::{TokioExecutor, TokioIo},
 	server::conn::auto::Builder,
+	service::TowerToHyperService,
 };
 use links_id::Id;
 use links_normalized::{Link, Normalized};
@@ -53,8 +54,10 @@ use tokio::{
 use tokio_rustls::{rustls::ServerConfig, TlsAcceptor};
 use tonic::{
 	codegen::{CompressionEncoding, InterceptedService},
-	transport::{server::Routes, Server as RpcServer},
+	service::Routes,
+	transport::Server as RpcServer,
 };
+use tower::util::ServiceExt;
 use tracing::{debug, error, trace, warn};
 
 use crate::{
@@ -117,14 +120,16 @@ pub async fn http_to_https_handler(
 
 /// Handler processing RPC API calls.
 pub async fn rpc_handler(
-	stream: impl AsyncRead + AsyncWrite + Send + Unpin + 'static,
+	stream: impl rt::Read + rt::Write + Send + Unpin + 'static,
 	service: Routes,
 ) {
-	use hyper_0_14::server::conn::Http;
-
-	if let Err(rpc_err) = Http::new()
-		.http2_only(true)
-		.serve_connection(stream, service)
+	if let Err(rpc_err) = http2::Builder::new(TokioExecutor::new())
+		.serve_connection(
+			stream,
+			TowerToHyperService::new(
+				service.map_request(|req: Request<_>| req.map(tonic::body::boxed)),
+			),
+		)
 		.await
 	{
 		error!(?rpc_err, "Error while handling gRPC connection");
@@ -313,7 +318,8 @@ impl PlainRpcAcceptor {
 					.accept_compressed(CompressionEncoding::Gzip),
 				api::get_auth_checker(config),
 			))
-			.into_service();
+			.into_service()
+			.prepare();
 
 		Box::leak(Box::new(Self {
 			service: Mutex::new(service),
@@ -329,7 +335,7 @@ impl Acceptor<TcpStream> for PlainRpcAcceptor {
 		spawn(async move {
 			trace!("New plain connection from {remote_addr} on {local_addr}");
 
-			rpc_handler(stream, service).await;
+			rpc_handler(TokioIo::new(stream), service).await;
 		});
 	}
 
@@ -373,7 +379,8 @@ impl TlsRpcAcceptor {
 					.accept_compressed(CompressionEncoding::Gzip),
 				api::get_auth_checker(config),
 			))
-			.into_service();
+			.into_service()
+			.prepare();
 
 		Box::leak(Box::new(Self {
 			service: Arc::new(Mutex::new(service)),
@@ -392,7 +399,7 @@ impl Acceptor<TcpStream> for TlsRpcAcceptor {
 			trace!("New TLS connection from {remote_addr} on {local_addr}");
 
 			match tls_acceptor.accept(stream).await {
-				Ok(stream) => rpc_handler(stream, service).await,
+				Ok(stream) => rpc_handler(TokioIo::new(stream), service).await,
 				Err(err) => warn!("Error accepting incoming TLS connection: {err:?}"),
 			}
 		});

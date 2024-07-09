@@ -28,7 +28,7 @@ links-domainmap = { path = "../links-domainmap", version = "*", features = [
 anyhow = "1.0.86"
 async-trait = "0.1.81"
 basic-toml = "0.1.9"
-clap = { version = "4.5.8", features = ["derive", "env"] }
+clap = { version = "4.5.9", features = ["derive", "env"] }
 colored = "2.1.0"
 fred = { version = "9.0.3", features = [
 	"metrics",
@@ -36,13 +36,19 @@ fred = { version = "9.0.3", features = [
 	"partial-tracing",
 ] }
 hyper = "1.4.0"
-hyper_0_14 = { version = "0.14.29", package = "hyper" }
+hyper-util = { version = "0.1.6", features = [
+	"http1",
+	"http2",
+	"server",
+	"service",
+	"tokio",
+] }
 notify = "6.1.1"
 parking_lot = "0.12.3"
 pico-args = { version = "0.5.0", features = [
 	"combined-flags",
 ], default-features = false }
-prost = "0.12.6"
+prost = "0.13.0"
 rand = "0.8.5"
 regex = "1.10.5"
 rustls-pemfile = "2.1.2"
@@ -64,13 +70,14 @@ tokio-rustls = { version = "0.26.0", default-features = false, features = [
 	"ring",
 	"tls12",
 ] }
-tonic = { version = "0.11.0", default-features = false, features = [
+tonic = { version = "0.12.0", default-features = false, features = [
 	"gzip",
 	"tls",
 	"tls-roots",
 	"channel",
 	"codegen",
 	"prost",
+	"server",
 ] }
 tracing = "0.1.40"
 tracing-appender = { version = "0.2.3", features = [
@@ -79,19 +86,14 @@ tracing-appender = { version = "0.2.3", features = [
 tracing-subscriber = "0.3.18"
 strum = { version = "0.26.3", features = ["derive"] }
 crossbeam-channel = "0.5.13"
-hyper-util = { version = "0.1.6", features = [
-	"server",
-	"http1",
-	"http2",
-	"tokio",
-] }
+tower = "0.4.13"
 
 [build-dependencies]
 base64 = "0.22.1"
 lol_html = "1.2.1"
 minify-html = "0.15.0"
 sha2 = "0.10.8"
-tonic-build = "0.11.0"
+tonic-build = "0.12.0"
 
 [dev-dependencies]
 regex = "1.10.5"
