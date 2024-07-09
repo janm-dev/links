@@ -42,7 +42,7 @@ parking_lot = "0.12.3"
 pico-args = { version = "0.5.0", features = [
 	"combined-flags",
 ], default-features = false }
-prost = "0.12.6"
+prost = "0.13.0"
 rand = "0.8.5"
 regex = "1.10.5"
 rustls-pemfile = "2.1.2"
