@@ -210,7 +210,7 @@ pub async fn get_rpc_client(
 	enable_tls: bool,
 ) -> LinksClient<Channel> {
 	if enable_tls {
-		let tls_config = ClientTlsConfig::new();
+		let tls_config = ClientTlsConfig::new().with_native_roots();
 
 		let channel = Channel::from_shared(format!("https://{}:{}", host.as_ref(), port))
 			.unwrap()
