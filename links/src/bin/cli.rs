@@ -186,7 +186,7 @@ where
 
 	// Connect to gRPC API with native CA certs
 	let client = if cli.tls {
-		let tls_config = ClientTlsConfig::new();
+		let tls_config = ClientTlsConfig::new().with_native_roots();
 
 		let channel = Channel::from_shared(format!("https://{}:{}", cli.host, port))
 			.format_err("The host or port is invalid")?
