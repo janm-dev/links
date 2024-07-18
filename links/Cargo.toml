@@ -56,7 +56,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.120"
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
-thiserror = "1.0.62"
+thiserror = "1.0.63"
 time = { version = "0.3.36", features = [
 	"macros",
 	"parsing",
@@ -70,7 +70,7 @@ tokio-rustls = { version = "0.26.0", default-features = false, features = [
 	"ring",
 	"tls12",
 ] }
-tonic = { version = "0.12.0", default-features = false, features = [
+tonic = { version = "0.12.1", default-features = false, features = [
 	"gzip",
 	"tls",
 	"tls-roots",
@@ -93,7 +93,7 @@ base64 = "0.22.1"
 lol_html = "1.2.1"
 minify-html = "0.15.0"
 sha2 = "0.10.8"
-tonic-build = "0.12.0"
+tonic-build = "0.12.1"
 
 [dev-dependencies]
 regex = "1.10.5"
