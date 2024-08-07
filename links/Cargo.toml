@@ -36,7 +36,7 @@ fred = { version = "9.0.3", features = [
 	"partial-tracing",
 ] }
 hyper = "1.4.1"
-hyper-util = { version = "0.1.6", features = [
+hyper-util = { version = "0.1.7", features = [
 	"http1",
 	"http2",
 	"server",
