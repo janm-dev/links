@@ -314,13 +314,15 @@ impl CertificateSource {
 					.next()
 					.ok_or(CertificateAcquisitionError::MissingKey)??;
 
-				let cert_key = CertifiedKey::new(certs, sign::any_supported_type(&key)?);
+				let cert_key = CertifiedKey::new(
+					certs,
+					sign::any_supported_type(&key)
+						.map_err(CertificateAcquisitionError::InvalidKey)?,
+				);
 
-				// Check if the certificate matches the key
-				// TODO: Waiting on <https://github.com/rustls/rustls/issues/618>,
-				// TODO: <https://github.com/briansmith/webpki/issues/35>,
-				// TODO: <https://github.com/briansmith/ring/issues/419>,
-				// TODO: or similar.
+				let () = cert_key
+					.keys_match()
+					.map_err(CertificateAcquisitionError::KeyMismatch)?;
 
 				Ok(cert_key)
 			}
@@ -372,12 +374,18 @@ pub enum CertificateAcquisitionError {
 	/// not be read)
 	#[error("A filesystem error occurred")]
 	FileIo(#[from] IoError),
+	/// The certificate can not be found
+	#[error("No certificate found")]
+	MissingCert,
 	/// The key can not be found
 	#[error("No key found")]
 	MissingKey,
 	/// The private key is invalid or unsupported
 	#[error("The private key is invalid or unsupported")]
-	InvalidKey(#[from] RustlsError),
+	InvalidKey(#[source] RustlsError),
+	/// The private key does not match the certificate
+	#[error("The private key does not match the certificate")]
+	KeyMismatch(#[source] RustlsError),
 }
 
 /// The type of certificate source, for example certificate/key files, ACME,
