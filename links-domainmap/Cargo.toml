@@ -38,13 +38,13 @@ idna = { version = "1.0.2", default-features = false, features = [
 	"alloc",
 	"compiled_data",
 ] }
-serde = { version = "1.0.205", optional = true, default-features = false, features = [
+serde = { version = "1.0.206", optional = true, default-features = false, features = [
 	"derive",
 	"alloc",
 ] }
 
 [dev-dependencies]
 criterion = "0.5.1"
-serde_json = { version = "1.0.122", default-features = false, features = [
+serde_json = { version = "1.0.124", default-features = false, features = [
 	"alloc",
 ] }
