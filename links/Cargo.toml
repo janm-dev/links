@@ -30,6 +30,7 @@ async-trait = "0.1.81"
 basic-toml = "0.1.9"
 clap = { version = "4.5.15", features = ["derive", "env"] }
 colored = "2.1.0"
+crossbeam-channel = "0.5.13"
 fred = { version = "9.0.3", features = [
 	"metrics",
 	"enable-rustls-ring",
@@ -79,14 +80,13 @@ tonic = { version = "0.12.1", default-features = false, features = [
 	"prost",
 	"server",
 ] }
+tower = { version = "0.5.0", features = ["util"] }
 tracing = "0.1.40"
 tracing-appender = { version = "0.2.3", features = [
 	"parking_lot",
 ] }
 tracing-subscriber = "0.3.18"
 strum = { version = "0.26.3", features = ["derive"] }
-crossbeam-channel = "0.5.13"
-tower = "0.5.0"
 
 [build-dependencies]
 base64 = "0.22.1"
