@@ -43,8 +43,8 @@
 //! [whatwg url]: https://url.spec.whatwg.org/#host-parsing
 //! [chrome]: https://github.com/chromium/chromium/blob/18095fefc0746e934e623019294b10844d8ec989/net/base/url_util.cc#L359-L377
 //! [firefox]: https://searchfox.org/mozilla-central/rev/23690c9281759b41eedf730d3dcb9ae04ccaddf8/security/nss/lib/mozpkix/lib/pkixnames.cpp#1979-1997
-//! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
-//! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
+//! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
+//! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
@@ -164,6 +164,7 @@ impl AsRef<str> for Label {
 }
 
 /// A domain name split into individual labels (not including the root label).
+///
 /// Labels are stored in most-significant-first order, i.e. `"www.example.com."`
 /// would be stored as `["com", "example", "www"]`. Labels are stored in their
 /// ASCII-encoded form (A-labels for internationalized domain name labels). If
@@ -182,6 +183,9 @@ impl AsRef<str> for Label {
 /// identifier] domain (e.g. `"example.com".matches("example.com")`, and
 /// `"*.example.com".matches("www.example.com")`). Care should be taken to use
 /// the appropriate method in each situation.
+///
+/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
+/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Domain {
 	/// Indicates whether the domain is a wildcard, i.e. that the left-most
@@ -199,7 +203,7 @@ impl Domain {
 	/// allowing so-called "[fake A-labels][IDNA]" (labels starting with "xn--",
 	/// while not being valid punycode).
 	///
-	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
+	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 	/// [IDNA]: https://www.rfc-editor.org/rfc/rfc5890#section-2.3.2.1
 	///
 	/// # Errors
@@ -287,7 +291,7 @@ impl Domain {
 	/// (i.e. domain names ending with a '.'), which is [not allowed in
 	/// certificates][RFC 5280].
 	///
-	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
+	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 	/// [RFC 5280]: https://www.rfc-editor.org/rfc/rfc5280
 	///
 	/// # Errors
@@ -415,8 +419,8 @@ impl Domain {
 	/// This domain is treated as a [reference identifier], and therefore if its
 	/// `is_wildcard` property is set, this function returns `None`.
 	///
-	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
-	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
+	/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
+	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 	#[must_use]
 	pub fn matches(&self, presented: &Self) -> Option<bool> {
 		if self.is_wildcard() {

@@ -103,8 +103,8 @@ use crate::Domain;
 /// # }
 /// ```
 ///
-/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
-/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
+/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
+/// [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 #[derive(Debug, Clone)]
 pub struct DomainMap<T> {
 	data: Vec<(Domain, T)>,
@@ -163,7 +163,7 @@ impl<T> DomainMap<T> {
 	/// for the given domain itself, the specific (non-wildcard) domain's value
 	/// is always returned, regardless of insertion order
 	///
-	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
+	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 	///
 	/// # Examples
 	///
@@ -228,7 +228,7 @@ impl<T> DomainMap<T> {
 	/// for the given domain itself, the specific (non-wildcard) domain's value
 	/// is always returned, regardless of insertion order
 	///
-	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
+	/// [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 	///
 	/// # Examples
 	///
