@@ -26,9 +26,10 @@ use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 use uriparse::{Scheme, URIReference};
 
-/// A normalized string used for vanity paths. Allows for storing and comparing
-/// vanity paths in a normalized, case-insensitive way. Also filters out
-/// whitespace and control characters.
+/// A normalized string used for vanity paths.
+///
+/// Allows for storing and comparing vanity paths in a normalized,
+/// case-insensitive way. Also filters out whitespace and control characters.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "&str", into = "String")]
 pub struct Normalized(String);
@@ -128,15 +129,17 @@ pub enum LinkError {
 }
 
 /// A normalized URL used as the redirect destination. This ensures that the
-/// link is a valid absolute HTTP(S) URL. The resulting `Link` is guaranteed to
-/// have an `http` or `https` scheme, be an absolute URL, not have a password,
-/// and be properly percent encoded. Note that this doesn't aim to make invalid
-/// URLs valid (e.g. by percent encoding non-ascii characters), but may
-/// normalize the provided URL (e.g. by decoding percent-encoded non-reserved
-/// characters or by lowercasing the host). `Link` should not be used to create
-/// a new, valid, properly encoded URL from user input, only to verify one, as
-/// it doesn't provide much useful feedback or help with encoding an almost
-/// valid URL, nor does it do much useful guesswork.
+/// link is a valid absolute HTTP(S) URL.
+///
+/// The resulting `Link` is guaranteed to have an `http` or `https` scheme, be
+/// an absolute URL, not have a password, and be properly percent encoded. Note
+/// that this doesn't aim to make invalid URLs valid (e.g. by percent encoding
+/// non-ascii characters), but may normalize the provided URL (e.g. by decoding
+/// percent-encoded non-reserved characters or by lowercasing the host). `Link`
+/// should not be used to create a new, valid, properly encoded URL from user
+/// input, only to verify one, as it doesn't provide much useful feedback or
+/// help with encoding an almost valid URL, nor does it do much useful
+/// guesswork.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "&str", into = "String")]
 pub struct Link(String);
