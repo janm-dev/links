@@ -1,5 +1,6 @@
 //! This module contains a trait and its implementations for a unified
 //! redirect, vanity path, and statistics store used as links' backend store.
+//!
 //! This store can be something simple like in-memory hashmaps, an interface to
 //! something more complex and feature-rich like Redis, or anything in between.
 //! The aim of this [`StoreBackend`] trait is to make it easy to swap between

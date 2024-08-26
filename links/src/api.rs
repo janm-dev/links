@@ -20,6 +20,7 @@ use crate::{
 	stats::StatisticDescription,
 	store::{Current, Store},
 };
+
 /// A wrapper around the generated tonic code. Contains the `rpc` module with
 /// all of the actual functionality. This is necessary to allow
 /// `clippy::pedantic` on the generated code.
@@ -28,10 +29,12 @@ mod rpc_wrapper {
 }
 
 /// Get a function that checks authentication/authorization of an incoming grpc
-/// API call. The incoming request is checked for the `auth` metadata value,
-/// which should be a shared secret string value, that is simply compared to
-/// the one configured. **It is critical that this value is kept secret and
-/// never exposed publicly!**
+/// API call.
+///
+/// The incoming request is checked for the `auth` metadata value, which should
+/// be a shared secret string value, that is simply compared to the one
+/// configured. **It is critical that this value is kept secret and never
+/// exposed publicly!**
 ///
 /// # Errors
 /// Returns the `UNAUTHENTICATED` status code if the token is not provided or
