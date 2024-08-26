@@ -458,9 +458,11 @@ impl Protocol {
 	}
 }
 
-/// A links redirector listener. This listens for incoming network connections
-/// on a specified address using a specified protocol in an async task in the
-/// background. On drop, the async task is aborted in order to stop listening.
+/// A links redirector listener.
+///
+/// Listens for incoming network connections on a specified address using a
+/// specified protocol in an async task in the background. On drop, the async
+/// task is aborted in order to stop listening.
 #[derive(Debug)]
 pub struct Listener {
 	/// The address this listener will listen on. No address indicates that this

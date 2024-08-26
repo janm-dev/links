@@ -136,8 +136,8 @@
 //! [whatwg url]: https://url.spec.whatwg.org/#host-parsing
 //! [chrome]: https://github.com/chromium/chromium/blob/18095fefc0746e934e623019294b10844d8ec989/net/base/url_util.cc#L359-L377
 //! [firefox]: https://searchfox.org/mozilla-central/rev/23690c9281759b41eedf730d3dcb9ae04ccaddf8/security/nss/lib/mozpkix/lib/pkixnames.cpp#1979-1997
-//! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=for%20each%20domain.-,reference%20identifier,-%3A%20%20An%20identifier%2C%20constructed
-//! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#section-1.8:~:text=context%20of%20PKIX.-,presented%20identifier,-%3A%20%20An%20identifier%20that
+//! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
+//! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]

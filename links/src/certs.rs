@@ -12,9 +12,11 @@ use tokio_rustls::rustls::{
 };
 use tracing::debug;
 
-/// A [`ResolvesServerCert`] implementor, resolving TLS certificates based on
-/// the domain name using `links-domainmap`. The default certificate for unknown
-/// or unrecognized domain names can be specified using `default`.
+/// A per-domain [`ResolvesServerCert`] implementor with fallback.
+///
+/// Resolves TLS certificates based on the domain name using `links-domainmap`.
+/// The default certificate for unknown or unrecognized domain names can be
+/// specified using `default`.
 ///
 /// [`ResolvesServerCert`]: https://docs.rs/rustls/latest/rustls/server/trait.ResolvesServerCert.html
 pub struct CertificateResolver {

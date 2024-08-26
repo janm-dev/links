@@ -48,6 +48,7 @@ pub const BASE_38_CHARSET: [char; 38] = [
 ];
 
 /// Reverse base 38 character set used for decoding encoded IDs.
+///
 /// The numeric value of a base 38 character is available at `ascii - 54`.
 pub const REVERSE_CHARSET: [u8; 69] = [
 	0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 6, 0, 7, 8, 9, 0, 10, 11, 12, 13, 14, 0, 15, 16, 17,
@@ -56,8 +57,10 @@ pub const REVERSE_CHARSET: [u8; 69] = [
 ];
 
 /// The offset from the ASCII value of a base 38 character to its index in
-/// `REVERSE_CHARSET`. To get the index of a character in `REVERSE_CHARSET`,
-/// subtract `REVERSE_CHARSET_BASE_38_OFFSET` from its value (`ascii - this`).
+/// `REVERSE_CHARSET`.
+///
+/// To get the index of a character in `REVERSE_CHARSET`, subtract
+/// `REVERSE_CHARSET_BASE_38_OFFSET` from its value (`ascii - this`).
 pub const REVERSE_CHARSET_BASE_38_OFFSET: usize = 54;
 
 /// The 40 bit ID used to identify links in links.
