@@ -67,7 +67,7 @@ pub use self::{
 	global::{Config, Hsts, Redirector},
 	partial::{IntoPartialError, Partial, PartialHsts},
 };
-use crate::server::Protocol;
+use crate::{server::Protocol, util::Unpoison};
 
 /// An update to certificate configuration
 #[derive(Debug)]
@@ -104,14 +104,15 @@ impl CertificateWatcher {
 	/// # Errors
 	/// This function returns an error if the file watcher for `files`
 	/// certificate sources could not be set up
-	#[allow(clippy::missing_panics_doc)]
 	pub fn new() -> anyhow::Result<Self> {
 		let (files_tx, files_rx) = unbounded();
 		let (config_tx, config_rx) = unbounded();
 		let files_watcher = notify::recommended_watcher(move |res| match res {
-			Ok(ev) => files_tx
-				.send(ev)
-				.expect("the certificate file watching channel closed unexpectedly"),
+			Ok(ev) => {
+				let _ = files_tx.send(ev).inspect_err(|err| {
+					error!("the certificate file watching channel closed unexpectedly: {err}");
+				});
+			}
 			Err(err) => error!(%err, "certificate file watching error"),
 		})?;
 
@@ -134,7 +135,7 @@ impl CertificateWatcher {
 	/// May return multiple certificate sources at once if one event caused all
 	/// of them to need updating. May return a false positive (a certificate
 	/// source may be returned when it hasn't actually changed).
-	#[allow(clippy::missing_panics_doc)]
+	#[allow(clippy::missing_panics_doc)] // TODO
 	pub fn watch(
 		&mut self,
 		debounce_time: Duration,
@@ -152,7 +153,7 @@ impl CertificateWatcher {
 				.cloned()
 				.collect();
 
-			let mut db = debounced.lock().expect("lock poisoned");
+			let mut db = debounced.lock().unpoison();
 			if let Some(ref mut debounced) = *db {
 				for source in file_sources {
 					if !debounced.0.contains(&source) {
@@ -181,7 +182,6 @@ impl CertificateWatcher {
 			}
 		};
 
-		#[allow(clippy::cognitive_complexity)]
 		let handle_config = |this: &mut Self, msg| match msg {
 			CertConfigUpdate::DefaultUpdated(default) => {
 				if let Some((Err(err), source)) = this
@@ -222,8 +222,8 @@ impl CertificateWatcher {
 			select! {
 				recv(self.files_rx) -> msg => handle_files(self, msg.expect("certificate watcher channel closed")),
 				recv(self.config_rx) -> msg => handle_config(self, msg.expect("certificate watcher channel closed")),
-				default(debounce_time) => if debounced.lock().expect("lock poisoned").is_some() {
-					break debounced.into_inner().expect("lock poisoned").expect("the option was just checked to be some");
+				default(debounce_time) => if debounced.lock().unpoison().is_some() {
+					break debounced.into_inner().unpoison().expect("the option was just checked to be some");
 				}
 			}
 		}
@@ -494,9 +494,11 @@ impl Display for ListenAddress {
 }
 
 impl PartialEq for ListenAddress {
-	// This is correct, a `None` address is distinct from all `Some(_)` addresses,
-	// but a `None` port is just the default port for that protocol
-	#[allow(clippy::suspicious_operation_groupings)]
+	#[expect(
+		clippy::suspicious_operation_groupings,
+		reason = "This is correct, a `None` address is distinct from all `Some(_)` addresses, but \
+		          a `None` port is just the default port for that protocol"
+	)]
 	fn eq(&self, other: &Self) -> bool {
 		self.protocol == other.protocol
 			&& self.address == other.address

@@ -1,6 +1,8 @@
 //! Miscellaneous statics, utilities, and macros used throughout links.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, panic::Location, sync::LockResult};
+
+use tracing::warn;
 
 /// A string representation of this crate's version.
 ///
@@ -31,6 +33,30 @@ pub const SERVER_NAME: &str = if cfg!(debug_assertions) {
 		env!("CARGO_PKG_VERSION_MINOR")
 	)
 };
+
+/// Unpoison a lock guard
+pub trait Unpoison {
+	/// The lock guard type
+	type Guard;
+
+	/// Get the lock guard regardless of poisoning status
+	fn unpoison(self) -> Self::Guard;
+}
+
+impl<G> Unpoison for LockResult<G> {
+	type Guard = G;
+
+	#[track_caller]
+	fn unpoison(self) -> Self::Guard {
+		match self {
+			Ok(g) => g,
+			Err(e) => {
+				warn!("a poisoned lock was encountered at {}", Location::caller());
+				e.into_inner()
+			}
+		}
+	}
+}
 
 /// Make a decent-looking and readable string out of a string -> string map
 pub fn stringify_map<K, V, H>(map: &HashMap<K, V, H>) -> String

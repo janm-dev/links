@@ -41,7 +41,10 @@ impl<F: FnOnce()> Drop for Terminator<F> {
 /// Convert an absolute file path to a format that the server can understand.
 /// This does nothing with the normal links server, but is required e.g. for the
 /// Docker container on Windows.
-#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+#[allow(
+	dead_code,
+	reason = "False positive, this function is used in tests, just not *all* of them"
+)]
 pub fn convert_path(path: impl AsRef<str>) -> String {
 	let mode = env::var("LINKS_TEST_EXTERNAL").ok();
 	let server_mode = mode.as_deref();
@@ -59,7 +62,10 @@ pub fn convert_path(path: impl AsRef<str>) -> String {
 /// and 530), with the default redirect enabled, the RPC token set to `abc123`,
 /// and TLS controlled by the `tls` argument of this function. Panics on any
 /// error.
-#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+#[allow(
+	dead_code,
+	reason = "False positive, this function is used in tests, just not *all* of them"
+)]
 pub fn start_server(tls: bool) -> Terminator<impl FnOnce()> {
 	let mut args = vec![
 		"--example-redirect",
@@ -89,7 +95,10 @@ pub fn start_server(tls: bool) -> Terminator<impl FnOnce()> {
 ///   `links:test` and use that container for testing
 /// - any other value (or an unset variable) will start the server that was
 ///   built as part of `cargo test`
-#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+#[allow(
+	dead_code,
+	reason = "False positive, this function is used in tests, just not *all* of them"
+)]
 pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl FnOnce()> {
 	let var = env::var("LINKS_TEST_EXTERNAL").ok();
 	let kill_server: Box<dyn FnOnce()> = match var.as_deref() {
@@ -192,7 +201,10 @@ pub fn start_server_with_args(args: Vec<impl AsRef<OsStr>>) -> Terminator<impl F
 /// Run the links CLI with the provided arguments, returning the output (from
 /// stdout). No configuration from environment variables will be used. Panics on
 /// any non-cli error.
-#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+#[allow(
+	dead_code,
+	reason = "False positive, this function is used in tests, just not *all* of them"
+)]
 pub fn run_cli(args: Vec<impl AsRef<OsStr>>) -> String {
 	let mut cmd = Command::new(env!("CARGO_BIN_EXE_cli"));
 	cmd.args(args);
@@ -203,7 +215,10 @@ pub fn run_cli(args: Vec<impl AsRef<OsStr>>) -> String {
 
 /// Get a links RPC client for the given host and port, with or without TLS
 /// enabled
-#[allow(dead_code)] // False positive, this function is used in tests, just not *all* of them
+#[allow(
+	dead_code,
+	reason = "False positive, this function is used in tests, just not *all* of them"
+)]
 pub async fn get_rpc_client(
 	host: impl AsRef<str>,
 	port: u16,

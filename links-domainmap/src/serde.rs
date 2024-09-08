@@ -113,7 +113,6 @@ mod tests {
 	use core::f32::consts::PI;
 
 	use super::*;
-	#[allow(clippy::wildcard_imports)]
 	use crate::tests::*;
 
 	#[test]

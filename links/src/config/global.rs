@@ -227,7 +227,7 @@ impl Display for Config {
 
 /// Actual configuration storage inside of a [`Config`]
 #[derive(Debug, PartialEq)]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 struct ConfigInner {
 	/// Minimum level of logs to be collected/displayed. Debug and trace levels
 	/// may expose secret information, so are not recommended for production

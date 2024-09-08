@@ -94,7 +94,6 @@ fn deserialize_env_var<T: for<'a> Deserialize<'a>>(key: &str) -> Option<T> {
 /// configuration from one source only, all fields are optional, which allows
 /// incremental updates to the actual [`Config`][super::Config] struct.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[allow(clippy::struct_excessive_bools)]
 pub struct Partial {
 	/// Minimum level of logs to be collected/displayed. Debug and trace levels
 	/// may expose secret information, so are not recommended for production
@@ -263,7 +262,6 @@ impl Partial {
 #[derive(
 	Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, EnumString, EnumDisplay,
 )]
-#[allow(clippy::module_name_repetitions)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case", ascii_case_insensitive)]
 pub enum PartialHsts {

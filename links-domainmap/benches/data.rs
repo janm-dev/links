@@ -1,7 +1,10 @@
 //! Test data for `links-domainmap`'s benchmarks
 
 /// Sample inputs for [`Domain::reference`]
-#[allow(unused)]
+#[allow(
+	dead_code,
+	reason = "False positive, this constant is used in tests, just not *all* of them"
+)]
 pub const DOMAIN_REFERENCE: &[&str] = &[
 	"example.com",
 	"example.com.",
@@ -36,7 +39,10 @@ pub const DOMAIN_REFERENCE: &[&str] = &[
 ];
 
 /// Sample inputs for [`Domain::presented`]
-#[allow(unused)]
+#[allow(
+	dead_code,
+	reason = "False positive, this constant is used in tests, just not *all* of them"
+)]
 pub const DOMAIN_PRESENTED: &[&str] = &[
 	"example.com",
 	"example.com.",

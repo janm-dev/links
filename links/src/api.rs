@@ -42,7 +42,6 @@ mod rpc_wrapper {
 pub fn get_auth_checker(
 	config: &'static Config,
 ) -> impl Fn(Request<()>) -> Result<Request<()>, Status> + Clone {
-	#[allow(clippy::cognitive_complexity)] // Caused by macro expansion
 	move |req: Request<()>| -> Result<Request<()>, Status> {
 		let token = if let Some(token) = req.metadata().get("auth") {
 			token.as_encoded_bytes()

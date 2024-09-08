@@ -12,6 +12,8 @@ use tokio_rustls::rustls::{
 };
 use tracing::debug;
 
+use crate::util::Unpoison;
+
 /// A per-domain [`ResolvesServerCert`] implementor with fallback.
 ///
 /// Resolves TLS certificates based on the domain name using `links-domainmap`.
@@ -37,29 +39,19 @@ impl CertificateResolver {
 	}
 
 	/// Get the default `CertifiedKey` if one is configured
-	///
-	/// # Panics
-	/// This function panics if the lock inside of `self` is poisoned
 	fn get_default(&self) -> Option<Arc<CertifiedKey>> {
-		self.default
-			.read()
-			.expect("lock is poisoned")
-			.as_ref()
-			.map(Arc::clone)
+		self.default.read().unpoison().as_ref().map(Arc::clone)
 	}
 
 	/// Get the matching `CertifiedKey` for the given reference identifier
 	/// domain name
-	///
-	/// # Panics
-	/// This function panics if the lock inside of `self` is poisoned
 	pub fn get(&self, domain: Option<&Domain>) -> Option<Arc<CertifiedKey>> {
 		domain.map_or_else(
 			|| self.get_default(),
 			|domain| {
 				self.certs
 					.read()
-					.expect("lock is poisoned")
+					.unpoison()
 					.get(domain)
 					.map_or_else(|| self.get_default(), |certkey| Some(Arc::clone(certkey)))
 			},
@@ -68,14 +60,8 @@ impl CertificateResolver {
 
 	/// Set the cert-key pair for the given domain. All future calls to `get` or
 	/// `resolve` with this domain name will return this new `CertifiedKey`.
-	///
-	/// # Panics
-	/// This function panics if the lock inside of `self` is poisoned
 	pub fn set(&self, domain: Domain, certkey: Arc<CertifiedKey>) {
-		self.certs
-			.write()
-			.expect("lock is poisoned")
-			.set(domain, certkey);
+		self.certs.write().unpoison().set(domain, certkey);
 	}
 
 	/// Set the default cert-key pair for unknown or unrecognized domains. All
@@ -83,20 +69,14 @@ impl CertificateResolver {
 	/// domain name not found in any other certificate sources will return this
 	/// new `CertifiedKey`. Setting the default certificate to `None` will
 	/// reject requests for unknown or unrecognized domains.
-	///
-	/// # Panics
-	/// This function panics if the lock inside of `self` is poisoned
 	pub fn set_default(&self, certkey: Option<Arc<CertifiedKey>>) {
-		*self.default.write().expect("lock is poisoned") = certkey;
+		*self.default.write().unpoison() = certkey;
 	}
 
 	/// Remove the cert-key pair for the given domain. All future calls to `get`
 	/// or `resolve` with this domain name will return nothing.
-	///
-	/// # Panics
-	/// This function panics if the lock inside of `self` is poisoned
 	pub fn remove(&self, domain: &Domain) {
-		self.certs.write().expect("lock is poisoned").remove(domain);
+		self.certs.write().unpoison().remove(domain);
 	}
 }
 

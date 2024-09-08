@@ -76,7 +76,6 @@ impl Id {
 	/// The number of characters in the usual Id representation.
 	pub const CHARS: usize = 8;
 	/// The maximum value of an Id when represented as a number.
-	#[allow(clippy::cast_possible_truncation)]
 	pub const MAX: u64 = 2u64.pow(Self::BITS as u32) - 1;
 	/// The minimum value of an Id when represented as a number
 	pub const MIN: u64 = 0;
@@ -131,7 +130,6 @@ impl Debug for Id {
 }
 
 impl Display for Id {
-	#[allow(clippy::cast_possible_truncation)]
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), FmtError> {
 		let mut buf = ['\0'; Self::CHARS];
 		let num = self.to_u64();
@@ -203,12 +201,6 @@ impl TryFrom<&str> for Id {
 	type Error = ConversionError;
 
 	fn try_from(string: &str) -> Result<Self, Self::Error> {
-		#[allow(
-			clippy::cast_possible_truncation,
-			clippy::cast_lossless,
-			clippy::cast_sign_loss,
-			clippy::cast_possible_wrap
-		)]
 		if string.len() < Self::CHARS {
 			Err(ConversionError::TooSmall)
 		} else if string.len() > Self::CHARS {
@@ -221,7 +213,6 @@ impl TryFrom<&str> for Id {
 			let mut num = string.chars().next().unwrap().to_digit(10).unwrap() as u64
 				* 38u64.pow((Self::CHARS - 1) as u32);
 
-			#[allow(clippy::cast_possible_truncation)]
 			for (i, char) in string.chars().rev().enumerate().take(Self::CHARS - 1) {
 				// Panic (indexing): `string` has already been checked to have only valid
 				// characters, so this always succeeds.
@@ -407,7 +398,7 @@ mod tests {
 	}
 
 	#[test]
-	#[allow(clippy::unnecessary_fallible_conversions)]
+	#[allow(clippy::unnecessary_fallible_conversions)] // that's what this test if for
 	fn try_from_bytes() {
 		assert_eq!(
 			Id([0x01, 0x02, 0x03, 0x04, 0x05]),

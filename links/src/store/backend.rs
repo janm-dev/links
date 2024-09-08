@@ -22,7 +22,6 @@ use crate::{
 
 /// The redirect, vanity path, and statistics store trait used by links.
 #[async_trait]
-#[allow(clippy::module_name_repetitions)]
 pub trait StoreBackend: Debug + Send + Sync {
 	/// Get this implementation's backend store type. This is used in
 	/// e.g. the configuration.

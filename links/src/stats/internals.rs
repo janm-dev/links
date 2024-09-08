@@ -57,7 +57,10 @@ impl Display for StatisticData {
 /// of the year 2000 UTC (e.g. on 2000-01-01 the period between 00:00:00.000 and
 /// 00:14:59.999 UTC is 0 and 15:30:00.000 to 15:44:59.999 UTC is 62)
 // Caused by the `datetime!` macro in `EPOCH`, related https://github.com/rust-lang/rust-clippy/issues/10349
-#[allow(clippy::unsafe_derive_deserialize)]
+#[expect(
+	clippy::unsafe_derive_deserialize,
+	reason = "false positive in the EPOCH constant"
+)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "&str", into = "String")]
 pub struct StatisticTime {

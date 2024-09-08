@@ -51,8 +51,6 @@ impl Normalized {
 
 	/// Returns the string this `Normalized` wraps, consuming `self`.
 	#[must_use]
-	// False positive, see https://github.com/rust-lang/rust-clippy/issues/4979
-	#[allow(clippy::missing_const_for_fn)]
 	pub fn into_string(self) -> String {
 		self.0
 	}
@@ -190,8 +188,6 @@ impl Link {
 
 	/// Returns the string this `Link` wraps, consuming `self`.
 	#[must_use]
-	// False positive, see https://github.com/rust-lang/rust-clippy/issues/4979
-	#[allow(clippy::missing_const_for_fn)]
 	pub fn into_string(self) -> String {
 		self.0
 	}
@@ -256,7 +252,6 @@ impl From<Link> for String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unicode_not_nfc)]
 mod tests {
 	use std::cmp::Ordering;
 
@@ -395,7 +390,6 @@ mod tests {
 	}
 
 	#[test]
-	#[allow(clippy::redundant_clone)]
 	fn normalized_cmp() {
 		assert_eq!(
 			Normalized::new("Big Bird	").cmp(&Normalized::new(" ᴮᴵᴳᴮᴵᴿᴰ")),

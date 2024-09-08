@@ -80,7 +80,10 @@ impl From<&IdOrVanity> for IdOrVanity {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "Vec<&str>", into = "Vec<&'static str>")]
 #[non_exhaustive]
-#[allow(clippy::struct_excessive_bools)]
+#[expect(
+	clippy::struct_excessive_bools,
+	reason = "using bitflags to save 3 bytes is a bit excessive for this"
+)]
 pub struct StatisticCategories {
 	/// Collect [`StatisticType::Request`]
 	pub redirect: bool,
@@ -116,7 +119,7 @@ impl StatisticCategories {
 	/// with the provided [`StatisticType`] should be collected
 	#[must_use]
 	pub const fn specifies(self, stat_type: StatisticType) -> bool {
-		#[allow(clippy::enum_glob_use)]
+		#[allow(clippy::enum_glob_use, reason = "scoped to this 6-line function")]
 		use StatisticType::*;
 
 		match stat_type {
@@ -327,7 +330,10 @@ mod tests {
 	use super::*;
 
 	#[test]
-	#[allow(clippy::unnecessary_fallible_conversions)]
+	#[expect(
+		clippy::unnecessary_fallible_conversions,
+		reason = "that's what this test is for"
+	)]
 	fn id_or_vanity() {
 		assert_eq!(
 			IdOrVanity::Id([0x11, 0x33, 0x55, 0x77, 0x99].into()),
@@ -397,7 +403,10 @@ mod tests {
 	}
 
 	#[test]
-	#[allow(clippy::unnecessary_fallible_conversions)]
+	#[expect(
+		clippy::unnecessary_fallible_conversions,
+		reason = "that's what this test is for"
+	)]
 	fn http_version() {
 		assert_eq!(
 			HttpVersion::from_str("HTTP/1.1").unwrap().as_str(),

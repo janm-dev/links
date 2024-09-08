@@ -232,7 +232,7 @@ where
 /// guaranteed to be unique at the time of the function call. If all IDs are
 /// taken, this will loop forever (but considering that that would be about
 /// 5 TB of IDs alone, that's quite unlikely).
-#[allow(clippy::similar_names)] // Caused by `res` and `req`
+#[expect(clippy::similar_names, reason = "res vs req")]
 async fn gen_unique_id(
 	mut client: LinksClient<Channel>,
 	token: AsciiMetadataValue,

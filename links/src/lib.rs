@@ -13,7 +13,11 @@
 )]
 #![allow(clippy::multiple_crate_versions)]
 #![allow(clippy::tabs_in_doc_comments)]
-#![allow(clippy::use_self)] // False-positives in #[derive(Serialize)] generated code
+#![allow(clippy::module_name_repetitions)]
+#![expect(
+	clippy::use_self,
+	reason = "false-positives in `#[derive(Serialize)]`-generated code"
+)]
 
 pub mod api;
 pub mod certs;

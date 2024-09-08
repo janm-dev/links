@@ -27,8 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let proto = fs::read_to_string(&proto_path)?;
 	fs::write(
 		&proto_path,
-		"#[allow(clippy::pedantic, clippy::nursery, missing_docs, \
-		 clippy::redundant_async_block)]\npub mod rpc {\n"
+		"#[allow(clippy::pedantic, clippy::nursery, missing_docs, clippy::redundant_async_block, \
+		 reason = \"generated code\")]\npub mod rpc {\n"
 			.to_string()
 			+ &proto + "}\n",
 	)?;

@@ -558,7 +558,6 @@ mod tests {
 	};
 
 	use super::*;
-	#[allow(clippy::wildcard_imports)]
 	use crate::tests::*;
 
 	#[test]
