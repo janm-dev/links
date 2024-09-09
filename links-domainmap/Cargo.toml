@@ -38,7 +38,7 @@ idna = { version = "1.0.2", default-features = false, features = [
 	"alloc",
 	"compiled_data",
 ] }
-serde = { version = "1.0.209", optional = true, default-features = false, features = [
+serde = { version = "1.0.210", optional = true, default-features = false, features = [
 	"derive",
 	"alloc",
 ] }
