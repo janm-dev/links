@@ -37,7 +37,7 @@ fred = { version = "9.2.1", features = [
 	"partial-tracing",
 ] }
 hyper = "1.4.1"
-hyper-util = { version = "0.1.7", features = [
+hyper-util = { version = "0.1.8", features = [
 	"http1",
 	"http2",
 	"server",
@@ -80,7 +80,7 @@ tonic = { version = "0.12.2", default-features = false, features = [
 	"prost",
 	"server",
 ] }
-tower = { version = "0.5.0", features = ["util"] }
+tower = { version = "0.5.1", features = ["util"] }
 tracing = "0.1.40"
 tracing-appender = { version = "0.2.3", features = [
 	"parking_lot",
