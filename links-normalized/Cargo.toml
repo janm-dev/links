@@ -17,7 +17,7 @@ fred = ["dep:fred"]
 fred = { version = "9.2.1", optional = true, default-features = false }
 serde = { version = "1.0.210", features = ["derive"] }
 thiserror = "1.0.63"
-unicode-normalization = "0.1.23"
+unicode-normalization = "0.1.24"
 uriparse = "0.6.4"
 
 [dev-dependencies]
