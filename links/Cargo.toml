@@ -71,7 +71,7 @@ tokio-rustls = { version = "0.26.0", default-features = false, features = [
 	"ring",
 	"tls12",
 ] }
-tonic = { version = "0.12.2", default-features = false, features = [
+tonic = { version = "0.12.3", default-features = false, features = [
 	"gzip",
 	"tls",
 	"tls-roots",
@@ -93,7 +93,7 @@ base64 = "0.22.1"
 lol_html = "1.2.1"
 minify-html = "0.15.0"
 sha2 = "0.10.8"
-tonic-build = "0.12.2"
+tonic-build = "0.12.3"
 
 [dev-dependencies]
 regex = "1.10.6"

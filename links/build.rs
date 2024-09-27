@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.build_client(true)
 		.build_server(true)
 		.compile_well_known_types(true)
-		.compile(&["../proto/links.proto"], &["../proto"])?;
+		.compile_protos(&["../proto/links.proto"], &["../proto"])?;
 
 	// Disable pedantic clippy lints in the generated file (if anyone has a
 	// more elegant solution to this, please open an issue)
