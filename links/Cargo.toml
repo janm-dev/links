@@ -28,7 +28,7 @@ links-domainmap = { path = "../links-domainmap", version = "*", features = [
 anyhow = "1.0.89"
 async-trait = "0.1.83"
 basic-toml = "0.1.9"
-clap = { version = "4.5.19", features = ["derive", "env"] }
+clap = { version = "4.5.20", features = ["derive", "env"] }
 colored = "2.1.0"
 crossbeam-channel = "0.5.13"
 fred = { version = "9.2.1", features = [
