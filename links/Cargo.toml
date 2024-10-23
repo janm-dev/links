@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.90"
+anyhow = "1.0.91"
 async-trait = "0.1.83"
 basic-toml = "0.1.9"
 clap = { version = "4.5.20", features = ["derive", "env"] }
@@ -53,11 +53,11 @@ prost = "0.13.3"
 rand = "0.8.5"
 regex = "1.11.0"
 rustls-pemfile = "2.2.0"
-serde = { version = "1.0.211", features = ["derive"] }
+serde = { version = "1.0.213", features = ["derive"] }
 serde_json = "1.0.132"
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
-thiserror = "1.0.64"
+thiserror = "1.0.65"
 time = { version = "0.3.36", features = [
 	"macros",
 	"parsing",
