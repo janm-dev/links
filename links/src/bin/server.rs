@@ -44,7 +44,7 @@ use links::{
 	store::Current,
 	util::{stringify_map, SERVER_HELP, SERVER_NAME},
 };
-use notify::{RecursiveMode, Watcher};
+use notify::{EventKind, RecursiveMode, Watcher};
 use pico_args::Arguments;
 use tokio::runtime::Builder;
 use tracing::{debug, error, info, Level};
@@ -218,6 +218,9 @@ fn main() -> Result<(), anyhow::Error> {
 			} else {
 				watcher_debounce.min(watcher_timeout) / 4
 			}) {
+				Ok(event) if matches!(event.kind, EventKind::Access(_)) => {
+					debug!(?event, "Ignoring file event from watcher");
+				}
 				Ok(event) => {
 					debug!(?event, "Received file event from watcher");
 					last_file_event = Some(Instant::now());
