@@ -52,7 +52,7 @@ use std::{
 
 use crossbeam_channel::{select, unbounded, Receiver, Sender};
 use links_domainmap::Domain;
-use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use strum::{Display as EnumDisplay, EnumString, ParseError};
 use tokio_rustls::rustls::{
@@ -142,7 +142,12 @@ impl CertificateWatcher {
 	) -> (Vec<CertificateSource>, DefaultCertificateSource) {
 		let debounced = Mutex::new(Option::<(Vec<_>, _)>::None);
 
-		let handle_files = |this: &mut Self, event| {
+		let handle_files = |this: &mut Self, event: Event| {
+			if let EventKind::Access(_) = event.kind {
+				debug!(?event, "Ignoring file event from watcher");
+				return;
+			}
+
 			debug!(?event, "Received file event from watcher");
 			let file_sources = this
 				.sources
