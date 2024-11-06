@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.92"
+anyhow = "1.0.93"
 async-trait = "0.1.83"
 basic-toml = "0.1.9"
 clap = { version = "4.5.20", features = ["derive", "env"] }
