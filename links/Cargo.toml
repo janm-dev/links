@@ -25,7 +25,7 @@ links-normalized = { path = "../links-normalized", version = "*", features = [
 links-domainmap = { path = "../links-domainmap", version = "*", features = [
 	"serde",
 ] }
-anyhow = "1.0.92"
+anyhow = "1.0.93"
 async-trait = "0.1.83"
 basic-toml = "0.1.9"
 clap = { version = "4.5.20", features = ["derive", "env"] }
@@ -63,7 +63,7 @@ time = { version = "0.3.36", features = [
 	"parsing",
 	"formatting",
 ] }
-tokio = { version = "1.41.0", features = [
+tokio = { version = "1.41.1", features = [
 	"rt-multi-thread",
 ] }
 tokio-rustls = { version = "0.26.0", default-features = false, features = [
@@ -103,4 +103,4 @@ reqwest = { version = "0.12.9", default-features = false, features = [
 	"gzip",
 ] }
 serial_test = "3.1.1"
-tokio = { version = "1.41.0", features = ["full"] }
+tokio = { version = "1.41.1", features = ["full"] }
