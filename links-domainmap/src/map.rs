@@ -1,6 +1,5 @@
 //! A map with [domain name][Domain] keys, with support for wildcards
 
-#[cfg(not(feature = "std"))]
 use alloc::vec::{IntoIter as VecIter, Vec};
 use core::{
 	fmt::Debug,
@@ -8,8 +7,6 @@ use core::{
 	mem,
 	slice::{Iter as SliceIter, IterMut as SliceIterMut},
 };
-#[cfg(feature = "std")]
-use std::vec::IntoIter as VecIter;
 
 use crate::Domain;
 
@@ -611,10 +608,7 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T> {
 
 #[cfg(test)]
 mod tests {
-	#[cfg(not(feature = "std"))]
 	use alloc::format;
-	#[cfg(feature = "std")]
-	use std::collections::HashMap;
 
 	use super::*;
 
@@ -982,13 +976,5 @@ mod tests {
 		assert!(map == other);
 		assert!(map == map);
 		assert!(map != DomainMap::new());
-
-		#[cfg(feature = "std")]
-		{
-			let mut hash_map = HashMap::<_, usize>::new();
-			hash_map.insert(cloned, 3);
-			assert_eq!(hash_map.get(&map), Some(&3));
-			assert_eq!(hash_map.get(&other), Some(&3));
-		}
 	}
 }

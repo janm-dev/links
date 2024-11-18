@@ -46,14 +46,12 @@
 //! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 //! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 
-#[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
 use core::{
 	cmp::Ordering,
+	error::Error,
 	fmt::{Debug, Display, Formatter, Result as FmtResult, Write},
 };
-#[cfg(feature = "std")]
-use std::error::Error;
 
 /// A domain name label, stored in lowercase in its ASCII-encoded form
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -233,7 +231,7 @@ impl Domain {
 	///
 	/// ```rust
 	/// # use links_domainmap::{Domain, DomainMap};
-	/// # use std::error::Error;
+	/// # use core::error::Error;
 	/// #
 	/// # struct StubClientHello;
 	/// # impl StubClientHello {
@@ -531,7 +529,6 @@ impl Display for ParseError {
 	}
 }
 
-#[cfg(feature = "std")]
 impl Error for ParseError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
@@ -549,13 +546,8 @@ impl From<idna::Errors> for ParseError {
 
 #[cfg(test)]
 mod tests {
-	#[cfg(not(feature = "std"))]
 	use alloc::{boxed::Box, collections::BTreeMap, format, string::ToString};
-	#[cfg(feature = "std")]
-	use std::{
-		collections::{BTreeMap, HashMap},
-		error::Error,
-	};
+	use core::error::Error;
 
 	use super::*;
 	use crate::tests::*;
@@ -579,7 +571,6 @@ mod tests {
 
 		assert!(Domain::presented("xn--example.com").is_err());
 
-		#[cfg(feature = "std")]
 		assert!(Domain::presented("xn--example.com")
 			.unwrap_err()
 			.source()
@@ -673,6 +664,7 @@ mod tests {
 		let foo = Domain::presented("foo.example.com").unwrap();
 		let a = Domain::presented("foo.an-example.com").unwrap();
 
+		#[allow(clippy::redundant_clone)]
 		let cloned = domain.clone();
 		assert!(domain == cloned);
 
@@ -708,19 +700,11 @@ mod tests {
 		let mut btree_map = BTreeMap::<_, usize>::new();
 		btree_map.insert(domain.clone(), 3);
 		assert_eq!(btree_map.get(&domain), Some(&3));
-
-		#[cfg(feature = "std")]
-		{
-			let mut hash_map = HashMap::<_, usize>::new();
-			hash_map.insert(cloned, 3);
-			assert_eq!(hash_map.get(&domain), Some(&3));
-		}
 	}
 
 	#[test]
 	fn parseerror_error() {
 		assert!(Domain::presented("xn--example.com").is_err());
-		#[cfg(feature = "std")]
 		assert!(Domain::presented("xn--example.com")
 			.unwrap_err()
 			.source()
@@ -728,7 +712,6 @@ mod tests {
 			.is::<idna::Errors>());
 
 		assert!(Domain::presented("example..com").is_err());
-		#[cfg(feature = "std")]
 		assert!(Domain::presented("example..com")
 			.unwrap_err()
 			.source()
