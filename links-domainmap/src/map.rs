@@ -502,7 +502,7 @@ impl<T: PartialEq> PartialEq for DomainMap<T> {
 		}
 
 		self.iter()
-			.all(|(key, value)| other.get_eq(key).map_or(false, |v| value == v))
+			.all(|(key, value)| other.get_eq(key) == Some(value))
 	}
 }
 
