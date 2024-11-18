@@ -15,7 +15,7 @@ keywords = [
 	"dns",
 ]
 categories = ["data-structures", "no-std"]
-rust-version = "1.74"
+rust-version = "1.81.0"
 
 [features]
 default = ["std"]
