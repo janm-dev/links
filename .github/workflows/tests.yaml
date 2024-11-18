@@ -70,9 +70,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1.74", "1.81", stable, beta]
-        features:
-          ["", "--features=std", "--features=serde", "--features=std,serde"]
+        version: ["1.81", stable, beta]
+        features: ["", "--features=serde"]
     name: Test links-domainmap with features "${{ matrix.features }}" on Rust ${{ matrix.version }}
     runs-on: ubuntu-latest
     steps:

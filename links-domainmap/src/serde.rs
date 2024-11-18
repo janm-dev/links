@@ -1,7 +1,6 @@
 //! Serialization and deserialization implementations using `serde` for
 //! [`DomainMap`] and [`Domain`]
 
-#[cfg(not(feature = "std"))]
 use alloc::format;
 use core::{
 	any,
@@ -108,7 +107,6 @@ impl<'de> Deserialize<'de> for Domain {
 
 #[cfg(test)]
 mod tests {
-	#[cfg(not(feature = "std"))]
 	use alloc::string::ToString;
 	use core::f32::consts::PI;
 

@@ -8,8 +8,6 @@
 //!
 //! # Cargo features
 //!
-//! - `std` (on by default): Enable features that require the standard library,
-//!   such as the `std::error::Error` trait
 //! - `serde`: Enable `serde` serialization and deserialization for `DomainMap`
 //!   and `Domain`
 //!
@@ -139,7 +137,7 @@
 //! [reference identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-12
 //! [presented identifier]: https://www.rfc-editor.org/rfc/rfc6125#page-11
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![forbid(unsafe_code)]
 #![warn(
 	clippy::pedantic,
@@ -150,7 +148,6 @@
 )]
 #![allow(clippy::tabs_in_doc_comments, clippy::module_name_repetitions)]
 
-#[cfg(not(feature = "std"))]
 extern crate alloc;
 
 mod domain;

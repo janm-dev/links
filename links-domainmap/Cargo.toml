@@ -15,12 +15,10 @@ keywords = [
 	"dns",
 ]
 categories = ["data-structures", "no-std"]
-rust-version = "1.74"
+rust-version = "1.81.0"
 
 [features]
-default = ["std"]
-# Enable features of links-domainmap that require the standard library
-std = ["idna/std", "serde?/std"]
+default = []
 # Enable `serde` serialization and deserialization for `DomainMap` and `Domain`
 serde = ["dep:serde"]
 
@@ -34,17 +32,17 @@ harness = false
 
 [dependencies]
 heapless = "0.8.0"
-idna = { version = "1.0.2", default-features = false, features = [
+idna = { version = "1.0.3", default-features = false, features = [
 	"alloc",
 	"compiled_data",
 ] }
-serde = { version = "1.0.214", optional = true, default-features = false, features = [
+serde = { version = "1.0.215", optional = true, default-features = false, features = [
 	"derive",
 	"alloc",
 ] }
 
 [dev-dependencies]
 criterion = "0.5.1"
-serde_json = { version = "1.0.132", default-features = false, features = [
+serde_json = { version = "1.0.133", default-features = false, features = [
 	"alloc",
 ] }
