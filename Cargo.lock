@@ -1653,7 +1653,7 @@ dependencies = [
  "sha2",
  "socket2",
  "strum",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "time",
  "tokio",
  "tokio-rustls",
@@ -1686,7 +1686,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
 ]
 
 [[package]]
@@ -1696,7 +1696,7 @@ dependencies = [
  "fred",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "unicode-normalization",
  "uriparse",
 ]
