@@ -80,7 +80,7 @@ tonic = { version = "0.12.3", default-features = false, features = [
 	"prost",
 	"server",
 ] }
-tower = { version = "0.5.1", features = ["util"] }
+tower = { version = "0.5.2", features = ["util"] }
 tracing = "0.1.41"
 tracing-appender = { version = "0.2.3", features = [
 	"parking_lot",
