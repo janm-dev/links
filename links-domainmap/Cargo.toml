@@ -43,6 +43,6 @@ serde = { version = "1.0.216", optional = true, default-features = false, featur
 
 [dev-dependencies]
 criterion = "0.5.1"
-serde_json = { version = "1.0.133", default-features = false, features = [
+serde_json = { version = "1.0.134", default-features = false, features = [
 	"alloc",
 ] }
