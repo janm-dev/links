@@ -29,7 +29,7 @@ anyhow = "1.0.95"
 async-trait = "0.1.85"
 basic-toml = "0.1.9"
 clap = { version = "4.5.23", features = ["derive", "env"] }
-colored = "2.2.0"
+colored = "3.0.0"
 crossbeam-channel = "0.5.14"
 fred = { version = "9.3.0", features = [
 	"metrics",
