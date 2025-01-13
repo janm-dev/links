@@ -556,7 +556,6 @@ impl Listener {
 					}
 					Err(err) => {
 						warn!("Error accepting TCP connection on {socket_addr}: {err:?}");
-						continue;
 					}
 				}
 			}
