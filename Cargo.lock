@@ -608,15 +608,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-queue"
-version = "0.3.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df0346b5d5e76ac2fe4e327c5fd1118d6be7c51dfb18f9b7922923f287471e35"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-utils"
 version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -840,9 +831,9 @@ dependencies = [
 
 [[package]]
 name = "float-cmp"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
+checksum = "b09cf3155332e944990140d967ff5eceb70df778b34f77d8075db46e4704e6d8"
 dependencies = [
  "num-traits",
 ]
@@ -864,15 +855,14 @@ dependencies = [
 
 [[package]]
 name = "fred"
-version = "9.4.0"
+version = "10.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cdd5378252ea124b712e0ac55147d26ae3af575883b34b8423091a4c719606b"
+checksum = "391bb3c769c0caea1c536b1e0802572740b8d686a9d363991277c6bc25b24eba"
 dependencies = [
  "arc-swap",
  "async-trait",
  "bytes",
  "bytes-utils",
- "crossbeam-queue",
  "float-cmp",
  "fred-macros",
  "futures",
@@ -881,7 +871,7 @@ dependencies = [
  "rand 0.8.5",
  "redis-protocol",
  "rustls",
- "rustls-native-certs 0.7.3",
+ "rustls-native-certs",
  "semver",
  "socket2",
  "tokio",
@@ -1233,7 +1223,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "rustls",
- "rustls-native-certs 0.8.0",
+ "rustls-native-certs",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls",
@@ -2497,9 +2487,9 @@ dependencies = [
 
 [[package]]
 name = "redis-protocol"
-version = "5.0.1"
+version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65deb7c9501fbb2b6f812a30d59c0253779480853545153a51d8e9e444ddc99f"
+checksum = "9cdba59219406899220fc4cdfd17a95191ba9c9afb719b5fa5a083d63109a9f1"
 dependencies = [
  "bytes",
  "bytes-utils",
@@ -2583,7 +2573,7 @@ dependencies = [
  "pin-project-lite",
  "quinn",
  "rustls",
- "rustls-native-certs 0.8.0",
+ "rustls-native-certs",
  "rustls-pemfile",
  "rustls-pki-types",
  "serde",
@@ -2699,19 +2689,6 @@ dependencies = [
  "rustls-webpki",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "rustls-native-certs"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5bfb394eeed242e909609f56089eecfe5fda225042e8b171791b9c95f5931e5"
-dependencies = [
- "openssl-probe",
- "rustls-pemfile",
- "rustls-pki-types",
- "schannel",
- "security-framework",
 ]
 
 [[package]]
@@ -3349,7 +3326,7 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
- "rustls-native-certs 0.8.0",
+ "rustls-native-certs",
  "rustls-pemfile",
  "socket2",
  "tokio",

@@ -31,7 +31,7 @@ basic-toml = "0.1.9"
 clap = { version = "4.5.27", features = ["derive", "env"] }
 colored = "3.0.0"
 crossbeam-channel = "0.5.14"
-fred = { version = "9.3.0", features = [
+fred = { version = "10.0.3", features = [
 	"metrics",
 	"enable-rustls-ring",
 	"partial-tracing",
