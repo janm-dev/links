@@ -36,7 +36,7 @@ fred = { version = "9.3.0", features = [
 	"enable-rustls-ring",
 	"partial-tracing",
 ] }
-hyper = "1.5.2"
+hyper = "1.6.0"
 hyper-util = { version = "0.1.10", features = [
 	"http1",
 	"http2",
