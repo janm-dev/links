@@ -63,7 +63,7 @@ time = { version = "0.3.39", features = [
 	"parsing",
 	"formatting",
 ] }
-tokio = { version = "1.44.0", features = [
+tokio = { version = "1.44.1", features = [
 	"rt-multi-thread",
 ] }
 tokio-rustls = { version = "0.26.2", default-features = false, features = [
@@ -97,10 +97,10 @@ tonic-build = "0.12.3"
 
 [dev-dependencies]
 regex = "1.11.1"
-reqwest = { version = "0.12.13", default-features = false, features = [
+reqwest = { version = "0.12.14", default-features = false, features = [
 	"http2",
 	"rustls-tls-native-roots",
 	"gzip",
 ] }
 serial_test = "3.1.1"
-tokio = { version = "1.44.0", features = ["full"] }
+tokio = { version = "1.44.1", features = ["full"] }
